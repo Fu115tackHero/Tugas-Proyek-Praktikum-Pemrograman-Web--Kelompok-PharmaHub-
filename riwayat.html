@@ -1,11 +1,68 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Riwayat</title>
-</head>
-<body>
-    <h1>Keranjang Kuda</h1>
-</body>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Riwayat Transaksi - PharmaHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body class="bg-gray-50 min-h-screen">
+    <!-- Navbar -->
+    <nav class="bg-white shadow-md">
+      <div
+        class="container mx-auto px-4 py-3 flex justify-between items-center"
+      >
+        <a href="index.html" class="flex items-center">
+          <img
+            src="assets/pharmahub-logo.png"
+            alt="PharmaHub"
+            class="h-10 w-auto"
+          />
+        </a>
+        <div class="space-x-6 hidden md:flex text-gray-700 text-sm">
+          <a href="index.html" class="hover:text-blue-600">Beranda</a>
+          <a href="produk.html" class="hover:text-blue-600">Produk</a>
+          <a href="notifikasi.html" class="hover:text-blue-600">Notifikasi</a>
+          <a href="riwayat.html" class="text-blue-600 font-semibold">Riwayat</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Konten Utama -->
+    <main class="container mx-auto px-4 py-12 text-center">
+      <i class="fas fa-receipt text-6xl text-gray-300 mb-6"></i>
+      <h1 class="text-2xl font-semibold text-gray-800 mb-2">
+        Belum Ada Riwayat Transaksi
+      </h1>
+      <p class="text-gray-500 mb-6">
+        Riwayat pembelian Anda akan muncul di sini setelah melakukan transaksi
+        pertama.
+      </p>
+      <a
+        href="produk.html"
+        class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold"
+      >
+        <i class="fas fa-shopping-cart mr-2"></i>Mulai Belanja
+      </a>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-16">
+      <div class="container mx-auto px-4 text-center">
+        <img
+          src="assets/pharmahub-logo.png"
+          alt="PharmaHub"
+          class="h-10 mx-auto mb-4"
+        />
+        <p class="text-gray-400 text-sm mb-4">
+          &copy; 2024 PharmaHub. Semua hak dilindungi.
+        </p>
+      </div>
+    </footer>
+  </body>
 </html>
