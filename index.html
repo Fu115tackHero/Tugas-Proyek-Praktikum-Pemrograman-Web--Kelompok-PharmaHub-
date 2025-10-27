@@ -1,17 +1,126 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>asede</title>
-</head>
-<body>
-    <p>akskoakosa</p>
-    <p>akskoakosa</p>
-    <p>akskoakosa</p>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PharmaHub - Obat Online Terpercaya</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css">
+  </head>
+  <body class="bg-gradient-to-b from-blue-50 to-blue-100 text-gray-800">
+    <!-- Navbar -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
+      <div
+        class="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center"
+      >
+        <!-- Logo -->
+        <a href="index.html" class="flex items-center">
+          <img src="assets/pharmahub-logo.png" alt="PharmaHub" class="h-10 w-auto" />
+        </a>
 
-    <p>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Iste iusto cupiditate obcaecati! Culpa modi in molestiae! Enim temporibus distinctio corporis.</p>
-    <p>mama mia lezatozs</p>
-    <p>this is the end</p>
-</body>
-</html>
+        <!-- Menu & Search -->
+        <div class="flex-1 max-w-xl mx-4 hidden md:block">
+          <div class="search-container">
+            <div class="relative">
+              <input
+                type="text"
+                id="search-input"
+                placeholder="Cari obat, vitamin, atau produk kesehatan..."
+                class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <button
+                class="absolute right-3 top-2 text-gray-500 hover:text-blue-600"
+              >
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+            <div id="search-results" class="search-results"></div>
+          </div>
+        </div>
+
+        <!-- Menu -->
+        <nav class="hidden md:flex space-x-6 text-sm font-medium text-gray-700">
+          <a href="index.html" class="hover:text-blue-600 transition"
+            >Beranda</a
+          >
+          <a href="produk.html" class="hover:text-blue-600 transition"
+            >Produk</a>
+          <a href="notifikasi.html" class="hover:text-blue-600 transition"
+            >Notifikasi</a
+          >
+          <a href="riwayat.html" class="hover:text-blue-600 transition"
+            >Riwayat</a
+          >
+        </nav>
+
+        <!-- Tombol Login & Keranjang -->
+        <div class="flex items-center space-x-4">
+          <!-- Mobile Search Button -->
+          <button id="mobile-search-btn" class="md:hidden text-gray-700">
+            <i class="fas fa-search text-xl"></i>
+          </button>
+
+          <a href="keranjang.html" class="relative">
+            <i class="fas fa-shopping-cart text-gray-700 text-xl"></i>
+            <span id="cart-count-mobile" class="cart-count hidden">0</span>
+          </a>
+          <a
+            href="Login.html"
+            class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition hidden md:block"
+            >Login</a
+          >
+
+          <!-- Mobile Menu Button -->
+          <button id="menu-btn" class="md:hidden flex flex-col space-y-1">
+            <span class="w-6 h-0.5 bg-gray-700"></span>
+            <span class="w-6 h-0.5 bg-gray-700"></span>
+            <span class="w-6 h-0.5 bg-gray-700"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Search Bar -->
+      <div
+        id="mobile-search"
+        class="md:hidden bg-white border-t border-gray-200 px-4 py-3 hidden"
+      >
+        <div class="search-container">
+          <div class="relative">
+            <input
+              type="text"
+              id="mobile-search-input"
+              placeholder="Cari obat, vitamin, atau produk kesehatan..."
+              class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <button
+              class="absolute right-3 top-2 text-gray-500 hover:text-blue-600"
+            >
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
+          <div id="mobile-search-results" class="search-results"></div>
+        </div>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div id="menu" class="hidden md:hidden bg-white border-t border-gray-200">
+        <nav class="flex flex-col space-y-2 px-6 py-4">
+          <a href="index.html" class="hover:text-blue-600 py-2">Beranda</a>
+          <a href="produk.html" class="hover:text-blue-600 py-2">Produk</a>
+          <a href="keranjang.html" class="hover:text-blue-600 py-2"
+            >Keranjang</a
+          >
+          <a href="notifikasi.html" class="hover:text-blue-600 py-2">Notifikasi</a>
+          <a href="riwayat.html" class="hover:text-blue-600 py-2">Riwayat</a>
+          <a
+            href="Login.html"
+            class="bg-blue-600 text-white px-4 py-2 rounded-md text-center hover:bg-blue-700 mt-2"
+            >Login</a
+          >
+        </nav>
+      </div>
+    </header>
