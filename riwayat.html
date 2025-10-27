@@ -64,6 +64,144 @@
             href="Login.html"
             class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition hidden md:block"
             >Login</a
-          >    
-        </body>
+          >
+
+          <!-- Mobile Menu Button -->
+          <button id="menu-btn" class="md:hidden flex flex-col space-y-1">
+            <span class="w-6 h-0.5 bg-gray-700"></span>
+            <span class="w-6 h-0.5 bg-gray-700"></span>
+            <span class="w-6 h-0.5 bg-gray-700"></span>
+          </button>
+        </div>
+
+        <!-- Mobile Menu Button -->
+        <button id="menu-btn" class="md:hidden flex flex-col space-y-1">
+          <span class="w-6 h-0.5 bg-gray-700"></span>
+          <span class="w-6 h-0.5 bg-gray-700"></span>
+          <span class="w-6 h-0.5 bg-gray-700"></span>
+        </button>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div id="menu" class="hidden md:hidden bg-white border-t border-gray-200">
+        <nav class="flex flex-col space-y-2 px-6 py-4">
+          <a href="index.html" class="hover:text-blue-600 py-2">Beranda</a>
+          <a href="produk.html" class="hover:text-blue-600 py-2">Produk</a>
+          <a href="keranjang.html" class="hover:text-blue-600 py-2">Keranjang</a>
+          <a href="notifikasi.html" class="hover:text-blue-600 py-2">Notifikasi</a>
+          <a href="riwayat.html" class="text-blue-600 font-semibold py-2">Riwayat</a>
+          <a
+            href="Login.html"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition inline-block w-fit"
+            >Login</a
+          >
+        </nav>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+      <!-- Page Header -->
+      <div class="mb-8">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Riwayat Transaksi</h1>
+            <p class="text-gray-600">Lihat semua riwayat pembelian dan transaksi Anda</p>
+          </div>
+          <div class="flex items-center space-x-3">
+            <select class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+              <option value="all">Semua Waktu</option>
+              <option value="week">7 Hari Terakhir</option>
+              <option value="month">30 Hari Terakhir</option>
+              <option value="quarter">3 Bulan Terakhir</option>
+            </select>
+            <button
+              class="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 transition disabled:text-gray-400"
+              disabled
+            >
+              <i class="fas fa-download mr-2"></i>Unduh Riwayat
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Tabs -->
+      <div class="mb-6">
+        <div class="border-b border-gray-200">
+          <nav class="flex space-x-8">
+            <button
+              class="tab-btn active py-2 px-1 border-b-2 border-blue-500 text-blue-600 font-medium text-sm"
+              data-tab="all"
+            >
+              Semua
+              <span class="ml-2 bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-xs">0</span>
+            </button>
+            <button
+              class="tab-btn py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm"
+              data-tab="completed"
+            >
+              Selesai
+              <span class="ml-2 bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">0</span>
+            </button>
+            <button
+              class="tab-btn py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm"
+              data-tab="processing"
+            >
+              Diproses
+              <span class="ml-2 bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">0</span>
+            </button>
+            <button
+              class="tab-btn py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm"
+              data-tab="cancelled"
+            >
+              Dibatalkan
+              <span class="ml-2 bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">0</span>
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      <!-- History Content -->
+      <div class="bg-white rounded-lg shadow-md">
+        <!-- Empty State -->
+        <div class="text-center py-16 px-6">
+          <div class="mb-6">
+            <i class="fas fa-receipt text-6xl text-gray-300"></i>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-700 mb-2">Belum Ada Riwayat Transaksi</h3>
+          <p class="text-gray-500 mb-6">
+            Riwayat pembelian Anda akan muncul di sini setelah melakukan transaksi pertama.
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
+            <div class="flex flex-col items-center p-4 bg-blue-50 rounded-lg">
+              <i class="fas fa-shopping-bag text-blue-500 text-2xl mb-2"></i>
+              <span class="text-sm text-blue-700 font-medium">Detail Pesanan</span>
+              <p class="text-xs text-blue-600 mt-1">Lihat produk yang dibeli</p>
+            </div>
+            <div class="flex flex-col items-center p-4 bg-green-50 rounded-lg">
+              <i class="fas fa-truck text-green-500 text-2xl mb-2"></i>
+              <span class="text-sm text-green-700 font-medium">Status Pengiriman</span>
+              <p class="text-xs text-green-600 mt-1">Tracking real-time</p>
+            </div>
+            <div class="flex flex-col items-center p-4 bg-purple-50 rounded-lg">
+              <i class="fas fa-star text-purple-500 text-2xl mb-2"></i>
+              <span class="text-sm text-purple-700 font-medium">Berikan Ulasan</span>
+              <p class="text-xs text-purple-600 mt-1">Rating & feedback</p>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <a
+              href="produk.html"
+              class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold"
+            >
+              <i class="fas fa-shopping-cart mr-2"></i>Mulai Belanja
+            </a>
+            <p class="text-sm text-gray-500">
+              Atau kembali ke 
+              <a href="index.html" class="text-blue-600 hover:text-blue-800 underline">beranda</a>
+            </p>
+          </div>
+        </div>
+      </div> 
+  </body>
 </html>
