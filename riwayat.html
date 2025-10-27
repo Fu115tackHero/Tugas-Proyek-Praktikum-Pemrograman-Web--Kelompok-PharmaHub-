@@ -1,11 +1,69 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Riwayat</title>
-</head>
-<body>
-    <h1>Lorem, ipsum dolor sit amet consectetur adipisicing elit. Dolorem iste cum suscipit tempore commodi, explicabo porro. Neque velit quae aspernatur.</h1>
-</body>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Riwayat Transaksi - PharmaHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+
+  <body class="bg-gray-50 min-h-screen">
+    <!-- Navbar -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+      <div
+        class="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center"
+      >
+        <!-- Logo -->
+        <a href="index.html" class="flex items-center">
+          <img src="assets/pharmahub-logo.png" alt="PharmaHub" class="h-10 w-auto" />
+        </a>
+
+        <!-- Menu & Search -->
+        <div class="flex-1 max-w-xl mx-4 hidden md:block">
+          <div class="search-container">
+            <div class="relative">
+              <input
+                type="text"
+                placeholder="Cari obat, vitamin, atau produk kesehatan..."
+                class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <button
+                class="absolute right-3 top-2 text-gray-500 hover:text-blue-600"
+              >
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Menu -->
+        <nav class="hidden md:flex space-x-6 text-sm font-medium text-gray-700">
+          <a href="index.html" class="hover:text-blue-600 transition">Beranda</a>
+          <a href="produk.html" class="hover:text-blue-600 transition">Produk</a>
+          <a href="notifikasi.html" class="hover:text-blue-600 transition">Notifikasi</a>
+          <a href="riwayat.html" class="text-blue-600 font-semibold">Riwayat</a>
+        </nav>
+
+        <!-- Tombol Login & Keranjang -->
+        <div class="flex items-center space-x-4">
+          <!-- Mobile Search Button -->
+          <button id="mobile-search-btn" class="md:hidden text-gray-700">
+            <i class="fas fa-search text-xl"></i>
+          </button>
+
+          <a href="keranjang.html" class="relative">
+            <i class="fas fa-shopping-cart text-gray-700 text-xl"></i>
+            <span id="cart-count-mobile" class="cart-count hidden">0</span>
+          </a>
+          <a
+            href="Login.html"
+            class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition hidden md:block"
+            >Login</a
+          >    
+        </body>
 </html>
