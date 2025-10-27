@@ -42,7 +42,7 @@
           >
         </nav>
 
-        <!-- Tombol Aksi -->
+        <!-- Tombol Login & Actions -->
         <div class="flex items-center space-x-4">
           <a href="keranjang.html" class="text-blue-600 font-semibold relative">
             <i class="fas fa-shopping-cart text-xl"></i>
@@ -54,7 +54,7 @@
             >Login</a
           >
 
-          <!-- Tombol Mobile -->
+          <!-- Mobile Menu Button -->
           <button id="menu-btn" class="md:hidden flex flex-col space-y-1">
             <span class="w-6 h-0.5 bg-gray-700"></span>
             <span class="w-6 h-0.5 bg-gray-700"></span>
@@ -84,7 +84,7 @@
       </div>
     </header>
 
-    <!-- Header Halaman -->
+    <!-- Page Header -->
     <section class="bg-white border-b border-gray-200">
       <div class="container mx-auto px-4 sm:px-6 py-6">
         <div class="flex items-center justify-between">
@@ -106,107 +106,279 @@
       </div>
     </section>
 
-    <!-- Konten Utama -->
     <div class="container mx-auto px-4 sm:px-6 py-8">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Keranjang -->
-        <div class="lg:col-span-2 bg-white rounded-lg shadow-sm">
-          <div id="cart-items" class="divide-y divide-gray-200 p-4">
-            <div class="text-center text-gray-500 py-10">
-              <i class="fas fa-shopping-cart text-5xl text-gray-300 mb-4"></i>
-              <p>Keranjang Anda masih kosong</p>
+        <!-- Cart Items Section -->
+        <div class="lg:col-span-2">
+          <div class="bg-white rounded-lg shadow-sm">
+            <!-- Cart Items Container -->
+            <div id="cart-items" class="divide-y divide-gray-200">
+              <!-- Cart items will be populated by JavaScript -->
             </div>
-          </div>
 
-          <!-- Tombol hapus semua -->
-          <div class="p-4 border-t border-gray-200">
-            <button
-              id="remove-all-btn"
-              class="text-red-600 hover:text-red-700 text-sm font-medium flex items-center"
+            <!-- Empty Cart Message -->
+            <div id="empty-cart" class="p-8 text-center hidden">
+              <i class="fas fa-shopping-cart text-6xl text-gray-300 mb-4"></i>
+              <h3 class="text-xl font-semibold text-gray-600 mb-2">
+                Keranjang Anda Kosong
+              </h3>
+              <p class="text-gray-500 mb-6">
+                Mulai berbelanja dan tambahkan produk ke keranjang
+              </p>
+              <a
+                href="index.html"
+                class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition inline-flex items-center"
+              >
+                <i class="fas fa-shopping-bag mr-2"></i>
+                Mulai Belanja
+              </a>
+            </div>
+
+            <!-- Remove All Button -->
+            <div
+              id="remove-all-section"
+              class="p-4 border-t border-gray-200 hidden"
             >
-              <i class="fas fa-trash mr-2"></i> Remove all
-            </button>
+              <button
+                id="remove-all-btn"
+                class="text-red-600 hover:text-red-700 text-sm font-medium flex items-center"
+              >
+                <i class="fas fa-trash mr-2"></i>
+                Remove all
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Ringkasan Pesanan -->
-        <div class="bg-white rounded-lg shadow-sm p-6 sticky top-4">
-          <div class="mb-6">
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-gray-700 font-medium">Have a coupon?</span>
-              <i class="fas fa-tag text-gray-400"></i>
+        <!-- Order Summary Section -->
+        <div class="lg:col-span-1">
+          <div class="bg-white rounded-lg shadow-sm p-6 sticky top-4">
+            <!-- Coupon Section -->
+            <div class="mb-6">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-gray-700 font-medium">Have a coupon?</span>
+                <i class="fas fa-tag text-gray-400"></i>
+              </div>
+              <div class="flex">
+                <input
+                  type="text"
+                  id="coupon-input"
+                  placeholder="Add coupon"
+                  class="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button
+                  id="apply-coupon-btn"
+                  class="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700 transition font-medium"
+                >
+                  Apply
+                </button>
+              </div>
+              <div id="coupon-message" class="mt-2 text-sm hidden"></div>
             </div>
-            <div class="flex">
-              <input
-                type="text"
-                id="coupon-input"
-                placeholder="Add coupon"
-                class="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none"
-              />
-              <button
-                id="apply-coupon-btn"
-                class="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700"
+
+            <!-- Order Summary -->
+            <div class="space-y-3 mb-6">
+              <div class="flex justify-between text-gray-600">
+                <span>Subtotal:</span>
+                <span id="subtotal">Rp 0</span>
+              </div>
+              <div class="flex justify-between text-gray-600">
+                <span>Discount:</span>
+                <span id="discount" class="text-red-600">-Rp 0</span>
+              </div>
+              <div class="flex justify-between text-gray-600">
+                <span>Tax:</span>
+                <span id="tax">+ Rp 0</span>
+              </div>
+              <hr class="border-gray-200" />
+              <div
+                class="flex justify-between text-lg font-semibold text-gray-800"
               >
-                Apply
-              </button>
+                <span>Total:</span>
+                <span id="total">Rp 0</span>
+              </div>
             </div>
-            <div id="coupon-message" class="mt-2 text-sm text-gray-500">
-              Masukkan kode kupon jika ada
-            </div>
-          </div>
 
-          <div class="space-y-3 mb-6">
-            <div class="flex justify-between text-gray-600">
-              <span>Subtotal:</span><span id="subtotal">Rp 0</span>
-            </div>
-            <div class="flex justify-between text-gray-600">
-              <span>Discount:</span><span id="discount">- Rp 0</span>
-            </div>
-            <div class="flex justify-between text-gray-600">
-              <span>Tax:</span><span id="tax">+ Rp 0</span>
-            </div>
-            <hr class="border-gray-200" />
-            <div
-              class="flex justify-between text-lg font-semibold text-gray-800"
+            <!-- Checkout Button -->
+            <a
+              href="checkout.html"
+              id="checkout-btn"
+              class="block w-full bg-blue-800 text-white py-3 rounded-lg font-semibold hover:bg-blue-900 transition text-center mb-4"
             >
-              <span>Total:</span><span id="total">Rp 0</span>
+              Checkout
+            </a>
+
+            <!-- Payment Methods -->
+            <div class="payment-methods">
+              <div class="flex items-center justify-center space-x-3 flex-wrap">
+                <img
+                  src="https://cdn.worldvectorlogo.com/logos/visa-2.svg"
+                  alt="Visa"
+                  class="h-6"
+                />
+                <img
+                  src="https://cdn.worldvectorlogo.com/logos/mastercard-6.svg"
+                  alt="Mastercard"
+                  class="h-6"
+                />
+                <img
+                  src="https://cdn.worldvectorlogo.com/logos/american-express-3.svg"
+                  alt="American Express"
+                  class="h-6"
+                />
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Logo_dana_blue.svg/512px-Logo_dana_blue.svg.png"
+                  alt="Dana"
+                  class="h-6"
+                />
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Logo_ovo_purple.svg/512px-Logo_ovo_purple.svg.png"
+                  alt="OVO"
+                  class="h-6"
+                />
+              </div>
             </div>
-          </div>
-
-          <a
-            href="checkout.html"
-            id="checkout-btn"
-            class="block w-full bg-blue-800 text-white py-3 rounded-lg font-semibold hover:bg-blue-900 text-center"
-          >
-            Checkout
-          </a>
-
-          <div class="flex items-center justify-center space-x-3 mt-4">
-            <img
-              src="https://cdn.worldvectorlogo.com/logos/visa-2.svg"
-              alt="Visa"
-              class="h-6"
-            />
-            <img
-              src="https://cdn.worldvectorlogo.com/logos/mastercard-6.svg"
-              alt="Mastercard"
-              class="h-6"
-            />
-            <img
-              src="https://cdn.worldvectorlogo.com/logos/american-express-3.svg"
-              alt="Amex"
-              class="h-6"
-            />
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Success Toast -->
+    <div
+      id="toast"
+      class="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-full opacity-0 transition-all duration-300"
+    >
+      <div class="flex items-center">
+        <i class="fas fa-check-circle mr-2"></i>
+        <span id="toast-message">Item updated successfully!</span>
+      </div>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="assets/js/main.js"></script>
+
     <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-10 mt-16">
-      <div class="container mx-auto px-4 sm:px-6">
-        <div class="text-center text-gray-400 text-sm">
-          &copy; 2024 PharmaHub. All rights reserved.
+    <footer class="bg-gray-800 text-white py-12 mt-16 relative overflow-hidden">
+      <div
+        class="absolute left-0 top-0 h-full w-80 opacity-90 bg-no-repeat bg-left bg-cover pointer-events-none"
+        style="background-image: url('assets/footer-decor.png')"
+      ></div>
+      <div class="container mx-auto px-4 sm:px-6 relative z-10">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <!-- Company Info -->
+          <div class="col-span-1 md:col-span-2">
+            <div class="flex items-center mb-6">
+              <img
+                src="assets/pharmahub-logo.png"
+                alt="PharmaHub"
+                class="h-12 w-auto"
+              />
+            </div>
+            <p class="text-gray-300 mb-4 leading-relaxed">
+              PharmaHub adalah platform terpercaya untuk kebutuhan obat dan
+              kesehatan Anda. Kami menyediakan obat-obatan berkualitas dengan
+              layanan yang profesional dan terpercaya.
+            </p>
+            <div class="flex space-x-4">
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-facebook-f text-xl"></i>
+              </a>
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-twitter text-xl"></i>
+              </a>
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-instagram text-xl"></i>
+              </a>
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-whatsapp text-xl"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Quick Links -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+            <ul class="space-y-2">
+              <li>
+                <a
+                  href="index.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Beranda</a
+                >
+              </li>
+              <li>
+                <a
+                  href="produk.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Semua Produk</a
+                >
+              </li>
+              <li>
+                <a
+                  href="notifikasi.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Notifikasi</a
+                >
+              </li>
+              <li>
+                <a
+                  href="riwayat.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Riwayat</a
+                >
+              </li>
+              <li>
+                <a
+                  href="keranjang.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Keranjang</a
+                >
+              </li>
+            </ul>
+          </div>
+
+          <!-- Contact Info -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Kontak</h3>
+            <ul class="space-y-3 text-gray-300">
+              <li class="flex items-center">
+                <i class="fas fa-map-marker-alt mr-3 text-blue-400"></i>
+                <span class="text-sm">Jl. Kesehatan No. 123, Jakarta</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-phone mr-3 text-blue-400"></i>
+                <span class="text-sm">+62 21 1234 5678</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-envelope mr-3 text-blue-400"></i>
+                <span class="text-sm">info@pharmahub.com</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-clock mr-3 text-blue-400"></i>
+                <span class="text-sm">24/7 Customer Service</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Bottom Footer -->
+        <div class="border-t border-gray-700 mt-8 pt-8 text-center">
+          <div class="flex flex-col md:flex-row justify-between items-center">
+            <p class="text-gray-400 text-sm mb-4 md:mb-0">
+              &copy; 2024 PharmaHub. All rights reserved.
+            </p>
+            <div class="flex space-x-6 text-sm">
+              <a href="#" class="text-gray-400 hover:text-white transition"
+                >Privacy Policy</a
+              >
+              <a href="#" class="text-gray-400 hover:text-white transition"
+                >Terms of Service</a
+              >
+              <a href="#" class="text-gray-400 hover:text-white transition"
+                >FAQ</a
+              >
+            </div>
+          </div>
         </div>
       </div>
     </footer>
