@@ -1,0 +1,36 @@
+/* PharmaHub Custom Styles */
+/* File ini berisi semua custom CSS yang tidak menggunakan Tailwind CSS */
+
+/* Cart Item Styles */
+.cart-item {
+    transition: all 0.3s ease;
+}
+
+.cart-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Quantity Button Animations */
+.quantity-btn {
+    transition: all 0.2s ease;
+}
+
+.quantity-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Payment Methods Logo Sizing */
+.payment-methods img {
+    height: 24px;
+    width: auto;
+    object-fit: contain;
+}
+
+/* Category Item Hover Effects */
+.category-item {
+    transition: all 0.3s ease;
+}
+
+.category-item:hover {
+    transform: translateY(-5px);
+}
