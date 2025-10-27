@@ -9,161 +9,206 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
+    <link rel="stylesheet" href="assets/css/styles.css" />
   </head>
-  <body
-    class="bg-gradient-to-b from-blue-50 to-blue-100 min-h-screen transition-all duration-300"
-  >
-    <header class="bg-white shadow-md">
+  <body class="bg-gradient-to-b from-blue-50 to-blue-100 min-h-screen">
+    <!-- Navbar -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
       <div
-        class="container mx-auto px-4 sm:px-6 py-4 flex justify-between items-center"
+        class="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center"
       >
+        <!-- Logo -->
         <a href="index.html" class="flex items-center">
           <img
             src="assets/pharmahub-logo.png"
             alt="PharmaHub"
             class="h-10 w-auto"
           />
-          <span class="ml-3 text-xl font-semibold text-blue-700"
-            >PharmaHub</span
-          >
         </a>
-        <nav class="space-x-6 text-sm font-medium text-gray-700 hidden md:flex">
-          <a href="index.html" class="hover:text-blue-600">Beranda</a>
-          <a href="produk.html" class="hover:text-blue-600">Produk</a>
-          <a href="keranjang.html" class="text-blue-600 font-semibold"
+
+        <!-- Menu -->
+        <nav class="hidden md:flex space-x-6 text-sm font-medium text-gray-700">
+          <a href="index.html" class="hover:text-blue-600 transition"
+            >Beranda</a
+          >
+          <a href="produk.html" class="hover:text-blue-600 transition"
+            >Produk</a
+          >
+          <a href="notifikasi.html" class="hover:text-blue-600 transition"
+            >Notifikasi</a
+          >
+          <a href="riwayat.html" class="hover:text-blue-600 transition"
+            >Riwayat</a
+          >
+        </nav>
+
+        <!-- Tombol Aksi -->
+        <div class="flex items-center space-x-4">
+          <a href="keranjang.html" class="text-blue-600 font-semibold relative">
+            <i class="fas fa-shopping-cart text-xl"></i>
+            <span class="text-sm ml-1">Keranjang</span>
+          </a>
+          <a
+            href="Login.html"
+            class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition hidden md:block"
+            >Login</a
+          >
+
+          <!-- Tombol Mobile -->
+          <button id="menu-btn" class="md:hidden flex flex-col space-y-1">
+            <span class="w-6 h-0.5 bg-gray-700"></span>
+            <span class="w-6 h-0.5 bg-gray-700"></span>
+            <span class="w-6 h-0.5 bg-gray-700"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div id="menu" class="hidden md:hidden bg-white border-t border-gray-200">
+        <nav class="flex flex-col space-y-2 px-6 py-4">
+          <a href="index.html" class="hover:text-blue-600 py-2">Beranda</a>
+          <a href="produk.html" class="hover:text-blue-600 py-2">Produk</a>
+          <a href="keranjang.html" class="text-blue-600 font-semibold py-2"
             >Keranjang</a
           >
-          <a href="login.html" class="hover:text-blue-600">Login</a>
+          <a href="notifikasi.html" class="hover:text-blue-600 py-2"
+            >Notifikasi</a
+          >
+          <a href="riwayat.html" class="hover:text-blue-600 py-2">Riwayat</a>
+          <a
+            href="Login.html"
+            class="bg-blue-600 text-white px-4 py-2 rounded-md text-center hover:bg-blue-700 mt-2"
+            >Login</a
+          >
         </nav>
       </div>
     </header>
 
-    <main class="container mx-auto px-4 sm:px-6 py-12">
-      <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">
-        Keranjang Belanja
-      </h1>
-
-      <div
-        id="cartContainer"
-        class="overflow-x-auto bg-white shadow-md rounded-lg"
-      >
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-blue-600 text-white">
-            <tr>
-              <th class="py-3 px-4 text-left text-sm font-semibold">Produk</th>
-              <th class="py-3 px-4 text-left text-sm font-semibold">Harga</th>
-              <th class="py-3 px-4 text-left text-sm font-semibold">Jumlah</th>
-              <th class="py-3 px-4 text-left text-sm font-semibold">Total</th>
-              <th class="py-3 px-4 text-center text-sm font-semibold">Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="cartItems" class="divide-y divide-gray-100 text-gray-700">
-            <tr>
-              <td class="py-4 px-4">Paracetamol 500mg</td>
-              <td class="py-4 px-4 harga" data-harga="5000">Rp5.000</td>
-              <td class="py-4 px-4">
-                <input
-                  type="number"
-                  class="jumlah w-16 border rounded-md text-center"
-                  min="1"
-                  value="2"
-                />
-              </td>
-              <td class="py-4 px-4 total">Rp10.000</td>
-              <td class="py-4 px-4 text-center">
-                <button class="hapus text-red-500 hover:text-red-700">
-                  <i class="fa-solid fa-trash"></i>
-                </button>
-              </td>
-            </tr>
-            <tr>
-              <td class="py-4 px-4">Vitamin C 1000mg</td>
-              <td class="py-4 px-4 harga" data-harga="12000">Rp12.000</td>
-              <td class="py-4 px-4">
-                <input
-                  type="number"
-                  class="jumlah w-16 border rounded-md text-center"
-                  min="1"
-                  value="1"
-                />
-              </td>
-              <td class="py-4 px-4 total">Rp12.000</td>
-              <td class="py-4 px-4 text-center">
-                <button class="hapus text-red-500 hover:text-red-700">
-                  <i class="fa-solid fa-trash"></i>
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div
-        class="mt-8 flex flex-col sm:flex-row justify-between items-center bg-white shadow-sm p-6 rounded-lg"
-      >
-        <p
-          id="grandTotal"
-          class="text-gray-800 font-semibold text-lg mb-4 sm:mb-0"
-        >
-          Total Keseluruhan: <span class="text-blue-700">Rp22.000</span>
-        </p>
-        <div class="space-x-4">
-          <button
-            id="clearCart"
-            class="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg transition"
-          >
-            Hapus Semua
-          </button>
-          <button
-            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg transition"
-          >
-            Checkout
-          </button>
+    <!-- Header Halaman -->
+    <section class="bg-white border-b border-gray-200">
+      <div class="container mx-auto px-4 sm:px-6 py-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <button
+              onclick="history.back()"
+              class="flex items-center text-blue-600 hover:text-blue-700 transition"
+            >
+              <i class="fas fa-arrow-left mr-2"></i>
+              Back to shop
+            </button>
+            <div class="hidden sm:block w-px h-6 bg-gray-300"></div>
+            <h1 class="text-2xl font-bold text-gray-800">Keranjang Belanja</h1>
+          </div>
+          <div class="text-sm text-gray-600">
+            <span id="cart-item-count">0</span> item dalam keranjang
+          </div>
         </div>
       </div>
-    </main>
+    </section>
 
-    <footer class="bg-gray-800 text-white py-6 mt-12 text-center">
-      <p class="text-sm text-gray-300">
-        &copy; 2024 PharmaHub. All rights reserved.
-      </p>
+    <!-- Konten Utama -->
+    <div class="container mx-auto px-4 sm:px-6 py-8">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Keranjang -->
+        <div class="lg:col-span-2 bg-white rounded-lg shadow-sm">
+          <div id="cart-items" class="divide-y divide-gray-200 p-4">
+            <div class="text-center text-gray-500 py-10">
+              <i class="fas fa-shopping-cart text-5xl text-gray-300 mb-4"></i>
+              <p>Keranjang Anda masih kosong</p>
+            </div>
+          </div>
+
+          <!-- Tombol hapus semua -->
+          <div class="p-4 border-t border-gray-200">
+            <button
+              id="remove-all-btn"
+              class="text-red-600 hover:text-red-700 text-sm font-medium flex items-center"
+            >
+              <i class="fas fa-trash mr-2"></i> Remove all
+            </button>
+          </div>
+        </div>
+
+        <!-- Ringkasan Pesanan -->
+        <div class="bg-white rounded-lg shadow-sm p-6 sticky top-4">
+          <div class="mb-6">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-gray-700 font-medium">Have a coupon?</span>
+              <i class="fas fa-tag text-gray-400"></i>
+            </div>
+            <div class="flex">
+              <input
+                type="text"
+                id="coupon-input"
+                placeholder="Add coupon"
+                class="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none"
+              />
+              <button
+                id="apply-coupon-btn"
+                class="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700"
+              >
+                Apply
+              </button>
+            </div>
+            <div id="coupon-message" class="mt-2 text-sm text-gray-500">
+              Masukkan kode kupon jika ada
+            </div>
+          </div>
+
+          <div class="space-y-3 mb-6">
+            <div class="flex justify-between text-gray-600">
+              <span>Subtotal:</span><span id="subtotal">Rp 0</span>
+            </div>
+            <div class="flex justify-between text-gray-600">
+              <span>Discount:</span><span id="discount">- Rp 0</span>
+            </div>
+            <div class="flex justify-between text-gray-600">
+              <span>Tax:</span><span id="tax">+ Rp 0</span>
+            </div>
+            <hr class="border-gray-200" />
+            <div
+              class="flex justify-between text-lg font-semibold text-gray-800"
+            >
+              <span>Total:</span><span id="total">Rp 0</span>
+            </div>
+          </div>
+
+          <a
+            href="checkout.html"
+            id="checkout-btn"
+            class="block w-full bg-blue-800 text-white py-3 rounded-lg font-semibold hover:bg-blue-900 text-center"
+          >
+            Checkout
+          </a>
+
+          <div class="flex items-center justify-center space-x-3 mt-4">
+            <img
+              src="https://cdn.worldvectorlogo.com/logos/visa-2.svg"
+              alt="Visa"
+              class="h-6"
+            />
+            <img
+              src="https://cdn.worldvectorlogo.com/logos/mastercard-6.svg"
+              alt="Mastercard"
+              class="h-6"
+            />
+            <img
+              src="https://cdn.worldvectorlogo.com/logos/american-express-3.svg"
+              alt="Amex"
+              class="h-6"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-10 mt-16">
+      <div class="container mx-auto px-4 sm:px-6">
+        <div class="text-center text-gray-400 text-sm">
+          &copy; 2024 PharmaHub. All rights reserved.
+        </div>
+      </div>
     </footer>
-
-    <script>
-      function formatRupiah(num) {
-        return "Rp" + num.toLocaleString("id-ID");
-      }
-
-      function updateTotal() {
-        let grandTotal = 0;
-        document.querySelectorAll("#cartItems tr").forEach((row) => {
-          const harga = parseInt(row.querySelector(".harga").dataset.harga);
-          const jumlah = parseInt(row.querySelector(".jumlah").value);
-          const total = harga * jumlah;
-          row.querySelector(".total").textContent = formatRupiah(total);
-          grandTotal += total;
-        });
-        document.querySelector("#grandTotal span").textContent =
-          formatRupiah(grandTotal);
-      }
-
-      document.querySelectorAll(".jumlah").forEach((input) => {
-        input.addEventListener("input", updateTotal);
-      });
-
-      document.querySelectorAll(".hapus").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-          e.target.closest("tr").remove();
-          updateTotal();
-        });
-      });
-
-      document.getElementById("clearCart").addEventListener("click", () => {
-        document.getElementById("cartItems").innerHTML = "";
-        updateTotal();
-      });
-
-      updateTotal();
-    </script>
   </body>
 </html>
