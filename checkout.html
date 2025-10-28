@@ -1,71 +1,136 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Checkout | PharmaHub</title>
     <style>
       body {
-        font-family: Arial, sans-serif;
-        background: #f4f6fb;
+        font-family: "Inter", Arial, sans-serif;
+        background: linear-gradient(to bottom, #eff6ff, #dbeafe);
         margin: 0;
         padding: 0;
       }
       .container {
-        max-width: 700px;
+        max-width: 900px;
         margin: 40px auto;
         background: #fff;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        padding: 32px;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        padding: 32px 24px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 32px;
+      }
+      .checkout-form {
+        flex: 1 1 320px;
+        min-width: 320px;
+      }
+      .order-summary {
+        flex: 1 1 320px;
+        min-width: 320px;
+        background: #f1f5f9;
+        border-radius: 10px;
+        padding: 24px 20px;
+        box-sizing: border-box;
+        height: fit-content;
       }
       h2 {
         margin-top: 0;
-        color: #2a7be4;
+        color: #1e40af;
+        font-size: 2rem;
+        font-weight: 700;
       }
-      form label {
+      h3 {
+        color: #1e293b;
+        margin-bottom: 12px;
+        font-size: 1.2rem;
+        font-weight: 600;
+      }
+      label {
         display: block;
         margin-bottom: 6px;
-        font-weight: bold;
+        font-weight: 500;
+        color: #334155;
       }
-      form input,
-      form textarea,
-      form select {
+      input,
+      textarea,
+      select {
         width: 100%;
-        padding: 8px;
+        padding: 10px;
         margin-bottom: 18px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        font-size: 1em;
-      }
-      .summary {
-        background: #f0f4fa;
-        padding: 18px;
+        border: 1px solid #cbd5e1;
         border-radius: 6px;
-        margin-bottom: 24px;
+        font-size: 1em;
+        background: #f8fafc;
+        transition: border 0.2s;
       }
-      .summary h3 {
-        margin-top: 0;
+      input:focus,
+      textarea:focus,
+      select:focus {
+        border-color: #2563eb;
+        outline: none;
       }
       .btn {
-        background: #2a7be4;
+        background: #1e40af;
         color: #fff;
         border: none;
-        padding: 12px 28px;
-        border-radius: 4px;
+        padding: 14px 32px;
+        border-radius: 6px;
         font-size: 1.1em;
         cursor: pointer;
+        font-weight: 600;
         transition: background 0.2s;
+        width: 100%;
+        margin-top: 10px;
       }
       .btn:hover {
-        background: #1a5bb8;
+        background: #1d4ed8;
+      }
+      .order-items {
+        margin-bottom: 18px;
+      }
+      .order-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 1em;
+        color: #334155;
+      }
+      .order-item:last-child {
+        border-bottom: none;
+      }
+      .order-total,
+      .order-subtotal {
+        display: flex;
+        justify-content: space-between;
+        font-weight: 600;
+        font-size: 1.1em;
+        margin-top: 10px;
+      }
+      .order-total {
+        color: #1e40af;
+        font-size: 1.2em;
+        margin-top: 18px;
+      }
+      @media (max-width: 900px) {
+        .container {
+          flex-direction: column;
+          padding: 18px 6vw;
+        }
+        .order-summary,
+        .checkout-form {
+          min-width: 0;
+        }
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <h2>Checkout</h2>
-      <form>
+      <form class="checkout-form" id="checkout-form" autocomplete="off">
+        <h2>Checkout</h2>
         <h3>Informasi Pembeli</h3>
         <label for="name">Nama Lengkap</label>
         <input type="text" id="name" name="name" required />
@@ -87,18 +152,77 @@
           <option value="ewallet">E-Wallet</option>
         </select>
 
-        <div class="summary">
-          <h3>Ringkasan Pesanan</h3>
-          <ul>
-            <li>Paracetamol 500mg x 2 - Rp10.000</li>
-            <li>Vitamin C 1000mg x 1 - Rp15.000</li>
-            <!-- Tambahkan item pesanan lain di sini -->
-          </ul>
-          <strong>Total: Rp35.000</strong>
-        </div>
-
-        <button type="submit" class="btn">Konfirmasi & Bayar</button>
+        <button type="submit" class="btn">Konfirmasi &amp; Bayar</button>
       </form>
+      <div class="order-summary">
+        <h3>Ringkasan Pesanan</h3>
+        <div class="order-items" id="order-items">
+          <!-- Barang dari keranjang akan muncul di sini -->
+        </div>
+        <div class="order-subtotal">
+          <span>Subtotal</span>
+          <span id="order-subtotal">Rp 0</span>
+        </div>
+        <div class="order-total">
+          <span>Total</span>
+          <span id="order-total">Rp 0</span>
+        </div>
+      </div>
     </div>
+    <script>
+      // Ambil data keranjang dari localStorage (format: [{name, qty, price}])
+      function formatRupiah(num) {
+        return "Rp " + num.toLocaleString("id-ID");
+      }
+
+      function getCart() {
+        try {
+          const cart = JSON.parse(localStorage.getItem("cart"));
+          if (Array.isArray(cart) && cart.length > 0) return cart;
+        } catch {}
+        // Fallback dummy data jika keranjang kosong
+        return [
+          { name: "Paracetamol 500mg", qty: 2, price: 5000 },
+          { name: "Vitamin C 1000mg", qty: 1, price: 15000 },
+        ];
+      }
+
+      function renderOrderSummary() {
+        const cart = getCart();
+        const orderItems = document.getElementById("order-items");
+        orderItems.innerHTML = "";
+        let subtotal = 0;
+        cart.forEach((item) => {
+          const totalItem = item.qty * item.price;
+          subtotal += totalItem;
+          const div = document.createElement("div");
+          div.className = "order-item";
+          div.innerHTML = `
+            <span>${item.name} <span style="color:#64748b;font-size:0.95em;">x${
+            item.qty
+          }</span></span>
+            <span>${formatRupiah(totalItem)}</span>
+          `;
+          orderItems.appendChild(div);
+        });
+        document.getElementById("order-subtotal").textContent =
+          formatRupiah(subtotal);
+        document.getElementById("order-total").textContent =
+          formatRupiah(subtotal);
+      }
+
+      renderOrderSummary();
+
+      // Optional: validasi form & alert sukses
+      document
+        .getElementById("checkout-form")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          alert("Terima kasih! Pesanan Anda telah diterima.");
+          // Kosongkan keranjang jika ingin
+          // localStorage.removeItem('cart');
+          window.location.href = "index.html";
+        });
+    </script>
   </body>
 </html>
