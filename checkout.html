@@ -3,7 +3,102 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Checkout | PharmaHub</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f4f6fb;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 700px;
+        margin: 40px auto;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        padding: 32px;
+      }
+      h2 {
+        margin-top: 0;
+        color: #2a7be4;
+      }
+      form label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: bold;
+      }
+      form input,
+      form textarea,
+      form select {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 18px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 1em;
+      }
+      .summary {
+        background: #f0f4fa;
+        padding: 18px;
+        border-radius: 6px;
+        margin-bottom: 24px;
+      }
+      .summary h3 {
+        margin-top: 0;
+      }
+      .btn {
+        background: #2a7be4;
+        color: #fff;
+        border: none;
+        padding: 12px 28px;
+        border-radius: 4px;
+        font-size: 1.1em;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .btn:hover {
+        background: #1a5bb8;
+      }
+    </style>
   </head>
-  <body></body>
+  <body>
+    <div class="container">
+      <h2>Checkout</h2>
+      <form>
+        <h3>Informasi Pembeli</h3>
+        <label for="name">Nama Lengkap</label>
+        <input type="text" id="name" name="name" required />
+
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required />
+
+        <label for="phone">Nomor Telepon</label>
+        <input type="tel" id="phone" name="phone" required />
+
+        <label for="address">Alamat Pengiriman</label>
+        <textarea id="address" name="address" rows="3" required></textarea>
+
+        <label for="payment">Metode Pembayaran</label>
+        <select id="payment" name="payment" required>
+          <option value="">Pilih Metode</option>
+          <option value="cod">Bayar di Tempat (COD)</option>
+          <option value="transfer">Transfer Bank</option>
+          <option value="ewallet">E-Wallet</option>
+        </select>
+
+        <div class="summary">
+          <h3>Ringkasan Pesanan</h3>
+          <ul>
+            <li>Paracetamol 500mg x 2 - Rp10.000</li>
+            <li>Vitamin C 1000mg x 1 - Rp15.000</li>
+            <!-- Tambahkan item pesanan lain di sini -->
+          </ul>
+          <strong>Total: Rp35.000</strong>
+        </div>
+
+        <button type="submit" class="btn">Konfirmasi & Bayar</button>
+      </form>
+    </div>
+  </body>
 </html>
