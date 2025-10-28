@@ -1,11 +1,341 @@
+
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Riwayat</title>
-</head>
-<body>
-    <h1>Lorem, ipsum dolor sit amet consectetur adipisicing elit. Dolorem iste cum suscipit tempore commodi, explicabo porro. Neque velit quae aspernatur.</h1>
-</body>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Riwayat Transaksi - PharmaHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+
+  <body class="bg-gray-50 min-h-screen">
+    <!-- Navbar -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+      <div
+        class="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center"
+      >
+        <!-- Logo -->
+        <a href="index.html" class="flex items-center">
+          <img src="assets/pharmahub-logo.png" alt="PharmaHub" class="h-10 w-auto" />
+        </a>
+
+        <!-- Menu & Search -->
+        <div class="flex-1 max-w-xl mx-4 hidden md:block">
+          <div class="search-container">
+            <div class="relative">
+              <input
+                type="text"
+                placeholder="Cari obat, vitamin, atau produk kesehatan..."
+                class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <button
+                class="absolute right-3 top-2 text-gray-500 hover:text-blue-600"
+              >
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Menu -->
+        <nav class="hidden md:flex space-x-6 text-sm font-medium text-gray-700">
+          <a href="index.html" class="hover:text-blue-600 transition">Beranda</a>
+          <a href="produk.html" class="hover:text-blue-600 transition">Produk</a>
+          <a href="notifikasi.html" class="hover:text-blue-600 transition">Notifikasi</a>
+          <a href="riwayat.html" class="text-blue-600 font-semibold">Riwayat</a>
+        </nav>
+
+        <!-- Tombol Login & Keranjang -->
+        <div class="flex items-center space-x-4">
+          <!-- Mobile Search Button -->
+          <button id="mobile-search-btn" class="md:hidden text-gray-700">
+            <i class="fas fa-search text-xl"></i>
+          </button>
+
+          <a href="keranjang.html" class="relative">
+            <i class="fas fa-shopping-cart text-gray-700 text-xl"></i>
+            <span id="cart-count-mobile" class="cart-count hidden">0</span>
+          </a>
+          <a
+            href="Login.html"
+            class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition hidden md:block"
+            >Login</a
+          >
+
+          <!-- Mobile Menu Button -->
+          <button id="menu-btn" class="md:hidden flex flex-col space-y-1">
+            <span class="w-6 h-0.5 bg-gray-700"></span>
+            <span class="w-6 h-0.5 bg-gray-700"></span>
+            <span class="w-6 h-0.5 bg-gray-700"></span>
+          </button>
+        </div>
+
+        <!-- Mobile Menu Button -->
+        <button id="menu-btn" class="md:hidden flex flex-col space-y-1">
+          <span class="w-6 h-0.5 bg-gray-700"></span>
+          <span class="w-6 h-0.5 bg-gray-700"></span>
+          <span class="w-6 h-0.5 bg-gray-700"></span>
+        </button>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div id="menu" class="hidden md:hidden bg-white border-t border-gray-200">
+        <nav class="flex flex-col space-y-2 px-6 py-4">
+          <a href="index.html" class="hover:text-blue-600 py-2">Beranda</a>
+          <a href="produk.html" class="hover:text-blue-600 py-2">Produk</a>
+          <a href="keranjang.html" class="hover:text-blue-600 py-2">Keranjang</a>
+          <a href="notifikasi.html" class="hover:text-blue-600 py-2">Notifikasi</a>
+          <a href="riwayat.html" class="text-blue-600 font-semibold py-2">Riwayat</a>
+          <a
+            href="Login.html"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition inline-block w-fit"
+            >Login</a
+          >
+        </nav>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+      <!-- Page Header -->
+      <div class="mb-8">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Riwayat Transaksi</h1>
+            <p class="text-gray-600">Lihat semua riwayat pembelian dan transaksi Anda</p>
+          </div>
+          <div class="flex items-center space-x-3">
+            <select class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+              <option value="all">Semua Waktu</option>
+              <option value="week">7 Hari Terakhir</option>
+              <option value="month">30 Hari Terakhir</option>
+              <option value="quarter">3 Bulan Terakhir</option>
+            </select>
+            <button
+              class="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 transition disabled:text-gray-400"
+              disabled
+            >
+              <i class="fas fa-download mr-2"></i>Unduh Riwayat
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Tabs -->
+      <div class="mb-6">
+        <div class="border-b border-gray-200">
+          <nav class="flex space-x-8">
+            <button
+              class="tab-btn active py-2 px-1 border-b-2 border-blue-500 text-blue-600 font-medium text-sm"
+              data-tab="all"
+            >
+              Semua
+              <span class="ml-2 bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-xs">0</span>
+            </button>
+            <button
+              class="tab-btn py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm"
+              data-tab="completed"
+            >
+              Selesai
+              <span class="ml-2 bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">0</span>
+            </button>
+            <button
+              class="tab-btn py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm"
+              data-tab="processing"
+            >
+              Diproses
+              <span class="ml-2 bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">0</span>
+            </button>
+            <button
+              class="tab-btn py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm"
+              data-tab="cancelled"
+            >
+              Dibatalkan
+              <span class="ml-2 bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">0</span>
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      <!-- History Content -->
+      <div class="bg-white rounded-lg shadow-md">
+        <!-- Empty State -->
+        <div class="text-center py-16 px-6">
+          <div class="mb-6">
+            <i class="fas fa-receipt text-6xl text-gray-300"></i>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-700 mb-2">Belum Ada Riwayat Transaksi</h3>
+          <p class="text-gray-500 mb-6">
+            Riwayat pembelian Anda akan muncul di sini setelah melakukan transaksi pertama.
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
+            <div class="flex flex-col items-center p-4 bg-blue-50 rounded-lg">
+              <i class="fas fa-shopping-bag text-blue-500 text-2xl mb-2"></i>
+              <span class="text-sm text-blue-700 font-medium">Detail Pesanan</span>
+              <p class="text-xs text-blue-600 mt-1">Lihat produk yang dibeli</p>
+            </div>
+            <div class="flex flex-col items-center p-4 bg-green-50 rounded-lg">
+              <i class="fas fa-truck text-green-500 text-2xl mb-2"></i>
+              <span class="text-sm text-green-700 font-medium">Status Pengiriman</span>
+              <p class="text-xs text-green-600 mt-1">Tracking real-time</p>
+            </div>
+            <div class="flex flex-col items-center p-4 bg-purple-50 rounded-lg">
+              <i class="fas fa-star text-purple-500 text-2xl mb-2"></i>
+              <span class="text-sm text-purple-700 font-medium">Berikan Ulasan</span>
+              <p class="text-xs text-purple-600 mt-1">Rating & feedback</p>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <a
+              href="produk.html"
+              class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold"
+            >
+              <i class="fas fa-shopping-cart mr-2"></i>Mulai Belanja
+            </a>
+            <p class="text-sm text-gray-500">
+              Atau kembali ke 
+              <a href="index.html" class="text-blue-600 hover:text-blue-800 underline">beranda</a>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Statistics Cards (Hidden when empty) -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8 hidden">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <div class="flex items-center">
+            <div class="bg-blue-100 p-3 rounded-full">
+              <i class="fas fa-shopping-bag text-blue-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">Total Pesanan</p>
+              <p class="text-2xl font-bold text-gray-900">0</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <div class="flex items-center">
+            <div class="bg-green-100 p-3 rounded-full">
+              <i class="fas fa-money-bill-wave text-green-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">Total Belanja</p>
+              <p class="text-2xl font-bold text-gray-900">Rp 0</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <div class="flex items-center">
+            <div class="bg-yellow-100 p-3 rounded-full">
+              <i class="fas fa-clock text-yellow-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">Dalam Proses</p>
+              <p class="text-2xl font-bold text-gray-900">0</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <div class="flex items-center">
+            <div class="bg-purple-100 p-3 rounded-full">
+              <i class="fas fa-star text-purple-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">Perlu Ulasan</p>
+              <p class="text-2xl font-bold text-gray-900">0</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12 mt-16">
+      <div class="container mx-auto px-4 sm:px-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <!-- Company Info -->
+          <div class="col-span-1 md:col-span-2">
+            <div class="flex items-center mb-6">
+              <img src="assets/pharmahub-logo.png" alt="PharmaHub" class="h-12 w-auto" />
+            </div>
+            <p class="text-gray-300 mb-4 leading-relaxed">
+              PharmaHub adalah platform terpercaya untuk kebutuhan obat dan kesehatan Anda. 
+              Kami menyediakan obat-obatan berkualitas dengan layanan yang profesional dan terpercaya.
+            </p>
+            <div class="flex space-x-4">
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-facebook-f text-xl"></i>
+              </a>
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-twitter text-xl"></i>
+              </a>
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-instagram text-xl"></i>
+              </a>
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-whatsapp text-xl"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Quick Links -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+            <ul class="space-y-2">
+              <li><a href="index.html" class="text-gray-300 hover:text-white transition">Beranda</a></li>
+              <li><a href="produk.html" class="text-gray-300 hover:text-white transition">Semua Produk</a></li>
+              <li><a href="notifikasi.html" class="text-gray-300 hover:text-white transition">Notifikasi</a></li>
+              <li><a href="riwayat.html" class="text-gray-300 hover:text-white transition">Riwayat</a></li>
+              <li><a href="keranjang.html" class="text-gray-300 hover:text-white transition">Keranjang</a></li>
+            </ul>
+          </div>
+
+          <!-- Contact Info -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Kontak</h3>
+            <ul class="space-y-3 text-gray-300">
+              <li class="flex items-center">
+                <i class="fas fa-map-marker-alt mr-3 text-blue-400"></i>
+                <span class="text-sm">Jl. Kesehatan No. 123, Jakarta</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-phone mr-3 text-blue-400"></i>
+                <span class="text-sm">+62 21 1234 5678</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-envelope mr-3 text-blue-400"></i>
+                <span class="text-sm">info@pharmahub.com</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-clock mr-3 text-blue-400"></i>
+                <span class="text-sm">24/7 Customer Service</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Bottom Footer -->
+        <div class="border-t border-gray-700 mt-8 pt-8 text-center">
+          <div class="flex flex-col md:flex-row justify-between items-center">
+            <p class="text-gray-400 text-sm mb-4 md:mb-0">
+              &copy; 2024 PharmaHub. All rights reserved.
+            </p>
+            <div class="flex space-x-6 text-sm">
+              <a href="#" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
+              <a href="#" class="text-gray-400 hover:text-white transition">Terms of Service</a>
+              <a href="#" class="text-gray-400 hover:text-white transition">FAQ</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script type="module" src="assets/js/pages/history.js"></script>
+  </body>
 </html>
