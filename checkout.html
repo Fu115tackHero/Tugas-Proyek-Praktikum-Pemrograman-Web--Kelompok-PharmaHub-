@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Checkout - PharmaHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body class="bg-gray-50 min-h-screen">
+    <!-- Navbar -->
+    <!-- ...navbar mirip keranjang.html... -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+      <div
+        class="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center"
+      >
+        <a href="index.html" class="flex items-center">
+          <img
+            src="assets/pharmahub-logo.png"
+            alt="PharmaHub"
+            class="h-10 w-auto"
+          />
+        </a>
+        <div class="flex-1 max-w-xl mx-4 hidden md:block">
+          <div class="search-container">
+            <div class="relative">
+              <input
+                type="text"
+                placeholder="Cari obat, vitamin, atau produk kesehatan..."
+                class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <button
+                class="absolute right-3 top-2 text-gray-500 hover:text-blue-600"
+              >
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        <nav class="hidden md:flex space-x-6 text-sm font-medium text-gray-700">
+          <a href="index.html" class="hover:text-blue-600 transition"
+            >Beranda</a
+          >
+          <a href="produk.html" class="hover:text-blue-600 transition"
+            >Produk</a
+          >
+          <a href="notifikasi.html" class="hover:text-blue-600 transition"
+            >Notifikasi</a
+          >
+          <a href="riwayat.html" class="hover:text-blue-600 transition"
+            >Riwayat</a
+          >
+        </nav>
+        <div class="flex items-center space-x-4">
+          <button id="mobile-search-btn" class="md:hidden text-gray-700">
+            <i class="fas fa-search text-xl"></i>
+          </button>
+          <a href="keranjang.html" class="relative">
+            <i class="fas fa-shopping-cart text-gray-700 text-xl"></i>
+            <span id="cart-count-mobile" class="cart-count hidden">0</span>
+          </a>
+          <a
+            href="Login.html"
+            class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition hidden md:block"
+            >Login</a
+          >
+          <button id="menu-btn" class="md:hidden flex flex-col space-y-1">
+            <span class="w-6 h-0.5 bg-gray-700"></span>
+            <span class="w-6 h-0.5 bg-gray-700"></span>
+            <span class="w-6 h-0.5 bg-gray-700"></span>
+          </button>
+        </div>
+      </div>
+      <div id="menu" class="hidden md:hidden bg-white border-t border-gray-200">
+        <nav class="flex flex-col space-y-2 px-6 py-4">
+          <a href="index.html" class="hover:text-blue-600 py-2">Beranda</a>
+          <a href="produk.html" class="hover:text-blue-600 py-2">Produk</a>
+          <a href="keranjang.html" class="hover:text-blue-600 py-2"
+            >Keranjang</a
+          >
+          <a href="notifikasi.html" class="hover:text-blue-600 py-2"
+            >Notifikasi</a
+          >
+          <a href="riwayat.html" class="hover:text-blue-600 py-2">Riwayat</a>
+          <a
+            href="Login.html"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition inline-block w-fit"
+            >Login</a
+          >
+        </nav>
+      </div>
+    </nav>
+    <!-- Breadcrumb -->
+    <div class="bg-white border-b">
+      <div class="container mx-auto px-4 py-3">
+        <nav class="text-sm text-gray-600">
+          <a href="index.html" class="hover:text-blue-600">Home</a>
+          <span class="mx-2">›</span>
+          <a href="keranjang.html" class="hover:text-blue-600">My Cart</a>
+          <span class="mx-2">›</span>
+          <span class="text-blue-600 font-medium">Checkout</span>
+        </nav>
+      </div>
+    </div>
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Left Column - Form -->
+        <div class="lg:col-span-2 space-y-8">
+          <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-6">
+              Informasi Pembayaran & Pengambilan
+            </h2>
+            <form id="checkout-form" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2"
+                  >Nama Lengkap *</label
+                >
+                <input
+                  type="text"
+                  id="nama"
+                  name="nama"
+                  placeholder="Nama Lengkap"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2"
+                  >Email *</label
+                >
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  placeholder="username@gmail.com"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2"
+                  >Nomor Telepon *</label
+                >
+                <input
+                  type="tel"
+                  id="telepon"
+                  name="telepon"
+                  placeholder="+62 812 3456 7890"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2"
+                  >Metode Pembayaran *</label
+                >
+                <select
+                  id="payment"
+                  name="payment"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                  onchange="handlePaymentChange()"
+                >
+                  <option value="">Pilih Metode</option>
+                  <option value="cod">Bayar di Tempat (COD)</option>
+                  <option value="transfer">Transfer Bank</option>
+                  <option value="ewallet">E-Wallet</option>
+                </select>
+              </div>
+              <!-- Opsi Bank -->
+              <div id="bank-options" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-2"
+                  >Pilih Bank</label
+                >
+                <select
+                  id="bank"
+                  name="bank"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Pilih Bank</option>
+                  <option value="mandiri">Mandiri</option>
+                  <option value="bca">BCA</option>
+                  <option value="bri">BRI</option>
+                  <option value="bni">BNI</option>
+                </select>
+              </div>
+              <!-- Opsi E-Wallet -->
+              <div id="ewallet-options" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-2"
+                  >Pilih E-Wallet</label
+                >
+                <select
+                  id="ewallet"
+                  name="ewallet"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Pilih E-Wallet</option>
+                  <option value="dana">Dana</option>
+                  <option value="ovo">OVO</option>
+                  <option value="gopay">GoPay</option>
+                  <option value="shopeepay">ShopeePay</option>
+                </select>
+              </div>
+              <div
+                class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-blue-800 text-sm"
+              >
+                <i class="fas fa-info-circle mr-2"></i>
+                Barang dapat diambil langsung di apotek setelah pembayaran
+                berhasil.
+              </div>
+              <button
+                type="submit"
+                class="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold"
+              >
+                Bayar Sekarang
+              </button>
+            </form>
+          </div>
+        </div>
+        <!-- Right Column - Order Summary -->
+        <div class="space-y-6">
+          <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-6">
+              Ringkasan Pesanan
+            </h2>
+            <div id="order-items" class="space-y-4 mb-4">
+              <!-- Barang dari keranjang akan muncul di sini -->
+            </div>
+            <div class="flex justify-between text-gray-600 mb-2">
+              <span>Subtotal</span>
+              <span id="subtotal">Rp 0</span>
+            </div>
+            <div class="flex justify-between text-gray-600 mb-2">
+              <span>Diskon</span>
+              <span id="discount" class="text-red-500">-Rp 0</span>
+            </div>
+            <!-- Hapus bagian Tax -->
+            <!-- <div class="flex justify-between text-gray-600 mb-2">
+              <span>Tax</span>
+              <span id="tax">+ Rp 0</span>
+            </div> -->
+            <hr class="my-4" />
+            <div
+              class="flex justify-between text-lg font-semibold text-gray-900"
+            >
+              <span>Total</span>
+              <span id="total">Rp 0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- Footer -->
+    <!-- ...footer mirip keranjang.html... -->
+    <footer class="bg-gray-800 text-white py-12 mt-16">
+      <div class="container mx-auto px-4 sm:px-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div class="col-span-1 md:col-span-2">
+            <div class="flex items-center mb-6">
+              <img
+                src="assets/pharmahub-logo.png"
+                alt="PharmaHub"
+                class="h-12 w-auto"
+              />
+            </div>
+            <p class="text-gray-300 mb-4 leading-relaxed">
+              PharmaHub adalah platform terpercaya untuk kebutuhan obat dan
+              kesehatan Anda. Kami menyediakan obat-obatan berkualitas dengan
+              layanan yang profesional dan terpercaya.
+            </p>
+            <div class="flex space-x-4">
+              <a href="#" class="text-gray-300 hover:text-white transition"
+                ><i class="fab fa-facebook-f text-xl"></i
+              ></a>
+              <a href="#" class="text-gray-300 hover:text-white transition"
+                ><i class="fab fa-twitter text-xl"></i
+              ></a>
+              <a href="#" class="text-gray-300 hover:text-white transition"
+                ><i class="fab fa-instagram text-xl"></i
+              ></a>
+              <a href="#" class="text-gray-300 hover:text-white transition"
+                ><i class="fab fa-whatsapp text-xl"></i
+              ></a>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+            <ul class="space-y-2">
+              <li>
+                <a
+                  href="index.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Beranda</a
+                >
+              </li>
+              <li>
+                <a
+                  href="produk.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Semua Produk</a
+                >
+              </li>
+              <li>
+                <a
+                  href="notifikasi.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Notifikasi</a
+                >
+              </li>
+              <li>
+                <a
+                  href="riwayat.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Riwayat</a
+                >
+              </li>
+              <li>
+                <a
+                  href="keranjang.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Keranjang</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Kontak</h3>
+            <ul class="space-y-3 text-gray-300">
+              <li class="flex items-center">
+                <i class="fas fa-map-marker-alt mr-3 text-blue-400"></i
+                ><span class="text-sm">Jl. Kesehatan No. 123, Jakarta</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-phone mr-3 text-blue-400"></i
+                ><span class="text-sm">+62 21 1234 5678</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-envelope mr-3 text-blue-400"></i
+                ><span class="text-sm">info@pharmahub.com</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-clock mr-3 text-blue-400"></i
+                ><span class="text-sm">24/7 Customer Service</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="border-t border-gray-700 mt-8 pt-8 text-center">
+          <div class="flex flex-col md:flex-row justify-between items-center">
+            <p class="text-gray-400 text-sm mb-4 md:mb-0">
+              &copy; 2024 PharmaHub. All rights reserved.
+            </p>
+            <div class="flex space-x-6 text-sm">
+              <a href="#" class="text-gray-400 hover:text-white transition"
+                >Privacy Policy</a
+              >
+              <a href="#" class="text-gray-400 hover:text-white transition"
+                >Terms of Service</a
+              >
+              <a href="#" class="text-gray-400 hover:text-white transition"
+                >FAQ</a
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+    <!-- JS: Ringkasan Pesanan -->
+    <script>
+      // Payment method logic
+      function handlePaymentChange() {
+        const payment = document.getElementById("payment").value;
+        document.getElementById("bank-options").classList.add("hidden");
+        document.getElementById("ewallet-options").classList.add("hidden");
+        if (payment === "transfer") {
+          document.getElementById("bank-options").classList.remove("hidden");
+        } else if (payment === "ewallet") {
+          document.getElementById("ewallet-options").classList.remove("hidden");
+        }
+      }
+
+      // Dummy image CDN (virus icon)
+      function getDummyImage(name) {
+        return "https://cdn-icons-png.flaticon.com/512/2966/2966388.png";
+      }
+
+      function formatRupiah(num) {
+        return "Rp " + num.toLocaleString("id-ID");
+      }
+      function getCart() {
+        try {
+          const cart = JSON.parse(localStorage.getItem("cart"));
+          if (Array.isArray(cart) && cart.length > 0) return cart;
+        } catch {}
+        // Dummy jika kosong
+        return [
+          { name: "Paracetamol 500mg", qty: 2, price: 5000 },
+          { name: "Vitamin C 1000mg", qty: 1, price: 15000 },
+        ];
+      }
+      function renderOrderSummary() {
+        const cart = getCart();
+        const orderItems = document.getElementById("order-items");
+        orderItems.innerHTML = "";
+        let subtotal = 0;
+        cart.forEach((item) => {
+          const totalItem = item.qty * item.price;
+          subtotal += totalItem;
+          const imgSrc = getDummyImage(item.name);
+          const div = document.createElement("div");
+          div.className =
+            "flex items-center bg-gray-50 rounded-lg p-3 shadow-sm";
+          div.innerHTML = `
+            <img src="${imgSrc}" alt="${
+            item.name
+          }" class="w-16 h-16 rounded-lg object-cover mr-4 border border-gray-200 bg-white"/>
+            <div class="flex-1">
+              <div class="font-medium text-gray-900">${item.name}</div>
+              <div class="text-xs text-gray-500 mb-1">x${item.qty}</div>
+              <div class="text-sm text-gray-700 font-semibold">${formatRupiah(
+                item.price
+              )} <span class="font-normal text-gray-400">/pcs</span></div>
+            </div>
+            <div class="font-semibold text-gray-900 ml-4">${formatRupiah(
+              totalItem
+            )}</div>
+          `;
+          orderItems.appendChild(div);
+        });
+        // Diskon dummy, tanpa tax
+        let discount = 0;
+        let total = subtotal - discount;
+        document.getElementById("subtotal").textContent =
+          formatRupiah(subtotal);
+        document.getElementById("discount").textContent =
+          "-" + formatRupiah(discount);
+        // Hilangkan tax
+        // document.getElementById("tax").textContent = "+ " + formatRupiah(tax);
+        document.getElementById("total").textContent = formatRupiah(total);
+      }
+      renderOrderSummary();
+      document
+        .getElementById("checkout-form")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          alert("Pembayaran berhasil! Silakan ambil barang di apotek.");
+          // localStorage.removeItem('cart');
+          window.location.href = "index.html";
+        });
+    </script>
+  </body>
+</html>
