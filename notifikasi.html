@@ -45,8 +45,8 @@
         <nav class="hidden md:flex space-x-6 text-sm font-medium text-gray-700">
           <a href="index.html" class="hover:text-blue-600 transition">Beranda</a>
           <a href="produk.html" class="hover:text-blue-600 transition">Produk</a>
-          <a href="notifikasi.html" class="text-blue-600 font-semibold">Notifikasi</a>
-          <a href="riwayat.html" class="hover:text-blue-600 transition">Riwayat</a>
+          <a href="notifikasi.html" class="hover:text-blue-600 transition">Notifikasi</a>
+          <a href="riwayat.html" class="text-blue-600 font-semibold">Riwayat</a>
         </nav>
 
         <!-- Tombol Login & Keranjang -->
@@ -88,8 +88,8 @@
           <a href="index.html" class="hover:text-blue-600 py-2">Beranda</a>
           <a href="produk.html" class="hover:text-blue-600 py-2">Produk</a>
           <a href="keranjang.html" class="hover:text-blue-600 py-2">Keranjang</a>
-          <a href="notifikasi.html" class="text-blue-600 font-semibold py-2">Notifikasi</a>
-          <a href="riwayat.html" class="hover:text-blue-600 py-2">Riwayat</a>
+          <a href="notifikasi.html" class="hover:text-blue-600 py-2">Notifikasi</a>
+          <a href="riwayat.html" class="text-blue-600 font-semibold py-2">Riwayat</a>
           <a
             href="Login.html"
             class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition inline-block w-fit"
@@ -105,23 +105,21 @@
       <div class="mb-8">
         <div class="flex items-center justify-between">
           <div>
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">Notifikasi</h1>
-            <p class="text-gray-600">Lihat semua notifikasi terbaru dari PharmaHub</p>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Riwayat Transaksi</h1>
+            <p class="text-gray-600">Lihat semua riwayat pembelian dan transaksi Anda</p>
           </div>
           <div class="flex items-center space-x-3">
+            <select class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+              <option value="all">Semua Waktu</option>
+              <option value="week">7 Hari Terakhir</option>
+              <option value="month">30 Hari Terakhir</option>
+              <option value="quarter">3 Bulan Terakhir</option>
+            </select>
             <button
-              id="mark-all-read"
               class="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 transition disabled:text-gray-400"
               disabled
             >
-              <i class="fas fa-check-double mr-2"></i>Tandai Semua Dibaca
-            </button>
-            <button
-              id="clear-all"
-              class="px-4 py-2 text-sm text-red-600 hover:text-red-800 transition disabled:text-gray-400"
-              disabled
-            >
-              <i class="fas fa-trash mr-2"></i>Hapus Semua
+              <i class="fas fa-download mr-2"></i>Unduh Riwayat
             </button>
           </div>
         </div>
@@ -140,23 +138,23 @@
             </button>
             <button
               class="tab-btn py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm"
-              data-tab="orders"
+              data-tab="completed"
             >
-              Pesanan
+              Selesai
               <span class="ml-2 bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">0</span>
             </button>
             <button
               class="tab-btn py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm"
-              data-tab="promotions"
+              data-tab="processing"
             >
-              Promosi
+              Diproses
               <span class="ml-2 bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">0</span>
             </button>
             <button
               class="tab-btn py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm"
-              data-tab="system"
+              data-tab="cancelled"
             >
-              Sistem
+              Dibatalkan
               <span class="ml-2 bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">0</span>
             </button>
           </nav>
