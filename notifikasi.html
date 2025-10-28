@@ -163,6 +163,130 @@
         </div>
       </div>
 
+      <!-- Notifications Content -->
+      <div class="bg-white rounded-lg shadow-md">
+        <!-- Empty State -->
+        <div class="text-center py-16 px-6">
+          <div class="mb-6">
+            <i class="fas fa-bell-slash text-6xl text-gray-300"></i>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-700 mb-2">Belum Ada Notifikasi</h3>
+          <p class="text-gray-500 mb-6">
+            Notifikasi Anda akan muncul di sini. Kami akan memberitahu Anda tentang:
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
+            <div class="flex flex-col items-center p-4 bg-blue-50 rounded-lg">
+              <i class="fas fa-shopping-bag text-blue-500 text-2xl mb-2"></i>
+              <span class="text-sm text-blue-700 font-medium">Status Pesanan</span>
+            </div>
+            <div class="flex flex-col items-center p-4 bg-green-50 rounded-lg">
+              <i class="fas fa-tags text-green-500 text-2xl mb-2"></i>
+              <span class="text-sm text-green-700 font-medium">Promo & Diskon</span>
+            </div>
+            <div class="flex flex-col items-center p-4 bg-purple-50 rounded-lg">
+              <i class="fas fa-info-circle text-purple-500 text-2xl mb-2"></i>
+              <span class="text-sm text-purple-700 font-medium">Info Penting</span>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <a
+              href="produk.html"
+              class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold"
+            >
+              <i class="fas fa-shopping-cart mr-2"></i>Mulai Belanja
+            </a>
+            <p class="text-sm text-gray-500">
+              Atau kembali ke 
+              <a href="index.html" class="text-blue-600 hover:text-blue-800 underline">beranda</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </main>
 
- </body>
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12 mt-16">
+      <div class="container mx-auto px-4 sm:px-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <!-- Company Info -->
+          <div class="col-span-1 md:col-span-2">
+            <div class="flex items-center mb-6">
+              <img src="assets/pharmahub-logo.png" alt="PharmaHub" class="h-12 w-auto" />
+            </div>
+            <p class="text-gray-300 mb-4 leading-relaxed">
+              PharmaHub adalah platform terpercaya untuk kebutuhan obat dan kesehatan Anda. 
+              Kami menyediakan obat-obatan berkualitas dengan layanan yang profesional dan terpercaya.
+            </p>
+            <div class="flex space-x-4">
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-facebook-f text-xl"></i>
+              </a>
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-twitter text-xl"></i>
+              </a>
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-instagram text-xl"></i>
+              </a>
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-whatsapp text-xl"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Quick Links -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+            <ul class="space-y-2">
+              <li><a href="index.html" class="text-gray-300 hover:text-white transition">Beranda</a></li>
+              <li><a href="produk.html" class="text-gray-300 hover:text-white transition">Semua Produk</a></li>
+              <li><a href="notifikasi.html" class="text-gray-300 hover:text-white transition">Notifikasi</a></li>
+              <li><a href="riwayat.html" class="text-gray-300 hover:text-white transition">Riwayat</a></li>
+              <li><a href="keranjang.html" class="text-gray-300 hover:text-white transition">Keranjang</a></li>
+            </ul>
+          </div>
+
+          <!-- Contact Info -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Kontak</h3>
+            <ul class="space-y-3 text-gray-300">
+              <li class="flex items-center">
+                <i class="fas fa-map-marker-alt mr-3 text-blue-400"></i>
+                <span class="text-sm">Jl. Kesehatan No. 123, Jakarta</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-phone mr-3 text-blue-400"></i>
+                <span class="text-sm">+62 21 1234 5678</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-envelope mr-3 text-blue-400"></i>
+                <span class="text-sm">info@pharmahub.com</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-clock mr-3 text-blue-400"></i>
+                <span class="text-sm">24/7 Customer Service</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Bottom Footer -->
+        <div class="border-t border-gray-700 mt-8 pt-8 text-center">
+          <div class="flex flex-col md:flex-row justify-between items-center">
+            <p class="text-gray-400 text-sm mb-4 md:mb-0">
+              &copy; 2024 PharmaHub. All rights reserved.
+            </p>
+            <div class="flex space-x-6 text-sm">
+              <a href="#" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
+              <a href="#" class="text-gray-400 hover:text-white transition">Terms of Service</a>
+              <a href="#" class="text-gray-400 hover:text-white transition">FAQ</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script type="module" src="assets/js/pages/notifications.js"></script>
+  </body>
 </html>
+
