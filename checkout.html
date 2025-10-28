@@ -400,7 +400,7 @@
         // Dummy jika kosong
         return [
           { name: "Paracetamol 500mg", qty: 2, price: 5000 },
-          { name: "Vitamin C 1000mg", qty: 1, price: 15000 }
+          { name: "Vitamin C 1000mg", qty: 1, price: 15000 },
         ];
       }
       function renderOrderSummary() {
@@ -416,13 +416,19 @@
           div.className =
             "flex items-center bg-gray-50 rounded-lg p-3 shadow-sm";
           div.innerHTML = `
-            <img src="${imgSrc}" alt="${item.name}" class="w-16 h-16 rounded-lg object-cover mr-4 border border-gray-200 bg-white"/>
+            <img src="${imgSrc}" alt="${
+            item.name
+          }" class="w-16 h-16 rounded-lg object-cover mr-4 border border-gray-200 bg-white"/>
             <div class="flex-1">
               <div class="font-medium text-gray-900">${item.name}</div>
               <div class="text-xs text-gray-500 mb-1">x${item.qty}</div>
-              <div class="text-sm text-gray-700 font-semibold">${formatRupiah(item.price)} <span class="font-normal text-gray-400">/pcs</span></div>
+              <div class="text-sm text-gray-700 font-semibold">${formatRupiah(
+                item.price
+              )} <span class="font-normal text-gray-400">/pcs</span></div>
             </div>
-            <div class="font-semibold text-gray-900 ml-4">${formatRupiah(totalItem)}</div>
+            <div class="font-semibold text-gray-900 ml-4">${formatRupiah(
+              totalItem
+            )}</div>
           `;
           orderItems.appendChild(div);
         });
