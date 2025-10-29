@@ -145,17 +145,9 @@ function removeAllItems() {
  */
 function updateCartItemCount() {
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-    
-    // Update cart count
-    const cartCount = document.getElementById('cart-count');
-    if (cartCount) {
-        cartCount.textContent = totalItems;
-        // Show atau hide cart count berdasarkan apakah ada items
-        if (totalItems > 0) {
-            cartCount.classList.remove('hidden');
-        } else {
-            cartCount.classList.add('hidden');
-        }
+    const cartCountElement = document.getElementById('cart-item-count');
+    if (cartCountElement) {
+        cartCountElement.textContent = totalItems;
     }
 }
 
