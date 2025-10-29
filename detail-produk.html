@@ -115,6 +115,281 @@
         </nav>
       </div>
     </header>
+<!-- Breadcrumb -->
+    <section class="container mx-auto px-4 sm:px-6 py-6">
+      <nav class="flex" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2 text-sm">
+          <li class="flex">
+            <a href="index.html" class="text-gray-500 hover:text-blue-600 transition">
+              <i class="fas fa-home"></i>
+            </a>
+          </li>
+          <li class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 text-xs mx-2"></i>
+            <a href="produk.html" class="text-gray-500 hover:text-blue-600 transition">Produk</a>
+          </li>
+          <li class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 text-xs mx-2"></i>
+            <span id="breadcrumb-product" class="text-blue-600 font-medium">Detail Produk</span>
+          </li>
+        </ol>
+      </nav>
+    </section>
 
- </body>
+    <!-- Product Detail Section -->
+    <section class="container mx-auto px-4 sm:px-6 pb-12">
+      <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6 lg:p-8">
+          <!-- Product Image -->
+          <div class="flex justify-center items-center">
+            <div class="bg-gray-100 rounded-lg p-8 w-full max-w-md">
+              <img
+                id="product-image"
+                src="https://cdn-icons-png.flaticon.com/512/2966/2966388.png"
+                alt="Product Image"
+                class="product-image w-full h-64 object-contain"
+              />
+            </div>
+          </div>
+
+          <!-- Product Info -->
+          <div class="space-y-6">
+            <!-- Brand and Name -->
+            <div>
+              <p id="product-brand" class="text-sm text-blue-600 font-medium mb-1">Brand: Abbott Laboratories (Pvt) Ltd</p>
+              <h1 id="product-name" class="text-3xl font-bold text-gray-800 mb-2">Loading...</h1>
+              <div id="prescription-badge" class="hidden">
+                <span class="bg-red-100 text-red-800 text-sm font-medium px-3 py-1 rounded-full">
+                  Perlu Resep Dokter
+                </span>
+              </div>
+            </div>
+
+            <!-- Price -->
+            <div class="border-t border-b border-gray-200 py-4">
+              <div class="flex items-center justify-between">
+                <span class="text-2xl font-bold text-blue-600" id="product-price">Rp 0</span>
+                <span class="text-sm text-gray-500">Per kemasan</span>
+              </div>
+            </div>
+
+            <!-- Used For -->
+            <div>
+              <h3 class="font-semibold text-gray-800 mb-2">Used For:</h3>
+              <ul id="product-uses" class="list-disc list-inside text-gray-600 space-y-1">
+                <li>Loading...</li>
+              </ul>
+            </div>
+
+            <!-- How it works -->
+            <div>
+              <h3 class="font-semibold text-gray-800 mb-2">How it works:</h3>
+              <p id="product-description" class="text-gray-600">Loading...</p>
+            </div>
+
+            <!-- Generics -->
+            <div>
+              <h3 class="font-semibold text-gray-800 mb-2">Generics:</h3>
+              <span id="product-generic" class="text-blue-600 font-medium">Loading...</span>
+            </div>
+
+            <!-- Quantity and Add to Cart -->
+            <div class="space-y-4">
+              <!-- Quantity Selector -->
+              <div class="flex items-center space-x-4">
+                <span class="text-gray-700 font-medium">Jumlah:</span>
+                <div class="flex items-center border border-gray-300 rounded-lg">
+                  <button
+                    id="decrease-btn"
+                    class="px-3 py-2 hover:bg-gray-100 transition"
+                  >
+                    <i class="fas fa-minus text-sm"></i>
+                  </button>
+                  <span id="quantity-display" class="px-4 py-2 font-medium">1</span>
+                  <button
+                    id="increase-btn"
+                    class="px-3 py-2 hover:bg-gray-100 transition"
+                  >
+                    <i class="fas fa-plus text-sm"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <!-- Add to Cart Button -->
+                <button
+                  id="add-to-cart-btn"
+                  class="bg-white border-2 border-blue-600 text-blue-600 py-4 rounded-lg font-semibold hover:bg-blue-50 transition flex items-center justify-center space-x-2"
+                >
+                  <i class="fas fa-shopping-cart"></i>
+                  <span>Add To Cart</span>
+                </button>
+
+                <!-- Checkout Button -->
+                <a
+                  href="checkout.html"
+                  class="bg-blue-600 text-white py-4 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center space-x-2"
+                >
+                  <i class="fas fa-credit-card"></i>
+                  <span>Checkout</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Additional Info -->
+            <div class="bg-blue-50 p-4 rounded-lg">
+              <h4 class="font-semibold text-gray-800 mb-2">Informasi Penting:</h4>
+              <ul class="text-sm text-gray-600 space-y-1">
+                <li>• Pastikan membaca aturan pakai sebelum mengonsumsi</li>
+                <li>• Simpan di tempat sejuk dan kering</li>
+                <li>• Jauhkan dari jangkauan anak-anak</li>
+                <li>• Konsultasikan dengan apoteker jika diperlukan</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product Details Tabs -->
+        <div class="border-t border-gray-200">
+          <div class="flex border-b border-gray-200">
+            <button class="tab-btn active px-6 py-3 font-medium text-blue-600 border-b-2 border-blue-600" data-tab="precaution">
+              Precaution
+            </button>
+            <button class="tab-btn px-6 py-3 font-medium text-gray-600 hover:text-blue-600 transition" data-tab="side-effects">
+              Side Effects
+            </button>
+            <button class="tab-btn px-6 py-3 font-medium text-gray-600 hover:text-blue-600 transition" data-tab="interactions">
+              Drug Interactions
+            </button>
+            <button class="tab-btn px-6 py-3 font-medium text-gray-600 hover:text-blue-600 transition" data-tab="indication">
+              Indication
+            </button>
+          </div>
+
+          <!-- Tab Content -->
+          <div class="p-6">
+            <div id="precaution" class="tab-content">
+              <h4 class="font-semibold text-gray-800 mb-3">Precaution:</h4>
+              <div id="precaution-content" class="text-gray-600 space-y-2">
+                <p>Loading precaution information...</p>
+              </div>
+            </div>
+
+            <div id="side-effects" class="tab-content hidden">
+              <h4 class="font-semibold text-gray-800 mb-3">Side Effects:</h4>
+              <div id="side-effects-content" class="text-gray-600 space-y-2">
+                <p>Loading side effects information...</p>
+              </div>
+            </div>
+
+            <div id="interactions" class="tab-content hidden">
+              <h4 class="font-semibold text-gray-800 mb-3">Drug Interactions:</h4>
+              <div id="interactions-content" class="text-gray-600 space-y-2">
+                <p>Loading drug interactions information...</p>
+              </div>
+            </div>
+
+            <div id="indication" class="tab-content hidden">
+              <h4 class="font-semibold text-gray-800 mb-3">Indication:</h4>
+              <div id="indication-content" class="text-gray-600 space-y-2">
+                <p>Loading indication information...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+      <div class="flex items-center">
+        <i class="fas fa-check-circle mr-2"></i>
+        <span id="toast-message">Produk berhasil ditambahkan ke keranjang!</span>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12 mt-16 relative overflow-hidden">
+      <div class="absolute left-0 top-0 h-full w-80 opacity-90 bg-no-repeat bg-left bg-cover pointer-events-none" style="background-image: url('assets/footer-decor.png');"></div>
+      <div class="container mx-auto px-4 sm:px-6 relative z-10">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <!-- Company Info -->
+          <div class="col-span-1 md:col-span-2">
+            <div class="flex items-center mb-6">
+              <img src="assets/pharmahub-logo.png" alt="PharmaHub" class="h-12 w-auto" />
+            </div>
+            <p class="text-gray-300 mb-4 leading-relaxed">
+              PharmaHub adalah platform terpercaya untuk kebutuhan obat dan kesehatan Anda. 
+              Kami menyediakan obat-obatan berkualitas dengan layanan yang profesional dan terpercaya.
+            </p>
+            <div class="flex space-x-4">
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-facebook-f text-xl"></i>
+              </a>
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-twitter text-xl"></i>
+              </a>
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-instagram text-xl"></i>
+              </a>
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-whatsapp text-xl"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Quick Links -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+            <ul class="space-y-2">
+              <li><a href="index.html" class="text-gray-300 hover:text-white transition">Beranda</a></li>
+              <li><a href="produk.html" class="text-gray-300 hover:text-white transition">Semua Produk</a></li>
+              <li><a href="notifikasi.html" class="text-gray-300 hover:text-white transition">Notifikasi</a></li>
+              <li><a href="riwayat.html" class="text-gray-300 hover:text-white transition">Riwayat</a></li>
+              <li><a href="keranjang.html" class="text-gray-300 hover:text-white transition">Keranjang</a></li>
+            </ul>
+          </div>
+
+          <!-- Contact Info -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Kontak</h3>
+            <ul class="space-y-3 text-gray-300">
+              <li class="flex items-center">
+                <i class="fas fa-map-marker-alt mr-3 text-blue-400"></i>
+                <span class="text-sm">Jl. Kesehatan No. 123, Jakarta</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-phone mr-3 text-blue-400"></i>
+                <span class="text-sm">+62 21 1234 5678</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-envelope mr-3 text-blue-400"></i>
+                <span class="text-sm">info@pharmahub.com</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-clock mr-3 text-blue-400"></i>
+                <span class="text-sm">24/7 Customer Service</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Bottom Footer -->
+        <div class="border-t border-gray-700 mt-8 pt-8 text-center">
+          <div class="flex flex-col md:flex-row justify-between items-center">
+            <p class="text-gray-400 text-sm mb-4 md:mb-0">
+              &copy; 2024 PharmaHub. All rights reserved.
+            </p>
+            <div class="flex space-x-6 text-sm">
+              <a href="#" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
+              <a href="#" class="text-gray-400 hover:text-white transition">Terms of Service</a>
+              <a href="#" class="text-gray-400 hover:text-white transition">FAQ</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+    <script type="module" src="assets/js/pages/productDetail.js"></script>
+  </body>
 </html>
