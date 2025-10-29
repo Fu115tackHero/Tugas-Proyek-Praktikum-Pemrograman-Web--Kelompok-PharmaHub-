@@ -1,13 +1,658 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Produk</title>
-</head>
-<body>
-    <h1>
-        Halaman Produk
-    </h1>
-</body>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Semua Produk - PharmaHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css">
+  </head>
+  <body class="bg-gradient-to-b from-blue-50 to-blue-100 text-gray-800">
+    <!-- Navbar -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
+      <div
+        class="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center"
+      >
+        <!-- Logo -->
+        <a href="index.html" class="flex items-center">
+          <img src="assets/pharmahub-logo.png" alt="PharmaHub" class="h-10 w-auto" />
+        </a>
+
+        <!-- Menu & Search -->
+        <div class="flex-1 max-w-xl mx-4 hidden md:block">
+          <div class="search-container">
+            <div class="relative">
+              <input
+                type="text"
+                id="search-input"
+                placeholder="Cari obat, vitamin, atau produk kesehatan..."
+                class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <button
+                class="absolute right-3 top-2 text-gray-500 hover:text-blue-600"
+              >
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+            <div id="search-results" class="search-results"></div>
+          </div>
+        </div>
+
+        <!-- Menu -->
+        <nav class="hidden md:flex space-x-6 text-sm font-medium text-gray-700">
+          <a href="index.html" class="hover:text-blue-600 transition"
+            >Beranda</a
+          >
+          <a href="produk.html" class="text-blue-600 font-semibold">Produk</a>
+          <a href="notifikasi.html" class="hover:text-blue-600 transition"
+            >Notifikasi</a
+          >
+          <a href="riwayat.html" class="hover:text-blue-600 transition"
+            >Riwayat</a
+          >
+        </nav>
+
+        <!-- Tombol Login & Keranjang -->
+        <div class="flex items-center space-x-4">
+          <!-- Mobile Search Button -->
+          <button id="mobile-search-btn" class="md:hidden text-gray-700">
+            <i class="fas fa-search text-xl"></i>
+          </button>
+
+          <a href="keranjang.html" class="relative">
+            <i class="fas fa-shopping-cart text-gray-700 text-xl"></i>
+            <span id="cart-count-mobile" class="cart-count hidden">0</span>
+          </a>
+          <a
+            href="Login.html"
+            class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition hidden md:block"
+            >Login</a
+          >
+
+          <!-- Mobile Menu Button -->
+          <button id="menu-btn" class="md:hidden flex flex-col space-y-1">
+            <span class="w-6 h-0.5 bg-gray-700"></span>
+            <span class="w-6 h-0.5 bg-gray-700"></span>
+            <span class="w-6 h-0.5 bg-gray-700"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Search Bar -->
+      <div
+        id="mobile-search"
+        class="md:hidden bg-white border-t border-gray-200 px-4 py-3 hidden"
+      >
+        <div class="search-container">
+          <div class="relative">
+            <input
+              type="text"
+              id="mobile-search-input"
+              placeholder="Cari obat, vitamin, atau produk kesehatan..."
+              class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <button
+              class="absolute right-3 top-2 text-gray-500 hover:text-blue-600"
+            >
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
+          <div id="mobile-search-results" class="search-results"></div>
+        </div>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div id="menu" class="hidden md:hidden bg-white border-t border-gray-200">
+        <nav class="flex flex-col space-y-2 px-6 py-4">
+          <a href="index.html" class="hover:text-blue-600 py-2">Beranda</a>
+          <a href="produk.html" class="text-blue-600 font-semibold py-2">Produk</a>
+          <a href="keranjang.html" class="hover:text-blue-600 py-2"
+            >Keranjang</a
+          >
+          <a href="notifikasi.html" class="hover:text-blue-600 py-2">Notifikasi</a>
+          <a href="riwayat.html" class="hover:text-blue-600 py-2">Riwayat</a>
+          <a
+            href="Login.html"
+            class="bg-blue-600 text-white px-4 py-2 rounded-md text-center hover:bg-blue-700 mt-2"
+            >Login</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <!-- Breadcrumb -->
+    <section class="container mx-auto px-4 sm:px-6 py-6">
+      <nav class="flex" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2">
+          <li class="flex">
+            <a href="index.html" class="text-gray-500 hover:text-blue-600 transition">
+              <i class="fas fa-home"></i>
+            </a>
+          </li>
+          <li class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 text-sm mx-2"></i>
+            <span class="text-blue-600 font-medium">Semua Produk</span>
+          </li>
+        </ol>
+      </nav>
+    </section>
+
+    <!-- Header Section -->
+    <section class="container mx-auto px-4 sm:px-6 pb-8">
+      <div class="text-center">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">Semua Produk Obat</h1>
+        <p class="text-gray-600 max-w-2xl mx-auto">
+          Temukan berbagai macam obat dan produk kesehatan berkualitas dengan harga terjangkau. 
+          Semua produk terjamin keaslian dan sudah mendapat izin dari BPOM.
+        </p>
+      </div>
+    </section>
+
+    <!-- Filter Section -->
+    <section class="container mx-auto px-4 sm:px-6 pb-8">
+      <div class="bg-white rounded-lg shadow-sm p-4 md:p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Filter Produk</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Kategori Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
+            <select id="category-filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Semua Kategori</option>
+              <option value="obat-bebas">Obat Bebas</option>
+              <option value="obat-keras">Obat Keras</option>
+              <option value="suplemen">Suplemen & Vitamin</option>
+              <option value="antiseptik">Antiseptik</option>
+            </select>
+          </div>
+          
+          <!-- Harga Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Rentang Harga</label>
+            <select id="price-filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Semua Harga</option>
+              <option value="0-15000">Di bawah Rp 15.000</option>
+              <option value="15000-30000">Rp 15.000 - Rp 30.000</option>
+              <option value="30000-50000">Rp 30.000 - Rp 50.000</option>
+              <option value="50000+">Di atas Rp 50.000</option>
+            </select>
+          </div>
+          
+          <!-- Urutkan -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Urutkan</label>
+            <select id="sort-filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="name-asc">Nama A-Z</option>
+              <option value="name-desc">Nama Z-A</option>
+              <option value="price-low">Harga Terendah</option>
+              <option value="price-high">Harga Tertinggi</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Semua Produk Obat -->
+    <section id="all-products" class="container mx-auto px-4 sm:px-6 pb-12">
+      <div
+        id="products-grid"
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+      >
+        <!-- Products will be loaded here by JavaScript -->
+      </div>
+      
+      <!-- Loading Indicator -->
+      <div id="loading" class="text-center py-8 hidden">
+        <i class="fas fa-spinner fa-spin text-blue-600 text-2xl"></i>
+        <p class="text-gray-600 mt-2">Memuat produk...</p>
+      </div>
+    </section>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+      <div class="flex items-center">
+        <i class="fas fa-check-circle mr-2"></i>
+        <span id="toast-message"
+          >Produk berhasil ditambahkan ke keranjang!</span
+        >
+      </div>
+    </div>
+
+    <script>
+      // Mobile menu toggle
+      const btn = document.getElementById("menu-btn");
+      const menu = document.getElementById("menu");
+      btn.addEventListener("click", () => {
+        menu.classList.toggle("hidden");
+      });
+
+      // Mobile search toggle
+      const mobileSearchBtn = document.getElementById("mobile-search-btn");
+      const mobileSearch = document.getElementById("mobile-search");
+      mobileSearchBtn.addEventListener("click", () => {
+        mobileSearch.classList.toggle("hidden");
+      });
+
+      // All products data
+      const allProducts = [
+        {
+          id: 1,
+          name: "Paracetamol 500mg",
+          description: "Untuk menurunkan demam dan meredakan sakit kepala atau nyeri ringan.",
+          price: 12000,
+          category: "obat-bebas",
+          prescriptionRequired: false
+        },
+        {
+          id: 2,
+          name: "Ibuprofen 400mg",
+          description: "Obat antiinflamasi non-steroid untuk nyeri otot, sendi, atau sakit gigi.",
+          price: 15000,
+          category: "obat-bebas",
+          prescriptionRequired: false
+        },
+        {
+          id: 3,
+          name: "Promag",
+          description: "Meredakan sakit maag, nyeri ulu hati, dan gangguan asam lambung.",
+          price: 8000,
+          category: "obat-bebas",
+          prescriptionRequired: false
+        },
+        {
+          id: 4,
+          name: "Loperamide (Imodium)",
+          description: "Untuk mengatasi diare akut.",
+          price: 20000,
+          category: "obat-bebas",
+          prescriptionRequired: false
+        },
+        {
+          id: 5,
+          name: "Cetirizine",
+          description: "Antihistamin untuk alergi, bersin, atau gatal-gatal.",
+          price: 25000,
+          category: "obat-bebas",
+          prescriptionRequired: false
+        },
+        {
+          id: 6,
+          name: "Salbutamol Inhaler",
+          description: "Membantu meredakan sesak napas akibat asma atau bronkitis.",
+          price: 45000,
+          category: "obat-keras",
+          prescriptionRequired: false
+        },
+        {
+          id: 7,
+          name: "Betadine",
+          description: "Antiseptik luar untuk membersihkan luka ringan atau goresan.",
+          price: 18000,
+          category: "antiseptik",
+          prescriptionRequired: false
+        },
+        {
+          id: 8,
+          name: "Oralit",
+          description: "Larutan rehidrasi untuk mencegah dehidrasi akibat diare atau muntah.",
+          price: 5000,
+          category: "obat-bebas",
+          prescriptionRequired: false
+        },
+        {
+          id: 9,
+          name: "Vitamin C 500mg",
+          description: "Meningkatkan daya tahan tubuh dan membantu penyembuhan.",
+          price: 25000,
+          category: "suplemen",
+          prescriptionRequired: false
+        },
+        {
+          id: 10,
+          name: "Amoxicillin 500mg",
+          description: "Untuk infeksi bakteri ringan, seperti infeksi tenggorokan atau kulit.",
+          price: 40000,
+          category: "obat-keras",
+          prescriptionRequired: true
+        },
+        {
+          id: 11,
+          name: "Omeprazole 20mg",
+          description: "Untuk mengatasi asam lambung berlebih dan maag kronis.",
+          price: 35000,
+          category: "obat-keras",
+          prescriptionRequired: true
+        },
+        {
+          id: 12,
+          name: "Vitamin D3 1000 IU",
+          description: "Membantu penyerapan kalsium dan kesehatan tulang.",
+          price: 45000,
+          category: "suplemen",
+          prescriptionRequired: false
+        },
+        {
+          id: 13,
+          name: "Multivitamin Complete",
+          description: "Kombinasi lengkap vitamin dan mineral untuk kesehatan optimal.",
+          price: 55000,
+          category: "suplemen",
+          prescriptionRequired: false
+        },
+        {
+          id: 14,
+          name: "Alcohol 70%",
+          description: "Antiseptik untuk membersihkan tangan dan permukaan.",
+          price: 15000,
+          category: "antiseptik",
+          prescriptionRequired: false
+        },
+        {
+          id: 15,
+          name: "Captopril 25mg",
+          description: "Obat untuk menurunkan tekanan darah tinggi.",
+          price: 30000,
+          category: "obat-keras",
+          prescriptionRequired: true
+        }
+      ];
+
+      let filteredProducts = [...allProducts];
+
+      // Cart functionality
+      let cart = JSON.parse(localStorage.getItem("pharmahub-cart")) || [];
+
+      // Update cart count display
+      function updateCartCount() {
+        const totalItems = cart.reduce(
+          (total, item) => total + item.quantity,
+          0
+        );
+        const cartCountMobile = document.getElementById("cart-count-mobile");
+
+        if (totalItems > 0) {
+          cartCountMobile.textContent = totalItems;
+          cartCountMobile.classList.remove("hidden");
+        } else {
+          cartCountMobile.classList.add("hidden");
+        }
+      }
+
+      // Show toast notification
+      function showToast(message) {
+        const toast = document.getElementById("toast");
+        const toastMessage = document.getElementById("toast-message");
+
+        toastMessage.textContent = message;
+        toast.classList.add("show");
+
+        setTimeout(() => {
+          toast.classList.remove("show");
+        }, 3000);
+      }
+
+      // Render products
+      function renderProducts(products) {
+        const grid = document.getElementById("products-grid");
+        
+        grid.innerHTML = products.map(product => `
+          <div class="bg-white rounded-xl shadow hover:shadow-lg transition p-5 text-center flex flex-col${product.prescriptionRequired ? ' border-l-4 border-red-500' : ''}">
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/2966/2966388.png"
+              alt="${product.name}"
+              class="w-20 mx-auto mb-4"
+            />
+            <h3 class="font-semibold text-gray-800">${product.name}</h3>
+            <p class="text-gray-600 text-sm mt-1">${product.description}</p>
+            ${product.prescriptionRequired ? 
+              '<div class="mt-2 mb-2"><span class="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded">Perlu Resep Dokter</span></div>' : 
+              ''
+            }
+            <div class="mt-auto">
+              <p class="text-blue-600 font-bold mt-4">Rp ${product.price.toLocaleString()}</p>
+              <a
+                href="detail-produk.html?id=${product.id}"
+                class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition w-full flex items-center justify-center"
+              >
+                <i class="fas fa-shopping-cart"></i>
+              </a>
+            </div>
+          </div>
+        `).join('');
+
+        // Re-attach event listeners
+        attachEventListeners();
+      }
+
+      // Note: Add to cart functionality moved to detail product page
+      function attachEventListeners() {
+        // No event listeners needed for product cards now
+      }
+
+      // Filter functions
+      function applyFilters() {
+        const categoryFilter = document.getElementById("category-filter").value;
+        const priceFilter = document.getElementById("price-filter").value;
+        const sortFilter = document.getElementById("sort-filter").value;
+
+        let filtered = [...allProducts];
+
+        // Category filter
+        if (categoryFilter) {
+          filtered = filtered.filter(product => product.category === categoryFilter);
+        }
+
+        // Price filter
+        if (priceFilter) {
+          if (priceFilter === "0-15000") {
+            filtered = filtered.filter(product => product.price < 15000);
+          } else if (priceFilter === "15000-30000") {
+            filtered = filtered.filter(product => product.price >= 15000 && product.price <= 30000);
+          } else if (priceFilter === "30000-50000") {
+            filtered = filtered.filter(product => product.price > 30000 && product.price <= 50000);
+          } else if (priceFilter === "50000+") {
+            filtered = filtered.filter(product => product.price > 50000);
+          }
+        }
+
+        // Sort
+        if (sortFilter === "name-asc") {
+          filtered.sort((a, b) => a.name.localeCompare(b.name));
+        } else if (sortFilter === "name-desc") {
+          filtered.sort((a, b) => b.name.localeCompare(a.name));
+        } else if (sortFilter === "price-low") {
+          filtered.sort((a, b) => a.price - b.price);
+        } else if (sortFilter === "price-high") {
+          filtered.sort((a, b) => b.price - a.price);
+        }
+
+        filteredProducts = filtered;
+        renderProducts(filteredProducts);
+      }
+
+      // Search functionality
+      function setupSearch(inputId, resultsId) {
+        const searchInput = document.getElementById(inputId);
+        const searchResults = document.getElementById(resultsId);
+
+        searchInput.addEventListener("input", function () {
+          const query = this.value.toLowerCase();
+
+          if (query.length < 2) {
+            searchResults.classList.remove("active");
+            return;
+          }
+
+          const filteredProducts = allProducts.filter(
+            (product) =>
+              product.name.toLowerCase().includes(query) ||
+              product.description.toLowerCase().includes(query)
+          );
+
+          if (filteredProducts.length > 0) {
+            searchResults.innerHTML = filteredProducts
+              .map(
+                (product) => `
+              <div class="p-3 border-b border-gray-200 hover:bg-blue-50 cursor-pointer" data-id="${
+                product.id
+              }">
+                <div class="font-medium">${product.name}</div>
+                <div class="text-sm text-gray-600">${product.description}</div>
+                <div class="text-blue-600 font-bold mt-1">Rp ${product.price.toLocaleString()}</div>
+              </div>
+            `
+              )
+              .join("");
+
+            // Add click event to search results
+            searchResults.querySelectorAll("div[data-id]").forEach((item) => {
+              item.addEventListener("click", function () {
+                const productId = this.getAttribute("data-id");
+                const product = allProducts.find((p) => p.id == productId);
+
+                if (product) {
+                  // Scroll to product
+                  const productElement = document
+                    .querySelector(`.add-to-cart-btn[data-id="${productId}"]`)
+                    ?.closest(".bg-white");
+                  
+                  if (productElement) {
+                    productElement.scrollIntoView({ behavior: "smooth" });
+
+                    // Highlight product
+                    productElement.classList.add("ring-2", "ring-blue-500");
+                    setTimeout(() => {
+                      productElement.classList.remove("ring-2", "ring-blue-500");
+                    }, 2000);
+                  }
+
+                  // Hide search results
+                  searchResults.classList.remove("active");
+                  searchInput.value = "";
+                }
+              });
+            });
+
+            searchResults.classList.add("active");
+          } else {
+            searchResults.innerHTML =
+              '<div class="p-3 text-center text-gray-500">Produk tidak ditemukan</div>';
+            searchResults.classList.add("active");
+          }
+        });
+
+        // Hide search results when clicking outside
+        document.addEventListener("click", function (e) {
+          if (
+            !searchInput.contains(e.target) &&
+            !searchResults.contains(e.target)
+          ) {
+            searchResults.classList.remove("active");
+          }
+        });
+      }
+
+      // Initialize page
+      document.addEventListener("DOMContentLoaded", function() {
+        renderProducts(allProducts);
+        updateCartCount();
+        setupSearch("search-input", "search-results");
+        setupSearch("mobile-search-input", "mobile-search-results");
+
+        // Attach filter event listeners
+        document.getElementById("category-filter").addEventListener("change", applyFilters);
+        document.getElementById("price-filter").addEventListener("change", applyFilters);
+        document.getElementById("sort-filter").addEventListener("change", applyFilters);
+      });
+    </script> -->
+
+    <!-- JavaScript Files -->
+    <script src="assets/js/main.js"></script>
+    <script src="assets/js/products.js"></script>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12 mt-16 relative overflow-hidden">
+      <div class="absolute left-0 top-0 h-full w-80 opacity-90 bg-no-repeat bg-left bg-cover pointer-events-none" style="background-image: url('assets/footer-decor.png');"></div>
+      <div class="container mx-auto px-4 sm:px-6 relative z-10">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <!-- Company Info -->
+          <div class="col-span-1 md:col-span-2">
+            <div class="flex items-center mb-6">
+              <img src="assets/pharmahub-logo.png" alt="PharmaHub" class="h-12 w-auto" />
+            </div>
+            <p class="text-gray-300 mb-4 leading-relaxed">
+              PharmaHub adalah platform terpercaya untuk kebutuhan obat dan kesehatan Anda. 
+              Kami menyediakan obat-obatan berkualitas dengan layanan yang profesional dan terpercaya.
+            </p>
+            <div class="flex space-x-4">
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-facebook-f text-xl"></i>
+              </a>
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-twitter text-xl"></i>
+              </a>
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-instagram text-xl"></i>
+              </a>
+              <a href="#" class="text-gray-300 hover:text-white transition">
+                <i class="fab fa-whatsapp text-xl"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Quick Links -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+            <ul class="space-y-2">
+              <li><a href="index.html" class="text-gray-300 hover:text-white transition">Beranda</a></li>
+              <li><a href="produk.html" class="text-gray-300 hover:text-white transition">Semua Produk</a></li>
+              <li><a href="notifikasi.html" class="text-gray-300 hover:text-white transition">Notifikasi</a></li>
+              <li><a href="riwayat.html" class="text-gray-300 hover:text-white transition">Riwayat</a></li>
+              <li><a href="keranjang.html" class="text-gray-300 hover:text-white transition">Keranjang</a></li>
+            </ul>
+          </div>
+
+          <!-- Contact Info -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Kontak</h3>
+            <ul class="space-y-3 text-gray-300">
+              <li class="flex items-center">
+                <i class="fas fa-map-marker-alt mr-3 text-blue-400"></i>
+                <span class="text-sm">Jl. Kesehatan No. 123, Jakarta</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-phone mr-3 text-blue-400"></i>
+                <span class="text-sm">+62 21 1234 5678</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-envelope mr-3 text-blue-400"></i>
+                <span class="text-sm">info@pharmahub.com</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-clock mr-3 text-blue-400"></i>
+                <span class="text-sm">24/7 Customer Service</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Bottom Footer -->
+        <div class="border-t border-gray-700 mt-8 pt-8 text-center">
+          <div class="flex flex-col md:flex-row justify-between items-center">
+            <p class="text-gray-400 text-sm mb-4 md:mb-0">
+              &copy; 2024 PharmaHub. All rights reserved.
+            </p>
+            <div class="flex space-x-6 text-sm">
+              <a href="#" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
+              <a href="#" class="text-gray-400 hover:text-white transition">Terms of Service</a>
+              <a href="#" class="text-gray-400 hover:text-white transition">FAQ</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </body>
 </html>
