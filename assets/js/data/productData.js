@@ -1,10 +1,99 @@
-/**
- * Centralized product data for PharmaHub
- * This file contains all product information used across the application
- */
+// Product data for search
+export const products = [
+    {
+        id: 1,
+        name: "Paracetamol 500mg",
+        description: "Untuk menurunkan demam dan meredakan sakit kepala atau nyeri ringan.",
+        price: 12000,
+    },
+    {
+        id: 2,
+        name: "Ibuprofen 400mg",
+        description: "Obat antiinflamasi non-steroid untuk nyeri otot, sendi, atau sakit gigi.",
+        price: 15000,
+    },
+    {
+        id: 3,
+        name: "Promag",
+        description: "Meredakan sakit maag, nyeri ulu hati, dan gangguan asam lambung.",
+        price: 8000,
+    },
+    {
+        id: 4,
+        name: "Loperamide (Imodium)",
+        description: "Untuk mengatasi diare akut.",
+        price: 20000,
+    },
+    {
+        id: 5,
+        name: "Cetirizine",
+        description: "Antihistamin untuk alergi, bersin, atau gatal-gatal.",
+        price: 25000,
+    },
+    {
+        id: 6,
+        name: "Salbutamol Inhaler",
+        description: "Membantu meredakan sesak napas akibat asma atau bronkitis.",
+        price: 45000,
+    },
+    {
+        id: 7,
+        name: "Betadine",
+        description: "Antiseptik luar untuk membersihkan luka ringan atau goresan.",
+        price: 18000,
+    },
+    {
+        id: 8,
+        name: "Oralit",
+        description: "Larutan rehidrasi untuk mencegah dehidrasi akibat diare atau muntah.",
+        price: 5000,
+    },
+    {
+        id: 9,
+        name: "Vitamin C 500mg",
+        description: "Meningkatkan daya tahan tubuh dan membantu penyembuhan.",
+        price: 25000,
+    },
+    {
+        id: 10,
+        name: "Amoxicillin 500mg",
+        description: "Untuk infeksi bakteri ringan, seperti infeksi tenggorokan atau kulit.",
+        price: 40000,
+    },
+    {
+        id: 11,
+        name: "Omeprazole 20mg",
+        description: "Untuk mengatasi asam lambung berlebih dan maag kronis.",
+        price: 35000,
+    },
+    {
+        id: 12,
+        name: "Vitamin D3 1000 IU",
+        description: "Membantu penyerapan kalsium dan kesehatan tulang.",
+        price: 45000,
+    },
+    {
+        id: 13,
+        name: "Multivitamin Complete",
+        description: "Kombinasi lengkap vitamin dan mineral untuk kesehatan optimal.",
+        price: 55000,
+    },
+    {
+        id: 14,
+        name: "Alcohol 70%",
+        description: "Antiseptik untuk membersihkan tangan dan permukaan.",
+        price: 15000,
+    },
+    {
+        id: 15,
+        name: "Captopril 25mg",
+        description: "Obat untuk menurunkan tekanan darah tinggi.",
+        price: 30000,
+    },
+];
 
-// Complete product data as object for easy lookup by ID
-export const productsById = {
+// Detailed product data for cart and product detail pages
+export const productsDetailed = {
     '1': {
         id: '1',
         name: 'Paracetamol 500mg',
@@ -13,7 +102,6 @@ export const productsById = {
         description: 'Untuk menurunkan demam dan meredakan sakit kepala atau nyeri ringan.',
         uses: 'Menurunkan demam, meredakan nyeri ringan hingga sedang seperti sakit kepala, sakit gigi, nyeri otot.',
         genericName: 'Paracetamol',
-        category: 'obat-bebas',
         prescriptionRequired: false
     },
     '2': {
@@ -24,7 +112,6 @@ export const productsById = {
         description: 'Obat antiinflamasi non-steroid untuk nyeri otot, sendi, atau sakit gigi.',
         uses: 'Mengurangi peradangan, menurunkan demam, meredakan nyeri otot dan sendi.',
         genericName: 'Ibuprofen',
-        category: 'obat-bebas',
         prescriptionRequired: false
     },
     '3': {
@@ -35,7 +122,6 @@ export const productsById = {
         description: 'Meredakan sakit maag, nyeri ulu hati, dan gangguan asam lambung.',
         uses: 'Meredakan sakit maag, nyeri ulu hati, kembung, dan mual akibat asam lambung berlebih.',
         genericName: 'Antasida',
-        category: 'obat-bebas',
         prescriptionRequired: false
     },
     '4': {
@@ -46,7 +132,6 @@ export const productsById = {
         description: 'Untuk mengatasi diare akut.',
         uses: 'Mengatasi diare akut dengan mengurangi pergerakan usus dan meningkatkan penyerapan air.',
         genericName: 'Loperamide',
-        category: 'obat-bebas',
         prescriptionRequired: false
     },
     '5': {
@@ -57,7 +142,6 @@ export const productsById = {
         description: 'Antihistamin untuk alergi, bersin, atau gatal-gatal.',
         uses: 'Meredakan gejala alergi seperti bersin, hidung tersumbat, mata berair, dan gatal-gatal.',
         genericName: 'Cetirizine',
-        category: 'obat-bebas',
         prescriptionRequired: false
     },
     '6': {
@@ -68,7 +152,6 @@ export const productsById = {
         description: 'Membantu meredakan sesak napas akibat asma atau bronkitis.',
         uses: 'Meredakan sesak napas, bronkospasme, dan gejala asma akut.',
         genericName: 'Salbutamol',
-        category: 'obat-keras',
         prescriptionRequired: false
     },
     '7': {
@@ -79,7 +162,6 @@ export const productsById = {
         description: 'Antiseptik luar untuk membersihkan luka ringan atau goresan.',
         uses: 'Antiseptik untuk luka kecil, goresan, dan pencegahan infeksi pada luka luar.',
         genericName: 'Povidone Iodine',
-        category: 'antiseptik',
         prescriptionRequired: false
     },
     '8': {
@@ -90,7 +172,6 @@ export const productsById = {
         description: 'Larutan rehidrasi untuk mencegah dehidrasi akibat diare atau muntah.',
         uses: 'Mengganti cairan dan elektrolit yang hilang akibat diare, muntah, atau berkeringat berlebihan.',
         genericName: 'Oralit',
-        category: 'obat-bebas',
         prescriptionRequired: false
     },
     '9': {
@@ -101,7 +182,6 @@ export const productsById = {
         description: 'Meningkatkan daya tahan tubuh dan membantu penyembuhan.',
         uses: 'Meningkatkan sistem imun, membantu penyembuhan luka, dan melindungi dari radikal bebas.',
         genericName: 'Vitamin C',
-        category: 'suplemen',
         prescriptionRequired: false
     },
     '10': {
@@ -112,7 +192,6 @@ export const productsById = {
         description: 'Untuk infeksi bakteri ringan, seperti infeksi tenggorokan atau kulit.',
         uses: 'Mengobati infeksi bakteri pada saluran pernapasan, kulit, dan saluran kemih.',
         genericName: 'Amoxicillin',
-        category: 'obat-keras',
         prescriptionRequired: true
     },
     '11': {
@@ -123,7 +202,6 @@ export const productsById = {
         description: 'Untuk mengatasi asam lambung berlebih dan maag kronis.',
         uses: 'Mengurangi produksi asam lambung, mengobati tukak lambung dan GERD.',
         genericName: 'Omeprazole',
-        category: 'obat-keras',
         prescriptionRequired: true
     },
     '12': {
@@ -134,7 +212,6 @@ export const productsById = {
         description: 'Membantu penyerapan kalsium dan kesehatan tulang.',
         uses: 'Mendukung kesehatan tulang, gigi, dan sistem imun.',
         genericName: 'Vitamin D3',
-        category: 'suplemen',
         prescriptionRequired: false
     },
     '13': {
@@ -145,7 +222,6 @@ export const productsById = {
         description: 'Kombinasi lengkap vitamin dan mineral untuk kesehatan optimal.',
         uses: 'Memenuhi kebutuhan vitamin dan mineral harian untuk menjaga kesehatan tubuh.',
         genericName: 'Multivitamin',
-        category: 'suplemen',
         prescriptionRequired: false
     },
     '14': {
@@ -156,7 +232,6 @@ export const productsById = {
         description: 'Antiseptik untuk membersihkan tangan dan permukaan.',
         uses: 'Membersihkan tangan, sterilisasi alat, dan desinfeksi permukaan.',
         genericName: 'Alcohol',
-        category: 'antiseptik',
         prescriptionRequired: false
     },
     '15': {
@@ -167,35 +242,6 @@ export const productsById = {
         description: 'Obat untuk menurunkan tekanan darah tinggi.',
         uses: 'Mengontrol tekanan darah tinggi dan mencegah komplikasi jantung.',
         genericName: 'Captopril',
-        category: 'obat-keras',
         prescriptionRequired: true
     },
 };
-
-// Product data as array for listings and iterations
-export const products = Object.values(productsById);
-
-// Helper function to get product by ID
-export function getProductById(productId) {
-    return productsById[productId] || null;
-}
-
-// Helper function to get all products as array
-export function getAllProducts() {
-    return products;
-}
-
-// Helper function to get products by category
-export function getProductsByCategory(category) {
-    return products.filter(product => product.category === category);
-}
-
-// Helper function to search products
-export function searchProducts(query) {
-    const searchTerm = query.toLowerCase();
-    return products.filter(product =>
-        product.name.toLowerCase().includes(searchTerm) ||
-        product.description.toLowerCase().includes(searchTerm) ||
-        product.genericName.toLowerCase().includes(searchTerm)
-    );
-}

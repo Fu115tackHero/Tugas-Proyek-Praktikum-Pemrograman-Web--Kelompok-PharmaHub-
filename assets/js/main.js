@@ -1,13 +1,8 @@
 // ==========================================
-// IMPORTS
+// IMPORTS & CONSTANTS
 // ==========================================
 
-// Import product data from centralized location
-import { getProductById } from './data/products.js';
-
-// ==========================================
-// GLOBAL VARIABLES & CONSTANTS
-// ==========================================
+import { productsDetailed } from './data/productData.js';
 
 let cart = JSON.parse(localStorage.getItem("pharmahub-cart")) || [];
 const TAX_RATE = 0.1; // 10% tax
@@ -44,22 +39,25 @@ function showToast(message, type = 'success') {
     
     if (!toast || !toastMessage) return;
     
-    // Reset toast classes
-    toast.className = 'toast';
-    
-    // Add type-specific styling
-    const typeClass = type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600';
-    toast.classList.add('fixed', 'bottom-4', 'right-4', 'px-6', 'py-3', 'rounded-lg', 'shadow-lg', 'transform', 'transition-all', 'duration-300', typeClass, 'text-white');
+    toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 ${
+        type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600'
+    } text-white`;
     
     toastMessage.textContent = message;
+    toast.classList.remove('translate-y-full', 'opacity-0');
     
-    // Show toast
-    toast.classList.add('show');
-    
-    // Hide toast after 3 seconds
     setTimeout(() => {
-        toast.classList.remove('show');
+        toast.classList.add('translate-y-full', 'opacity-0');
     }, 3000);
+}
+
+/**
+ * Get product data by ID
+ * @param {string} productId - Product ID
+ * @returns {object|null} Product data or null if not found
+ */
+function getProductById(productId) {
+    return productsDetailed[productId] || null;
 }
 
 // ==========================================
@@ -87,7 +85,8 @@ function addToCart(productId, quantity = 1) {
             id: productId,
             name: product.name,
             price: product.price,
-            quantity: quantity
+            quantity: quantity,
+            savedForLater: false
         });
     }
     
@@ -144,7 +143,9 @@ function removeAllItems() {
  * Update cart item count in header
  */
 function updateCartItemCount() {
-    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+    // Only count items that are not saved for later
+    const activeItems = cart.filter(item => !item.savedForLater);
+    const totalItems = activeItems.reduce((sum, item) => sum + item.quantity, 0);
     const cartCountElement = document.getElementById('cart-item-count');
     if (cartCountElement) {
         cartCountElement.textContent = totalItems;
@@ -175,47 +176,58 @@ function renderCart() {
     if (emptyCartSection) emptyCartSection.classList.add('hidden');
     if (removeAllSection) removeAllSection.classList.remove('hidden');
 
-    cartItemsContainer.innerHTML = cart.map(item => `
-        <div class="cart-item p-4 hover:bg-gray-50">
+    cartItemsContainer.innerHTML = cart.map(item => {
+        const isDisabled = item.savedForLater;
+        const savedBadge = isDisabled ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 ml-2 opacity-50"><i class="fas fa-bookmark mr-1"></i>Saved for later</span>' : '';
+        const actionButtonText = isDisabled ? 'Unsave' : 'Save for later';
+        const actionButtonIcon = isDisabled ? 'fas fa-undo' : 'fas fa-bookmark';
+        
+        return `
+        <div class="cart-item p-4 hover:bg-gray-50 ${isDisabled ? 'bg-gray-50' : ''}">
             <div class="flex items-start space-x-4">
                 <!-- Product Image -->
                 <div class="flex-shrink-0">
                     <img src="https://cdn-icons-png.flaticon.com/512/2966/2966388.png" 
                          alt="${item.name}" 
-                         class="w-16 h-16 object-contain bg-gray-100 rounded-lg p-2">
+                         class="w-16 h-16 object-contain bg-gray-100 rounded-lg p-2 ${isDisabled ? 'grayscale opacity-50' : ''}">
                 </div>
 
                 <!-- Product Details -->
                 <div class="flex-1 min-w-0">
-                    <h3 class="font-semibold text-gray-800 mb-1">${item.name}</h3>
-                    <p class="text-sm text-gray-600 mb-2">Obat untuk kesehatan</p>
+                    <div class="flex items-center mb-1">
+                        <h3 class="font-semibold text-gray-800 ${isDisabled ? 'text-gray-500 opacity-50' : ''}">${item.name}</h3>
+                        ${savedBadge}
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2 ${isDisabled ? 'opacity-50' : ''}">Obat untuk kesehatan</p>
                     
                     <!-- Actions -->
                     <div class="flex items-center space-x-4 text-sm">
                         <button onclick="removeItem('${item.id}')" class="text-red-600 hover:text-red-700 font-medium">
-                            Remove
+                            <i class="fas fa-trash mr-1"></i>Remove
                         </button>
                         <button onclick="saveForLater('${item.id}')" class="text-blue-600 hover:text-blue-700 font-medium">
-                            Save for later
+                            <i class="${actionButtonIcon} mr-1"></i>${actionButtonText}
                         </button>
                     </div>
                 </div>
 
                 <!-- Price and Quantity -->
                 <div class="text-right">
-                    <div class="font-semibold text-gray-800 mb-2">${formatCurrency(item.price)}</div>
+                    <div class="font-semibold text-gray-800 mb-2 ${isDisabled ? 'text-gray-500 opacity-50' : ''}">${formatCurrency(item.price)}</div>
                     
                     <!-- Quantity Controls -->
                     <div class="flex items-center space-x-2 mb-2">
-                        <span class="text-sm text-gray-600">Qty</span>
-                        <div class="flex items-center border border-gray-300 rounded">
+                        <span class="text-sm text-gray-600 ${isDisabled ? 'opacity-50' : ''}">Qty</span>
+                        <div class="flex items-center border border-gray-300 rounded ${isDisabled ? 'opacity-50 pointer-events-none' : ''}">
                             <button onclick="updateQuantity('${item.id}', -1)" 
-                                    class="quantity-btn w-8 h-8 flex items-center justify-center hover:bg-gray-100">
+                                    class="quantity-btn w-8 h-8 flex items-center justify-center hover:bg-gray-100"
+                                    ${isDisabled ? 'disabled' : ''}>
                                 <i class="fas fa-minus text-xs"></i>
                             </button>
                             <span class="w-12 text-center py-1 text-sm">${item.quantity}</span>
                             <button onclick="updateQuantity('${item.id}', 1)" 
-                                    class="quantity-btn w-8 h-8 flex items-center justify-center hover:bg-gray-100">
+                                    class="quantity-btn w-8 h-8 flex items-center justify-center hover:bg-gray-100"
+                                    ${isDisabled ? 'disabled' : ''}>
                                 <i class="fas fa-plus text-xs"></i>
                             </button>
                         </div>
@@ -223,7 +235,8 @@ function renderCart() {
                 </div>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
     
     updateCartItemCount();
 }
@@ -244,7 +257,8 @@ function applyCoupon() {
         return;
     }
 
-    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const activeItems = cart.filter(item => !item.savedForLater);
+    const subtotal = activeItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const coupon = coupons[couponCode];
 
     if (!coupon) {
@@ -292,7 +306,9 @@ function showCouponMessage(message, type) {
  * Update order summary
  */
 function updateSummary() {
-    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    // Only calculate items that are not saved for later
+    const activeItems = cart.filter(item => !item.savedForLater);
+    const subtotal = activeItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const discountAmount = Math.floor(subtotal * (currentDiscountPercent / 100));
     const taxableAmount = subtotal - discountAmount;
     const tax = Math.floor(taxableAmount * TAX_RATE);
@@ -314,7 +330,8 @@ function updateSummary() {
     // Enable/disable checkout button (now a link)
     const checkoutBtn = document.getElementById('checkout-btn');
     if (checkoutBtn) {
-        if (cart.length === 0) {
+        // Disable checkout if no active items (items not saved for later)
+        if (activeItems.length === 0) {
             checkoutBtn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
             checkoutBtn.classList.remove('hover:bg-blue-900');
         } else {
@@ -335,7 +352,22 @@ function updateSummary() {
  * @param {string} id - Product ID
  */
 function saveForLater(id) {
-    showToast('Fitur "Save for later" akan segera hadir!', 'info');
+    const item = cart.find(item => item.id === id);
+    if (item) {
+        // Toggle saved for later status
+        item.savedForLater = !item.savedForLater;
+        
+        // Save to localStorage
+        localStorage.setItem("pharmahub-cart", JSON.stringify(cart));
+        
+        // Re-render cart and update summary
+        renderCart();
+        updateSummary();
+        
+        // Show appropriate toast message
+        const action = item.savedForLater ? 'disimpan untuk nanti' : 'dikembalikan ke keranjang';
+        showToast(`${item.name} ${action}`);
+    }
 }
 
 /**
@@ -459,3 +491,8 @@ window.PharmaHub = {
     formatCurrency,
     showToast
 };
+
+// Make critical functions available globally for onclick handlers
+window.removeItem = removeItem;
+window.updateQuantity = updateQuantity;
+window.saveForLater = saveForLater;

@@ -4,7 +4,33 @@
  */
 
 import { initializeMobileMenu, updateCartCount, showToast } from '../components/utils.js';
-import { products as allProducts, getProductsByCategory, searchProducts } from '../data/products.js';
+import { products } from '../data/productData.js';
+
+// Add category and prescriptionRequired properties to imported products
+const allProducts = products.map(product => ({
+    ...product,
+    category: getCategoryForProduct(product.id),
+    prescriptionRequired: getPresrcitonRequired(product.id)
+}));
+
+// Helper function to get category for each product
+function getCategoryForProduct(id) {
+    const categoryMap = {
+        1: "obat-bebas", 2: "obat-bebas", 3: "obat-bebas", 4: "obat-bebas", 
+        5: "obat-bebas", 6: "obat-keras", 7: "antiseptik", 8: "obat-bebas",
+        9: "suplemen", 10: "obat-keras", 11: "obat-keras", 12: "suplemen",
+        13: "suplemen", 14: "antiseptik", 15: "obat-keras"
+    };
+    return categoryMap[id] || "obat-bebas";
+}
+
+// Helper function to get prescription requirement for each product
+function getPresrcitonRequired(id) {
+    const prescriptionMap = {
+        10: true, 11: true, 15: true
+    };
+    return prescriptionMap[id] || false;
+}
 
 let filteredProducts = [...allProducts];
 
@@ -48,7 +74,7 @@ function applyFilters() {
 
     // Category filter
     if (categoryFilter) {
-        filtered = getProductsByCategory(categoryFilter);
+        filtered = filtered.filter(product => product.category === categoryFilter);
     }
 
     // Price filter
@@ -94,7 +120,11 @@ function setupSearch(inputId, resultsId) {
             return;
         }
 
-        const filteredProducts = searchProducts(query);
+        const filteredProducts = allProducts.filter(
+            (product) =>
+                product.name.toLowerCase().includes(query) ||
+                product.description.toLowerCase().includes(query)
+        );
 
         if (filteredProducts.length > 0) {
             searchResults.innerHTML = filteredProducts
