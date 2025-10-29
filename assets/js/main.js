@@ -1,4 +1,11 @@
 // ==========================================
+// IMPORTS
+// ==========================================
+
+// Import product data from centralized location
+import { getProductById } from './data/products.js';
+
+// ==========================================
 // GLOBAL VARIABLES & CONSTANTS
 // ==========================================
 
@@ -12,30 +19,6 @@ const coupons = {
     'SEHAT10': { discount: 10, minAmount: 50000 },
     'OBAT20': { discount: 20, minAmount: 100000 },
     'PHARMAHUB15': { discount: 15, minAmount: 75000 }
-};
-
-// Product data for detail pages
-const products = {
-    '1': {
-        id: '1',
-        name: 'Paracetamol 500mg',
-        brand: 'Sanbe Farma',
-        price: 12000,
-        description: 'Untuk menurunkan demam dan meredakan sakit kepala atau nyeri ringan.',
-        uses: 'Menurunkan demam, meredakan nyeri ringan hingga sedang seperti sakit kepala, sakit gigi, nyeri otot.',
-        genericName: 'Paracetamol',
-        prescriptionRequired: false
-    },
-    '2': {
-        id: '2',
-        name: 'Ibuprofen 400mg',
-        brand: 'Kimia Farma',
-        price: 15000,
-        description: 'Obat antiinflamasi non-steroid untuk nyeri otot, sendi, atau sakit gigi.',
-        uses: 'Mengurangi peradangan, menurunkan demam, meredakan nyeri otot dan sendi.',
-        genericName: 'Ibuprofen',
-        prescriptionRequired: false
-    },
 };
 
 // ==========================================
@@ -61,25 +44,22 @@ function showToast(message, type = 'success') {
     
     if (!toast || !toastMessage) return;
     
-    toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 ${
-        type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600'
-    } text-white`;
+    // Reset toast classes
+    toast.className = 'toast';
+    
+    // Add type-specific styling
+    const typeClass = type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600';
+    toast.classList.add('fixed', 'bottom-4', 'right-4', 'px-6', 'py-3', 'rounded-lg', 'shadow-lg', 'transform', 'transition-all', 'duration-300', typeClass, 'text-white');
     
     toastMessage.textContent = message;
-    toast.classList.remove('translate-y-full', 'opacity-0');
     
+    // Show toast
+    toast.classList.add('show');
+    
+    // Hide toast after 3 seconds
     setTimeout(() => {
-        toast.classList.add('translate-y-full', 'opacity-0');
+        toast.classList.remove('show');
     }, 3000);
-}
-
-/**
- * Get product data by ID
- * @param {string} productId - Product ID
- * @returns {object|null} Product data or null if not found
- */
-function getProductById(productId) {
-    return products[productId] || null;
 }
 
 // ==========================================
