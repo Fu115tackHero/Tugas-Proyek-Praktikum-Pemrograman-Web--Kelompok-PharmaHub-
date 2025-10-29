@@ -4,53 +4,64 @@
 
 // Mobile menu toggle
 export function initializeMobileMenu() {
-    const btn = document.getElementById("menu-btn");
-    const menu = document.getElementById("menu");
-    if (btn && menu) {
-        btn.addEventListener("click", () => {
-            menu.classList.toggle("hidden");
-        });
-    }
+  const btn = document.getElementById("menu-btn");
+  const menu = document.getElementById("menu");
+  if (btn && menu) {
+    btn.addEventListener("click", () => {
+      menu.classList.toggle("hidden");
+    });
+  }
 }
 
 // Update cart count display
 export function updateCartCount() {
-    const cart = JSON.parse(localStorage.getItem("pharmahub-cart")) || [];
-    const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
-    const cartCount = document.getElementById("cart-count");
-    const cartCountMobile = document.getElementById("cart-count-mobile");
+  const cart = JSON.parse(localStorage.getItem("pharmahub-cart")) || [];
+  const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+  const cartCount = document.getElementById("cart-count");
+  const cartCountMobile = document.getElementById("cart-count-mobile");
 
-    if (totalItems > 0) {
-        if (cartCount) {
-            cartCount.textContent = totalItems;
-            cartCount.classList.remove("hidden");
-        }
-        if (cartCountMobile) {
-            cartCountMobile.textContent = totalItems;
-            cartCountMobile.classList.remove("hidden");
-        }
-    } else {
-        if (cartCount) cartCount.classList.add("hidden");
-        if (cartCountMobile) cartCountMobile.classList.add("hidden");
+  if (totalItems > 0) {
+    if (cartCount) {
+      cartCount.textContent = totalItems;
+      cartCount.classList.remove("hidden");
     }
+    if (cartCountMobile) {
+      cartCountMobile.textContent = totalItems;
+      cartCountMobile.classList.remove("hidden");
+    }
+  } else {
+    if (cartCount) cartCount.classList.add("hidden");
+    if (cartCountMobile) cartCountMobile.classList.add("hidden");
+  }
 }
 
 // Show toast notification
-export function showToast(message) {
-    const toast = document.getElementById("toast");
-    const toastMessage = document.getElementById("toast-message");
+export function showToast(message, type = "success") {
+  const toast = document.getElementById("toast");
+  const toastMessage = document.getElementById("toast-message");
 
-    if (!toast || !toastMessage) return;
+  if (!toast || !toastMessage) return;
 
-    toastMessage.textContent = message;
-    toast.classList.add("show");
+  // Set toast color based on type
+  toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 ${
+    type === "success"
+      ? "bg-green-600"
+      : type === "error"
+      ? "bg-red-600"
+      : "bg-blue-600"
+  } text-white`;
 
-    setTimeout(() => {
-        toast.classList.remove("show");
-    }, 3000);
+  toastMessage.textContent = message;
+  toast.classList.remove("translate-y-full", "opacity-0");
+  toast.classList.add("show");
+
+  setTimeout(() => {
+    toast.classList.add("translate-y-full", "opacity-0");
+    toast.classList.remove("show");
+  }, 3000);
 }
 
 // Format currency
 export function formatCurrency(amount) {
-    return 'Rp ' + amount.toLocaleString('id-ID');
+  return "Rp " + amount.toLocaleString("id-ID");
 }

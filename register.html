@@ -19,17 +19,29 @@
         <!-- Header -->
         <div class="text-center mb-8">
           <div class="flex justify-center mb-4">
-            <img src="assets/pharmahub-logo.png" alt="PharmaHub" class="h-12 w-auto" />
+            <img
+              src="assets/pharmahub-logo.png"
+              alt="PharmaHub"
+              class="h-12 w-auto"
+            />
           </div>
-          <h1 class="text-2xl font-bold text-gray-800 mb-2">Daftar Akun Baru</h1>
-          <p class="text-gray-600">Bergabunglah dengan PharmaHub untuk akses mudah ke obat-obatan berkualitas</p>
+          <h1 class="text-2xl font-bold text-gray-800 mb-2">
+            Daftar Akun Baru
+          </h1>
+          <p class="text-gray-600">
+            Bergabunglah dengan PharmaHub untuk akses mudah ke obat-obatan
+            berkualitas
+          </p>
         </div>
 
         <!-- Registration Form -->
         <form id="registerForm" class="space-y-6">
           <!-- Full Name -->
           <div>
-            <label for="fullName" class="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              for="fullName"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
               Nama Lengkap
             </label>
             <div class="relative">
@@ -41,13 +53,18 @@
                 class="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Masukkan nama lengkap"
               />
-              <i class="fas fa-user absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+              <i
+                class="fas fa-user absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              ></i>
             </div>
           </div>
 
           <!-- Email -->
           <div>
-            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              for="email"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
               Email
             </label>
             <div class="relative">
@@ -59,13 +76,18 @@
                 class="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="contoh@email.com"
               />
-              <i class="fas fa-envelope absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+              <i
+                class="fas fa-envelope absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              ></i>
             </div>
           </div>
 
           <!-- Password -->
           <div>
-            <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              for="password"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
               Password
             </label>
             <div class="relative">
@@ -78,7 +100,9 @@
                 class="w-full px-4 py-3 pl-11 pr-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Minimal 8 karakter"
               />
-              <i class="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+              <i
+                class="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              ></i>
               <button
                 type="button"
                 id="togglePassword"
@@ -91,7 +115,10 @@
 
           <!-- Confirm Password -->
           <div>
-            <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              for="confirmPassword"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
               Konfirmasi Password
             </label>
             <div class="relative">
@@ -103,7 +130,9 @@
                 class="w-full px-4 py-3 pl-11 pr-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Ulangi password"
               />
-              <i class="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+              <i
+                class="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              ></i>
               <button
                 type="button"
                 id="toggleConfirmPassword"
@@ -126,12 +155,26 @@
         <!-- Login Link -->
         <div class="mt-6 text-center">
           <p class="text-gray-600">
-            Sudah punya akun? 
-            <a href="Login.html" class="text-blue-600 hover:text-blue-800 font-semibold">
+            Sudah punya akun?
+            <a
+              href="Login.html"
+              class="text-blue-600 hover:text-blue-800 font-semibold"
+            >
               Masuk di sini
             </a>
           </p>
         </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div
+      id="toast"
+      class="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-full opacity-0 transition-all duration-300"
+    >
+      <div class="flex items-center">
+        <i class="fas fa-check-circle mr-2"></i>
+        <span id="toast-message">Success!</span>
       </div>
     </div>
 
