@@ -174,3 +174,182 @@ function filterByCategory(category) {
         activeBtn.classList.add('bg-blue-600', 'text-white');
     }
 }
+
+/**
+ * Sort products
+ * @param {string} sortBy - Sort criteria (name, price-low, price-high)
+ */
+function sortProducts(sortBy) {
+    currentSort = sortBy;
+    applyFilters();
+}
+
+/**
+ * Search products
+ * @param {string} searchTerm - Search term
+ */
+function searchProducts(searchTerm) {
+    currentSearch = searchTerm.toLowerCase();
+    applyFilters();
+}
+
+/**
+ * Apply all filters and sorting
+ */
+function applyFilters() {
+    // Start with all products
+    filteredProducts = [...allProducts];
+    
+    // Apply category filter
+    if (currentCategory !== 'all') {
+        filteredProducts = filteredProducts.filter(product => 
+            product.category === currentCategory
+        );
+    }
+    
+    // Apply search filter
+    if (currentSearch) {
+        filteredProducts = filteredProducts.filter(product =>
+            product.name.toLowerCase().includes(currentSearch) ||
+            product.description.toLowerCase().includes(currentSearch) ||
+            product.brand.toLowerCase().includes(currentSearch)
+        );
+    }
+    
+    // Apply sorting
+    switch (currentSort) {
+        case 'price-low':
+            filteredProducts.sort((a, b) => a.price - b.price);
+            break;
+        case 'price-high':
+            filteredProducts.sort((a, b) => b.price - a.price);
+            break;
+        case 'name':
+        default:
+            filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+            break;
+    }
+    
+    renderProducts();
+    updateProductCount();
+}
+
+/**
+ * Render filtered products
+ */
+function renderProducts() {
+    const container = document.getElementById('products-container');
+    if (!container) return;
+    
+    if (filteredProducts.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-search text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-600 mb-2">Produk tidak ditemukan</h3>
+                <p class="text-gray-500">Coba ubah filter atau kata kunci pencarian</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = filteredProducts.map(product => `
+        <div class="bg-white rounded-xl shadow hover:shadow-lg transition p-5 text-center flex flex-col">
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/2966/2966388.png"
+              alt="${product.name}"
+              class="w-20 mx-auto mb-4"
+            />
+            <h3 class="font-semibold text-gray-800">${product.name}</h3>
+            <p class="text-gray-600 text-sm mt-1">${product.description}</p>
+            ${product.prescriptionRequired ? 
+              '<div class="mt-2 mb-2"><span class="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded">Perlu Resep Dokter</span></div>' : 
+              ''
+            }
+            <div class="mt-auto">
+              <p class="text-blue-600 font-bold mt-4">Rp ${product.price.toLocaleString()}</p>
+              <a
+                href="detail-produk.html?id=${product.id}"
+                class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition w-full flex items-center justify-center"
+              >
+                <i class="fas fa-shopping-cart"></i>
+              </a>
+            </div>
+          </div>
+    `).join('');
+}
+
+/**
+ * Update product count display
+ */
+function updateProductCount() {
+    const countElement = document.getElementById('product-count');
+    if (countElement) {
+        countElement.textContent = `${filteredProducts.length} produk ditemukan`;
+    }
+}
+
+// ==========================================
+// EVENT LISTENERS SETUP
+// ==========================================
+
+/**
+ * Setup search functionality
+ */
+function setupSearch() {
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            searchProducts(e.target.value);
+        });
+    }
+}
+
+/**
+ * Setup sort functionality
+ */
+function setupSort() {
+    const sortSelect = document.getElementById('sort-select');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', (e) => {
+            sortProducts(e.target.value);
+        });
+    }
+}
+
+// ==========================================
+// INITIALIZATION
+// ==========================================
+
+/**
+ * Initialize product page
+ */
+function initProductPage() {
+    renderProducts();
+    updateProductCount();
+    setupSearch();
+    setupSort();
+    
+    // Set initial active filter
+    filterByCategory('all');
+}
+
+// Auto-initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Only initialize if we're on the product page
+    if (document.getElementById('products-container')) {
+        initProductPage();
+    }
+});
+
+// ==========================================
+// EXPORT FUNCTIONS
+// ==========================================
+
+// Make functions available globally
+window.ProductPage = {
+    filterByCategory,
+    sortProducts,
+    searchProducts,
+    allProducts,
+    filteredProducts
+};
