@@ -1,0 +1,297 @@
+/**
+ * PharmaHub Products Page JavaScript
+ * File ini berisi logika khusus untuk halaman produk dan filtering
+ */
+
+import { initializeMobileMenu, updateCartCount, showToast } from '../components/utils.js';
+
+// All products data
+const allProducts = [
+    {
+        id: 1,
+        name: "Paracetamol 500mg",
+        description: "Untuk menurunkan demam dan meredakan sakit kepala atau nyeri ringan.",
+        price: 12000,
+        category: "obat-bebas",
+        prescriptionRequired: false
+    },
+    {
+        id: 2,
+        name: "Ibuprofen 400mg",
+        description: "Obat antiinflamasi non-steroid untuk nyeri otot, sendi, atau sakit gigi.",
+        price: 15000,
+        category: "obat-bebas",
+        prescriptionRequired: false
+    },
+    {
+        id: 3,
+        name: "Promag",
+        description: "Meredakan sakit maag, nyeri ulu hati, dan gangguan asam lambung.",
+        price: 8000,
+        category: "obat-bebas",
+        prescriptionRequired: false
+    },
+    {
+        id: 4,
+        name: "Loperamide (Imodium)",
+        description: "Untuk mengatasi diare akut.",
+        price: 20000,
+        category: "obat-bebas",
+        prescriptionRequired: false
+    },
+    {
+        id: 5,
+        name: "Cetirizine",
+        description: "Antihistamin untuk alergi, bersin, atau gatal-gatal.",
+        price: 25000,
+        category: "obat-bebas",
+        prescriptionRequired: false
+    },
+    {
+        id: 6,
+        name: "Salbutamol Inhaler",
+        description: "Membantu meredakan sesak napas akibat asma atau bronkitis.",
+        price: 45000,
+        category: "obat-keras",
+        prescriptionRequired: false
+    },
+    {
+        id: 7,
+        name: "Betadine",
+        description: "Antiseptik luar untuk membersihkan luka ringan atau goresan.",
+        price: 18000,
+        category: "antiseptik",
+        prescriptionRequired: false
+    },
+    {
+        id: 8,
+        name: "Oralit",
+        description: "Larutan rehidrasi untuk mencegah dehidrasi akibat diare atau muntah.",
+        price: 5000,
+        category: "obat-bebas",
+        prescriptionRequired: false
+    },
+    {
+        id: 9,
+        name: "Vitamin C 500mg",
+        description: "Meningkatkan daya tahan tubuh dan membantu penyembuhan.",
+        price: 25000,
+        category: "suplemen",
+        prescriptionRequired: false
+    },
+    {
+        id: 10,
+        name: "Amoxicillin 500mg",
+        description: "Untuk infeksi bakteri ringan, seperti infeksi tenggorokan atau kulit.",
+        price: 40000,
+        category: "obat-keras",
+        prescriptionRequired: true
+    },
+    {
+        id: 11,
+        name: "Omeprazole 20mg",
+        description: "Untuk mengatasi asam lambung berlebih dan maag kronis.",
+        price: 35000,
+        category: "obat-keras",
+        prescriptionRequired: true
+    },
+    {
+        id: 12,
+        name: "Vitamin D3 1000 IU",
+        description: "Membantu penyerapan kalsium dan kesehatan tulang.",
+        price: 45000,
+        category: "suplemen",
+        prescriptionRequired: false
+    },
+    {
+        id: 13,
+        name: "Multivitamin Complete",
+        description: "Kombinasi lengkap vitamin dan mineral untuk kesehatan optimal.",
+        price: 55000,
+        category: "suplemen",
+        prescriptionRequired: false
+    },
+    {
+        id: 14,
+        name: "Alcohol 70%",
+        description: "Antiseptik untuk membersihkan tangan dan permukaan.",
+        price: 15000,
+        category: "antiseptik",
+        prescriptionRequired: false
+    },
+    {
+        id: 15,
+        name: "Captopril 25mg",
+        description: "Obat untuk menurunkan tekanan darah tinggi.",
+        price: 30000,
+        category: "obat-keras",
+        prescriptionRequired: true
+    }
+];
+
+let filteredProducts = [...allProducts];
+
+// Render products
+function renderProducts(products) {
+    const grid = document.getElementById("products-grid");
+    
+    grid.innerHTML = products.map(product => `
+        <div class="bg-white rounded-xl shadow hover:shadow-lg transition p-5 text-center flex flex-col${product.prescriptionRequired ? ' border-l-4 border-red-500' : ''}">
+            <img
+                src="https://cdn-icons-png.flaticon.com/512/2966/2966388.png"
+                alt="${product.name}"
+                class="w-20 mx-auto mb-4"
+            />
+            <h3 class="font-semibold text-gray-800">${product.name}</h3>
+            <p class="text-gray-600 text-sm mt-1">${product.description}</p>
+            ${product.prescriptionRequired ? 
+                '<div class="mt-2 mb-2"><span class="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded">Perlu Resep Dokter</span></div>' : 
+                ''
+            }
+            <div class="mt-auto">
+                <p class="text-blue-600 font-bold mt-4">Rp ${product.price.toLocaleString()}</p>
+                <a
+                    href="detail-produk.html?id=${product.id}"
+                    class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition w-full flex items-center justify-center"
+                >
+                    <i class="fas fa-shopping-cart"></i>
+                </a>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Filter functions
+function applyFilters() {
+    const categoryFilter = document.getElementById("category-filter")?.value || '';
+    const priceFilter = document.getElementById("price-filter")?.value || '';
+    const sortFilter = document.getElementById("sort-filter")?.value || '';
+
+    let filtered = [...allProducts];
+
+    // Category filter
+    if (categoryFilter) {
+        filtered = filtered.filter(product => product.category === categoryFilter);
+    }
+
+    // Price filter
+    if (priceFilter) {
+        if (priceFilter === "0-15000") {
+            filtered = filtered.filter(product => product.price < 15000);
+        } else if (priceFilter === "15000-30000") {
+            filtered = filtered.filter(product => product.price >= 15000 && product.price <= 30000);
+        } else if (priceFilter === "30000-50000") {
+            filtered = filtered.filter(product => product.price > 30000 && product.price <= 50000);
+        } else if (priceFilter === "50000+") {
+            filtered = filtered.filter(product => product.price > 50000);
+        }
+    }
+
+    // Sort
+    if (sortFilter === "name-asc") {
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortFilter === "name-desc") {
+        filtered.sort((a, b) => b.name.localeCompare(a.name));
+    } else if (sortFilter === "price-low") {
+        filtered.sort((a, b) => a.price - b.price);
+    } else if (sortFilter === "price-high") {
+        filtered.sort((a, b) => b.price - a.price);
+    }
+
+    filteredProducts = filtered;
+    renderProducts(filteredProducts);
+}
+
+// Search functionality
+function setupSearch(inputId, resultsId) {
+    const searchInput = document.getElementById(inputId);
+    const searchResults = document.getElementById(resultsId);
+
+    if (!searchInput || !searchResults) return;
+
+    searchInput.addEventListener("input", function () {
+        const query = this.value.toLowerCase();
+
+        if (query.length < 2) {
+            searchResults.classList.remove("active");
+            return;
+        }
+
+        const filteredProducts = allProducts.filter(
+            (product) =>
+                product.name.toLowerCase().includes(query) ||
+                product.description.toLowerCase().includes(query)
+        );
+
+        if (filteredProducts.length > 0) {
+            searchResults.innerHTML = filteredProducts
+                .map(
+                    (product) => `
+                <div class="p-3 border-b border-gray-200 hover:bg-blue-50 cursor-pointer" data-id="${product.id}">
+                    <div class="font-medium">${product.name}</div>
+                    <div class="text-sm text-gray-600">${product.description}</div>
+                    <div class="text-blue-600 font-bold mt-1">Rp ${product.price.toLocaleString()}</div>
+                </div>
+            `
+                )
+                .join("");
+
+            // Add click event to search results
+            searchResults.querySelectorAll("div[data-id]").forEach((item) => {
+                item.addEventListener("click", function () {
+                    const productId = this.getAttribute("data-id");
+                    // Redirect to product detail page
+                    window.location.href = `detail-produk.html?id=${productId}`;
+                });
+            });
+
+            searchResults.classList.add("active");
+        } else {
+            searchResults.innerHTML =
+                '<div class="p-3 text-center text-gray-500">Produk tidak ditemukan</div>';
+            searchResults.classList.add("active");
+        }
+    });
+
+    // Hide search results when clicking outside
+    document.addEventListener("click", function (e) {
+        if (
+            !searchInput.contains(e.target) &&
+            !searchResults.contains(e.target)
+        ) {
+            searchResults.classList.remove("active");
+        }
+    });
+}
+
+// Initialize page
+document.addEventListener("DOMContentLoaded", function() {
+    // Initialize mobile menu
+    initializeMobileMenu();
+    
+    // Render products and update cart count
+    renderProducts(allProducts);
+    updateCartCount();
+    
+    // Setup search functionality
+    setupSearch("search-input", "search-results");
+    setupSearch("mobile-search-input", "mobile-search-results");
+
+    // Attach filter event listeners
+    const categoryFilter = document.getElementById("category-filter");
+    const priceFilter = document.getElementById("price-filter");
+    const sortFilter = document.getElementById("sort-filter");
+    
+    if (categoryFilter) categoryFilter.addEventListener("change", applyFilters);
+    if (priceFilter) priceFilter.addEventListener("change", applyFilters);
+    if (sortFilter) sortFilter.addEventListener("change", applyFilters);
+    
+    // Mobile search toggle
+    const mobileSearchBtn = document.getElementById("mobile-search-btn");
+    const mobileSearch = document.getElementById("mobile-search");
+    if (mobileSearchBtn && mobileSearch) {
+        mobileSearchBtn.addEventListener("click", () => {
+            mobileSearch.classList.toggle("hidden");
+        });
+    }
+});
