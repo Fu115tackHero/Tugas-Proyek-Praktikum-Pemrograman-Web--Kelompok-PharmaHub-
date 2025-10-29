@@ -4,130 +4,33 @@
  */
 
 import { initializeMobileMenu, updateCartCount, showToast } from '../components/utils.js';
+import { products } from '../data/productData.js';
 
-// All products data
-const allProducts = [
-    {
-        id: 1,
-        name: "Paracetamol 500mg",
-        description: "Untuk menurunkan demam dan meredakan sakit kepala atau nyeri ringan.",
-        price: 12000,
-        category: "obat-bebas",
-        prescriptionRequired: false
-    },
-    {
-        id: 2,
-        name: "Ibuprofen 400mg",
-        description: "Obat antiinflamasi non-steroid untuk nyeri otot, sendi, atau sakit gigi.",
-        price: 15000,
-        category: "obat-bebas",
-        prescriptionRequired: false
-    },
-    {
-        id: 3,
-        name: "Promag",
-        description: "Meredakan sakit maag, nyeri ulu hati, dan gangguan asam lambung.",
-        price: 8000,
-        category: "obat-bebas",
-        prescriptionRequired: false
-    },
-    {
-        id: 4,
-        name: "Loperamide (Imodium)",
-        description: "Untuk mengatasi diare akut.",
-        price: 20000,
-        category: "obat-bebas",
-        prescriptionRequired: false
-    },
-    {
-        id: 5,
-        name: "Cetirizine",
-        description: "Antihistamin untuk alergi, bersin, atau gatal-gatal.",
-        price: 25000,
-        category: "obat-bebas",
-        prescriptionRequired: false
-    },
-    {
-        id: 6,
-        name: "Salbutamol Inhaler",
-        description: "Membantu meredakan sesak napas akibat asma atau bronkitis.",
-        price: 45000,
-        category: "obat-keras",
-        prescriptionRequired: false
-    },
-    {
-        id: 7,
-        name: "Betadine",
-        description: "Antiseptik luar untuk membersihkan luka ringan atau goresan.",
-        price: 18000,
-        category: "antiseptik",
-        prescriptionRequired: false
-    },
-    {
-        id: 8,
-        name: "Oralit",
-        description: "Larutan rehidrasi untuk mencegah dehidrasi akibat diare atau muntah.",
-        price: 5000,
-        category: "obat-bebas",
-        prescriptionRequired: false
-    },
-    {
-        id: 9,
-        name: "Vitamin C 500mg",
-        description: "Meningkatkan daya tahan tubuh dan membantu penyembuhan.",
-        price: 25000,
-        category: "suplemen",
-        prescriptionRequired: false
-    },
-    {
-        id: 10,
-        name: "Amoxicillin 500mg",
-        description: "Untuk infeksi bakteri ringan, seperti infeksi tenggorokan atau kulit.",
-        price: 40000,
-        category: "obat-keras",
-        prescriptionRequired: true
-    },
-    {
-        id: 11,
-        name: "Omeprazole 20mg",
-        description: "Untuk mengatasi asam lambung berlebih dan maag kronis.",
-        price: 35000,
-        category: "obat-keras",
-        prescriptionRequired: true
-    },
-    {
-        id: 12,
-        name: "Vitamin D3 1000 IU",
-        description: "Membantu penyerapan kalsium dan kesehatan tulang.",
-        price: 45000,
-        category: "suplemen",
-        prescriptionRequired: false
-    },
-    {
-        id: 13,
-        name: "Multivitamin Complete",
-        description: "Kombinasi lengkap vitamin dan mineral untuk kesehatan optimal.",
-        price: 55000,
-        category: "suplemen",
-        prescriptionRequired: false
-    },
-    {
-        id: 14,
-        name: "Alcohol 70%",
-        description: "Antiseptik untuk membersihkan tangan dan permukaan.",
-        price: 15000,
-        category: "antiseptik",
-        prescriptionRequired: false
-    },
-    {
-        id: 15,
-        name: "Captopril 25mg",
-        description: "Obat untuk menurunkan tekanan darah tinggi.",
-        price: 30000,
-        category: "obat-keras",
-        prescriptionRequired: true
-    }
-];
+// Add category and prescriptionRequired properties to imported products
+const allProducts = products.map(product => ({
+    ...product,
+    category: getCategoryForProduct(product.id),
+    prescriptionRequired: getPresrcitonRequired(product.id)
+}));
+
+// Helper function to get category for each product
+function getCategoryForProduct(id) {
+    const categoryMap = {
+        1: "obat-bebas", 2: "obat-bebas", 3: "obat-bebas", 4: "obat-bebas", 
+        5: "obat-bebas", 6: "obat-keras", 7: "antiseptik", 8: "obat-bebas",
+        9: "suplemen", 10: "obat-keras", 11: "obat-keras", 12: "suplemen",
+        13: "suplemen", 14: "antiseptik", 15: "obat-keras"
+    };
+    return categoryMap[id] || "obat-bebas";
+}
+
+// Helper function to get prescription requirement for each product
+function getPresrcitonRequired(id) {
+    const prescriptionMap = {
+        10: true, 11: true, 15: true
+    };
+    return prescriptionMap[id] || false;
+}
 
 let filteredProducts = [...allProducts];
 

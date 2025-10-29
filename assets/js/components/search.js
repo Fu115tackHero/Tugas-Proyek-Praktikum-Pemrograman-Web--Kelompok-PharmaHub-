@@ -1,4 +1,4 @@
-import { products } from '../data/products.js';
+import { products } from '../data/productData.js';
 
 // Search functionality
 export function initializeSearch(inputId, resultsId) {

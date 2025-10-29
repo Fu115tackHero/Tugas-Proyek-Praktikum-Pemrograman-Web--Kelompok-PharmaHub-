@@ -3,7 +3,7 @@
  * File ini berisi logika khusus untuk halaman detail produk
  */
 
-import { productData } from '../data/productDetail.js';
+import { productData } from '../data/productDetailData.js';
 import { initializeMobileMenu, updateCartCount, showToast, formatCurrency } from '../components/utils.js';
 
 let quantity = 1;
