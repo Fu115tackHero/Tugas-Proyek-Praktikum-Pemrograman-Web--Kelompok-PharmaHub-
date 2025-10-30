@@ -9,7 +9,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/styles.css" />
   </head>
   <body class="bg-gradient-to-b from-blue-50 to-blue-100 text-gray-800">
     <!-- Navbar -->
@@ -19,9 +19,11 @@
       >
         <!-- Logo -->
         <a href="index.html" class="flex items-center">
-                      src="assets/images/logo/pharmahub-logo.png"
+          <img
+            src="assets/pharmahub-logo.png"
             alt="PharmaHub"
             class="h-10 w-auto"
+          />
         </a>
 
         <!-- Menu & Search -->
@@ -67,48 +69,65 @@
 
           <a href="keranjang.html" class="relative">
             <i class="fas fa-shopping-cart text-gray-700 text-xl"></i>
-            <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+            <span
+              id="cart-count"
+              class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden"
+              >0</span
+            >
           </a>
-          
+
           <!-- Login Button (shown when not logged in) -->
           <div id="loginButtonContainer" class="relative">
-            <a 
+            <a
               href="Login.html"
               class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 text-sm"
             >
               <i class="fas fa-sign-in-alt mr-2"></i>Login
             </a>
           </div>
-          
+
           <!-- Profile Picture Button (shown when logged in) -->
           <div id="profileContainer" class="relative hidden">
-            <button 
+            <button
               id="profileBtn"
               class="profile-btn w-10 h-10 rounded-full overflow-hidden border-2 border-gray-300 hover:border-blue-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               title="Profile Menu"
             >
-              <img 
-                id="navProfileImage" 
-                src="https://ui-avatars.com/api/?name=User&background=3b82f6&color=fff&size=40&rounded=true" 
-                alt="Profile" 
+              <img
+                id="navProfileImage"
+                src="https://ui-avatars.com/api/?name=User&background=3b82f6&color=fff&size=40&rounded=true"
+                alt="Profile"
                 class="profile-image w-full h-full object-cover"
-              >
+              />
             </button>
-            
+
             <!-- Profile Dropdown (hidden by default) -->
-            <div id="profileDropdown" class="profile-dropdown absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden">
+            <div
+              id="profileDropdown"
+              class="profile-dropdown absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden"
+            >
               <div class="px-4 py-3 border-b border-gray-100">
-                <p class="text-sm font-medium text-gray-900" id="navUserName">Guest User</p>
-                <p class="text-sm text-gray-500" id="navUserEmail">Hover untuk melihat menu</p>
+                <p class="text-sm font-medium text-gray-900" id="navUserName">
+                  Guest User
+                </p>
+                <p class="text-sm text-gray-500" id="navUserEmail">
+                  Hover untuk melihat menu
+                </p>
               </div>
-              <a href="profile.html" class="dropdown-item block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+              <a
+                href="profile.html"
+                class="dropdown-item block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
                 <i class="fas fa-user mr-2"></i>Pengaturan Profil
               </a>
-              <a href="riwayat.html" class="dropdown-item block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+              <a
+                href="riwayat.html"
+                class="dropdown-item block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
                 <i class="fas fa-history mr-2"></i>Riwayat Pesanan
               </a>
               <div class="border-t border-gray-100 mt-1">
-                <button 
+                <button
                   id="navLogoutBtn"
                   onclick="handleNavLogout()"
                   class="dropdown-item block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -155,26 +174,45 @@
       <div id="menu" class="hidden md:hidden bg-white border-t border-gray-200">
         <nav class="flex flex-col space-y-2 px-6 py-4">
           <a href="index.html" class="hover:text-blue-600 py-2">Beranda</a>
-          <a href="produk.html" class="text-blue-600 font-semibold py-2">Produk</a>
+          <a href="produk.html" class="text-blue-600 font-semibold py-2"
+            >Produk</a
+          >
           <a href="keranjang.html" class="hover:text-blue-600 py-2"
             >Keranjang</a
           >
-          <a href="notifikasi.html" class="hover:text-blue-600 py-2">Notifikasi</a>
+          <a href="notifikasi.html" class="hover:text-blue-600 py-2"
+            >Notifikasi</a
+          >
           <a href="riwayat.html" class="hover:text-blue-600 py-2">Riwayat</a>
-          
+
           <!-- Mobile Login Button (shown when not logged in) -->
-          <div id="mobileLoginContainer" class="border-t border-gray-200 pt-2 mt-2">
-            <a href="Login.html" class="flex items-center hover:text-blue-600 py-2">
+          <div
+            id="mobileLoginContainer"
+            class="border-t border-gray-200 pt-2 mt-2"
+          >
+            <a
+              href="Login.html"
+              class="flex items-center hover:text-blue-600 py-2"
+            >
               <i class="fas fa-sign-in-alt mr-2"></i>Login
             </a>
           </div>
-          
+
           <!-- Mobile Profile Menu (shown when logged in) -->
-          <div id="mobileProfileContainer" class="border-t border-gray-200 pt-2 mt-2 hidden">
-            <a href="profile.html" class="flex items-center hover:text-blue-600 py-2">
+          <div
+            id="mobileProfileContainer"
+            class="border-t border-gray-200 pt-2 mt-2 hidden"
+          >
+            <a
+              href="profile.html"
+              class="flex items-center hover:text-blue-600 py-2"
+            >
               <i class="fas fa-user mr-2"></i>Profil
             </a>
-            <button onclick="handleNavLogout()" class="flex items-center hover:text-blue-600 py-2 w-full text-left">
+            <button
+              onclick="handleNavLogout()"
+              class="flex items-center hover:text-blue-600 py-2 w-full text-left"
+            >
               <i class="fas fa-sign-out-alt mr-2"></i>Logout
             </button>
           </div>
@@ -187,7 +225,10 @@
       <nav class="flex" aria-label="Breadcrumb">
         <ol class="flex items-center space-x-2">
           <li class="flex">
-            <a href="index.html" class="text-gray-500 hover:text-blue-600 transition">
+            <a
+              href="index.html"
+              class="text-gray-500 hover:text-blue-600 transition"
+            >
               <i class="fas fa-home"></i>
             </a>
           </li>
@@ -204,8 +245,9 @@
       <div class="text-center">
         <h1 class="text-3xl font-bold text-gray-800 mb-4">Semua Produk Obat</h1>
         <p class="text-gray-600 max-w-2xl mx-auto">
-          Temukan berbagai macam obat dan produk kesehatan berkualitas dengan harga terjangkau. 
-          Semua produk terjamin keaslian dan sudah mendapat izin dari BPOM.
+          Temukan berbagai macam obat dan produk kesehatan berkualitas dengan
+          harga terjangkau. Semua produk terjamin keaslian dan sudah mendapat
+          izin dari BPOM.
         </p>
       </div>
     </section>
@@ -217,8 +259,13 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <!-- Kategori Filter -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
-            <select id="category-filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <label class="block text-sm font-medium text-gray-700 mb-2"
+              >Kategori</label
+            >
+            <select
+              id="category-filter"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
               <option value="">Semua Kategori</option>
               <option value="obat-bebas">Obat Bebas</option>
               <option value="obat-keras">Obat Keras</option>
@@ -226,11 +273,16 @@
               <option value="antiseptik">Antiseptik</option>
             </select>
           </div>
-          
+
           <!-- Harga Filter -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Rentang Harga</label>
-            <select id="price-filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <label class="block text-sm font-medium text-gray-700 mb-2"
+              >Rentang Harga</label
+            >
+            <select
+              id="price-filter"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
               <option value="">Semua Harga</option>
               <option value="0-15000">Di bawah Rp 15.000</option>
               <option value="15000-30000">Rp 15.000 - Rp 30.000</option>
@@ -238,11 +290,16 @@
               <option value="50000+">Di atas Rp 50.000</option>
             </select>
           </div>
-          
+
           <!-- Urutkan -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Urutkan</label>
-            <select id="sort-filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <label class="block text-sm font-medium text-gray-700 mb-2"
+              >Urutkan</label
+            >
+            <select
+              id="sort-filter"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
               <option value="name-asc">Nama A-Z</option>
               <option value="name-desc">Nama Z-A</option>
               <option value="price-low">Harga Terendah</option>
@@ -261,7 +318,7 @@
       >
         <!-- Products will be loaded here by JavaScript -->
       </div>
-      
+
       <!-- Loading Indicator -->
       <div id="loading" class="text-center py-8 hidden">
         <i class="fas fa-spinner fa-spin text-blue-600 text-2xl"></i>
@@ -281,17 +338,24 @@
 
     <!-- Footer -->
     <footer class="bg-gray-800 text-white py-12 mt-16 relative overflow-hidden">
-      <div class="footer-decoration absolute left-0 top-0 h-full w-80 opacity-90 bg-no-repeat bg-left bg-cover pointer-events-none"></div>
+      <div
+        class="footer-decoration absolute left-0 top-0 h-full w-80 opacity-90 bg-no-repeat bg-left bg-cover pointer-events-none"
+      ></div>
       <div class="container mx-auto px-4 sm:px-6 relative z-10">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
           <!-- Company Info -->
           <div class="col-span-1 md:col-span-2">
             <div class="flex items-center mb-6">
-              <img src="assets/pharmahub-logo.png" alt="PharmaHub" class="h-12 w-auto" />
+              <img
+                src="assets/pharmahub-logo.png"
+                alt="PharmaHub"
+                class="h-12 w-auto"
+              />
             </div>
             <p class="text-gray-300 mb-4 leading-relaxed">
-              PharmaHub adalah platform terpercaya untuk kebutuhan obat dan kesehatan Anda. 
-              Kami menyediakan obat-obatan berkualitas dengan layanan yang profesional dan terpercaya.
+              PharmaHub adalah platform terpercaya untuk kebutuhan obat dan
+              kesehatan Anda. Kami menyediakan obat-obatan berkualitas dengan
+              layanan yang profesional dan terpercaya.
             </p>
             <div class="flex space-x-4">
               <a href="#" class="text-gray-300 hover:text-white transition">
@@ -313,11 +377,41 @@
           <div>
             <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
             <ul class="space-y-2">
-              <li><a href="index.html" class="text-gray-300 hover:text-white transition">Beranda</a></li>
-              <li><a href="produk.html" class="text-gray-300 hover:text-white transition">Semua Produk</a></li>
-              <li><a href="notifikasi.html" class="text-gray-300 hover:text-white transition">Notifikasi</a></li>
-              <li><a href="riwayat.html" class="text-gray-300 hover:text-white transition">Riwayat</a></li>
-              <li><a href="keranjang.html" class="text-gray-300 hover:text-white transition">Keranjang</a></li>
+              <li>
+                <a
+                  href="index.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Beranda</a
+                >
+              </li>
+              <li>
+                <a
+                  href="produk.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Semua Produk</a
+                >
+              </li>
+              <li>
+                <a
+                  href="notifikasi.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Notifikasi</a
+                >
+              </li>
+              <li>
+                <a
+                  href="riwayat.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Riwayat</a
+                >
+              </li>
+              <li>
+                <a
+                  href="keranjang.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Keranjang</a
+                >
+              </li>
             </ul>
           </div>
 
@@ -352,9 +446,15 @@
               &copy; 2024 PharmaHub. All rights reserved.
             </p>
             <div class="flex space-x-6 text-sm">
-              <a href="#" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
-              <a href="#" class="text-gray-400 hover:text-white transition">Terms of Service</a>
-              <a href="#" class="text-gray-400 hover:text-white transition">FAQ</a>
+              <a href="#" class="text-gray-400 hover:text-white transition"
+                >Privacy Policy</a
+              >
+              <a href="#" class="text-gray-400 hover:text-white transition"
+                >Terms of Service</a
+              >
+              <a href="#" class="text-gray-400 hover:text-white transition"
+                >FAQ</a
+              >
             </div>
           </div>
         </div>

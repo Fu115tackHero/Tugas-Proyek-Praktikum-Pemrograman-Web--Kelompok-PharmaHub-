@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - PharmaHub</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
+      <div class="container mx-auto px-4 py-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <img
+              src="assets/pharmahub-logo.png"
+              alt="PharmaHub Logo"
+              class="h-10 w-auto"
+            />
+            <div>
+              <h1 class="text-2xl font-bold text-blue-600">PharmaHub Admin</h1>
+              <p class="text-sm text-gray-600">Dashboard Pesanan</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-4">
+            <a href="index.html" class="text-gray-600 hover:text-blue-600">
+              <i class="fas fa-home mr-2"></i>Kembali ke Beranda
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-600 text-sm">Total Pesanan</p>
+              <h3 class="text-3xl font-bold text-gray-800" id="total-orders">
+                0
+              </h3>
+            </div>
+            <div class="bg-blue-100 rounded-full p-3">
+              <i class="fas fa-shopping-bag text-blue-600 text-2xl"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-600 text-sm">Diproses</p>
+              <h3
+                class="text-3xl font-bold text-yellow-600"
+                id="processing-orders"
+              >
+                0
+              </h3>
+            </div>
+            <div class="bg-yellow-100 rounded-full p-3">
+              <i class="fas fa-clock text-yellow-600 text-2xl"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-600 text-sm">Dikirim</p>
+              <h3 class="text-3xl font-bold text-blue-600" id="shipped-orders">
+                0
+              </h3>
+            </div>
+            <div class="bg-blue-100 rounded-full p-3">
+              <i class="fas fa-truck text-blue-600 text-2xl"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-600 text-sm">Selesai</p>
+              <h3
+                class="text-3xl font-bold text-green-600"
+                id="delivered-orders"
+              >
+                0
+              </h3>
+            </div>
+            <div class="bg-green-100 rounded-full p-3">
+              <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex flex-wrap items-center gap-4">
+          <div class="flex-1 min-w-[200px]">
+            <input
+              type="text"
+              id="search-order"
+              placeholder="Cari berdasarkan Order ID atau nama..."
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <select
+            id="status-filter"
+            class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">Semua Status</option>
+            <option value="processing">Diproses</option>
+            <option value="shipped">Dikirim</option>
+            <option value="delivered">Selesai</option>
+            <option value="cancelled">Dibatalkan</option>
+          </select>
+          <button
+            id="refresh-btn"
+            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            <i class="fas fa-sync-alt mr-2"></i>Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- Orders Table -->
+      <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="p-6 border-b border-gray-200">
+          <h2 class="text-xl font-bold text-gray-800">Daftar Pesanan</h2>
+        </div>
+        <div id="orders-container" class="divide-y divide-gray-200">
+          <!-- Orders will be rendered here -->
+        </div>
+      </div>
+    </main>
+
+    <!-- Order Detail Modal -->
+    <div
+      id="order-modal"
+      class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50"
+    >
+      <div
+        class="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+      >
+        <div
+          class="p-6 border-b border-gray-200 flex justify-between items-center"
+        >
+          <h3 class="text-2xl font-bold text-gray-800">Detail Pesanan</h3>
+          <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+            <i class="fas fa-times text-2xl"></i>
+          </button>
+        </div>
+        <div id="order-detail-content" class="p-6">
+          <!-- Order details will be rendered here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div
+      id="toast"
+      class="fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300"
+    >
+      <p id="toast-message" class="text-white"></p>
+    </div>
+
+    <script type="module" src="assets/js/pages/admin.js"></script>
+  </body>
+</html>

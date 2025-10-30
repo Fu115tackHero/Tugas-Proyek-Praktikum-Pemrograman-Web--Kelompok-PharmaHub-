@@ -65,7 +65,7 @@ function renderProducts(products) {
                 src="assets/images/allproducts/${product.name
                   .toLowerCase()
                   .replace(/\s+/g, "-")
-                  .replace(/[()]/g, "")}.jpg"
+                  .replace(/[()%]/g, "")}.jpg"
                 alt="${product.name}"
                 class="w-32 h-32 object-cover mx-auto mb-4 rounded-lg"
             />

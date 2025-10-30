@@ -31,7 +31,7 @@ function loadProductData(productId) {
     productImage.src = `assets/images/allproducts/${product.name
       .toLowerCase()
       .replace(/\s+/g, "-")
-      .replace(/[()]/g, "")}.jpg`;
+      .replace(/[()%]/g, "")}.jpg`;
     productImage.alt = product.name;
   }
 
@@ -161,44 +161,49 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Get product ID from URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const productId = urlParams.get('id') || '1';
-    const product = loadProductData(productId);
+document.addEventListener("DOMContentLoaded", function () {
+  // Get product ID from URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const productId = urlParams.get("id") || "1";
+  const product = loadProductData(productId);
 
-    // Initialize mobile menu
-    initializeMobileMenu();
-    
-    // Initialize tabs and quantity controls
-    initTabs();
-    initQuantityControls();
+  // Initialize mobile menu
+  initializeMobileMenu();
 
-    // Update cart count using main.js function
-    if (window.PharmaHub && window.PharmaHub.updateCartItemCount) {
-        window.PharmaHub.updateCartItemCount();
+  // Initialize tabs and quantity controls
+  initTabs();
+  initQuantityControls();
+
+  // Update cart count using main.js function
+  if (window.PharmaHub && window.PharmaHub.updateCartItemCount) {
+    window.PharmaHub.updateCartItemCount();
+  }
+
+  // Add to cart button event listener
+  document.getElementById("add-to-cart-btn").addEventListener("click", () => {
+    // Read cart from localStorage and add item
+    const cart = JSON.parse(localStorage.getItem("pharmahub-cart")) || [];
+    const existing = cart.find((i) => i.id === productId);
+
+    if (existing) {
+      existing.quantity += quantity;
+    } else {
+      cart.push({
+        id: productId,
+        name: product.name,
+        price: product.price,
+        quantity,
+      });
     }
 
-    // Add to cart button event listener
-    document.getElementById('add-to-cart-btn').addEventListener('click', () => {
-        // Read cart from localStorage and add item
-        const cart = JSON.parse(localStorage.getItem('pharmahub-cart')) || [];
-        const existing = cart.find(i => i.id === productId);
+    localStorage.setItem("pharmahub-cart", JSON.stringify(cart));
+    if (window.PharmaHub && window.PharmaHub.updateCartItemCount) {
+      window.PharmaHub.updateCartItemCount();
+    }
+    showToast(`${product.name} berhasil ditambahkan ke keranjang!`);
 
-        if (existing) {
-            existing.quantity += quantity;
-        } else {
-            cart.push({ id: productId, name: product.name, price: product.price, quantity });
-        }
-
-        localStorage.setItem('pharmahub-cart', JSON.stringify(cart));
-        if (window.PharmaHub && window.PharmaHub.updateCartItemCount) {
-            window.PharmaHub.updateCartItemCount();
-        }
-        showToast(`${product.name} berhasil ditambahkan ke keranjang!`);
-
-        // Reset quantity to 1
-        quantity = 1;
-        document.getElementById('quantity-display').textContent = quantity;
-    });
+    // Reset quantity to 1
+    quantity = 1;
+    document.getElementById("quantity-display").textContent = quantity;
+  });
 });
