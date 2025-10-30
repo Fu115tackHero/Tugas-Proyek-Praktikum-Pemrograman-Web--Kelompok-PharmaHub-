@@ -9,7 +9,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/styles.css" />
     <style>
       .cart-count {
         position: absolute;
@@ -52,6 +52,7 @@
     </style>
   </head>
   <body class="bg-gradient-to-b from-blue-50 to-blue-100 text-gray-800">
+    <script type="module" src="assets/js/pages/productDetail.js"></script>
     <!-- Navbar -->
     <header class="bg-white shadow-md sticky top-0 z-50">
       <div
@@ -59,7 +60,11 @@
       >
         <!-- Logo -->
         <a href="index.html" class="flex items-center">
-          <img src="assets/pharmahub-logo.png" alt="PharmaHub" class="h-10 w-auto" />
+          <img
+            src="assets/pharmahub-logo.png"
+            alt="PharmaHub"
+            class="h-10 w-auto"
+          />
         </a>
 
         <!-- Menu -->
@@ -67,7 +72,9 @@
           <a href="index.html" class="hover:text-blue-600 transition"
             >Beranda</a
           >
-          <a href="produk.html" class="hover:text-blue-600 transition">Produk</a>
+          <a href="produk.html" class="hover:text-blue-600 transition"
+            >Produk</a
+          >
           <a href="notifikasi.html" class="hover:text-blue-600 transition"
             >Notifikasi</a
           >
@@ -149,7 +156,9 @@
           <a href="keranjang.html" class="hover:text-blue-600 py-2"
             >Keranjang</a
           >
-          <a href="notifikasi.html" class="hover:text-blue-600 py-2">Notifikasi</a>
+          <a href="notifikasi.html" class="hover:text-blue-600 py-2"
+            >Notifikasi</a
+          >
           <a href="riwayat.html" class="hover:text-blue-600 py-2">Riwayat</a>
           
                     <!-- Mobile Login Button (shown when not logged in) -->
@@ -171,22 +180,31 @@
         </nav>
       </div>
     </header>
-<!-- Breadcrumb -->
+    <!-- Breadcrumb -->
     <section class="container mx-auto px-4 sm:px-6 py-6">
       <nav class="flex" aria-label="Breadcrumb">
         <ol class="flex items-center space-x-2 text-sm">
           <li class="flex">
-            <a href="index.html" class="text-gray-500 hover:text-blue-600 transition">
+            <a
+              href="index.html"
+              class="text-gray-500 hover:text-blue-600 transition"
+            >
               <i class="fas fa-home"></i>
             </a>
           </li>
           <li class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 text-xs mx-2"></i>
-            <a href="produk.html" class="text-gray-500 hover:text-blue-600 transition">Produk</a>
+            <a
+              href="produk.html"
+              class="text-gray-500 hover:text-blue-600 transition"
+              >Produk</a
+            >
           </li>
           <li class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 text-xs mx-2"></i>
-            <span id="breadcrumb-product" class="text-blue-600 font-medium">Detail Produk</span>
+            <span id="breadcrumb-product" class="text-blue-600 font-medium"
+              >Detail Produk</span
+            >
           </li>
         </ol>
       </nav>
@@ -201,7 +219,8 @@
             <div class="bg-gray-100 rounded-lg p-8 w-full max-w-md">
               <img
                 id="product-image"
-                src="https://cdn-icons-png.flaticon.com/512/2966/2966388.png"
+                class="product-image w-full h-auto max-w-md object-cover rounded-lg"
+                src=""
                 alt="Product Image"
                 class="product-image w-full h-64 object-contain"
               />
@@ -212,10 +231,22 @@
           <div class="space-y-6">
             <!-- Brand and Name -->
             <div>
-              <p id="product-brand" class="text-sm text-blue-600 font-medium mb-1">Brand: Abbott Laboratories (Pvt) Ltd</p>
-              <h1 id="product-name" class="text-3xl font-bold text-gray-800 mb-2">Loading...</h1>
+              <p
+                id="product-brand"
+                class="text-sm text-blue-600 font-medium mb-1"
+              >
+                Brand: Abbott Laboratories (Pvt) Ltd
+              </p>
+              <h1
+                id="product-name"
+                class="text-3xl font-bold text-gray-800 mb-2"
+              >
+                Loading...
+              </h1>
               <div id="prescription-badge" class="hidden">
-                <span class="bg-red-100 text-red-800 text-sm font-medium px-3 py-1 rounded-full">
+                <span
+                  class="bg-red-100 text-red-800 text-sm font-medium px-3 py-1 rounded-full"
+                >
                   Perlu Resep Dokter
                 </span>
               </div>
@@ -224,7 +255,11 @@
             <!-- Price -->
             <div class="border-t border-b border-gray-200 py-4">
               <div class="flex items-center justify-between">
-                <span class="text-2xl font-bold text-blue-600" id="product-price">Rp 0</span>
+                <span
+                  class="text-2xl font-bold text-blue-600"
+                  id="product-price"
+                  >Rp 0</span
+                >
                 <span class="text-sm text-gray-500">Per kemasan</span>
               </div>
             </div>
@@ -232,7 +267,10 @@
             <!-- Used For -->
             <div>
               <h3 class="font-semibold text-gray-800 mb-2">Used For:</h3>
-              <ul id="product-uses" class="list-disc list-inside text-gray-600 space-y-1">
+              <ul
+                id="product-uses"
+                class="list-disc list-inside text-gray-600 space-y-1"
+              >
                 <li>Loading...</li>
               </ul>
             </div>
@@ -246,7 +284,9 @@
             <!-- Generics -->
             <div>
               <h3 class="font-semibold text-gray-800 mb-2">Generics:</h3>
-              <span id="product-generic" class="text-blue-600 font-medium">Loading...</span>
+              <span id="product-generic" class="text-blue-600 font-medium"
+                >Loading...</span
+              >
             </div>
 
             <!-- Quantity and Add to Cart -->
@@ -254,14 +294,18 @@
               <!-- Quantity Selector -->
               <div class="flex items-center space-x-4">
                 <span class="text-gray-700 font-medium">Jumlah:</span>
-                <div class="flex items-center border border-gray-300 rounded-lg">
+                <div
+                  class="flex items-center border border-gray-300 rounded-lg"
+                >
                   <button
                     id="decrease-btn"
                     class="px-3 py-2 hover:bg-gray-100 transition"
                   >
                     <i class="fas fa-minus text-sm"></i>
                   </button>
-                  <span id="quantity-display" class="px-4 py-2 font-medium">1</span>
+                  <span id="quantity-display" class="px-4 py-2 font-medium"
+                    >1</span
+                  >
                   <button
                     id="increase-btn"
                     class="px-3 py-2 hover:bg-gray-100 transition"
@@ -295,7 +339,9 @@
 
             <!-- Additional Info -->
             <div class="bg-blue-50 p-4 rounded-lg">
-              <h4 class="font-semibold text-gray-800 mb-2">Informasi Penting:</h4>
+              <h4 class="font-semibold text-gray-800 mb-2">
+                Informasi Penting:
+              </h4>
               <ul class="text-sm text-gray-600 space-y-1">
                 <li>â€¢ Pastikan membaca aturan pakai sebelum mengonsumsi</li>
                 <li>â€¢ Simpan di tempat sejuk dan kering</li>
@@ -309,16 +355,28 @@
         <!-- Product Details Tabs -->
         <div class="border-t border-gray-200">
           <div class="flex border-b border-gray-200">
-            <button class="tab-btn active px-6 py-3 font-medium text-blue-600 border-b-2 border-blue-600" data-tab="precaution">
+            <button
+              class="tab-btn active px-6 py-3 font-medium text-blue-600 border-b-2 border-blue-600"
+              data-tab="precaution"
+            >
               Precaution
             </button>
-            <button class="tab-btn px-6 py-3 font-medium text-gray-600 hover:text-blue-600 transition" data-tab="side-effects">
+            <button
+              class="tab-btn px-6 py-3 font-medium text-gray-600 hover:text-blue-600 transition"
+              data-tab="side-effects"
+            >
               Side Effects
             </button>
-            <button class="tab-btn px-6 py-3 font-medium text-gray-600 hover:text-blue-600 transition" data-tab="interactions">
+            <button
+              class="tab-btn px-6 py-3 font-medium text-gray-600 hover:text-blue-600 transition"
+              data-tab="interactions"
+            >
               Drug Interactions
             </button>
-            <button class="tab-btn px-6 py-3 font-medium text-gray-600 hover:text-blue-600 transition" data-tab="indication">
+            <button
+              class="tab-btn px-6 py-3 font-medium text-gray-600 hover:text-blue-600 transition"
+              data-tab="indication"
+            >
               Indication
             </button>
           </div>
@@ -340,7 +398,9 @@
             </div>
 
             <div id="interactions" class="tab-content hidden">
-              <h4 class="font-semibold text-gray-800 mb-3">Drug Interactions:</h4>
+              <h4 class="font-semibold text-gray-800 mb-3">
+                Drug Interactions:
+              </h4>
               <div id="interactions-content" class="text-gray-600 space-y-2">
                 <p>Loading drug interactions information...</p>
               </div>
@@ -361,23 +421,32 @@
     <div id="toast" class="toast">
       <div class="flex items-center">
         <i class="fas fa-check-circle mr-2"></i>
-        <span id="toast-message">Produk berhasil ditambahkan ke keranjang!</span>
+        <span id="toast-message"
+          >Produk berhasil ditambahkan ke keranjang!</span
+        >
       </div>
     </div>
 
     <!-- Footer -->
     <footer class="bg-gray-800 text-white py-12 mt-16 relative overflow-hidden">
-      <div class="footer-decoration absolute left-0 top-0 h-full w-80 opacity-90 bg-no-repeat bg-left bg-cover pointer-events-none"></div>
+      <div
+        class="footer-decoration absolute left-0 top-0 h-full w-80 opacity-90 bg-no-repeat bg-left bg-cover pointer-events-none"
+      ></div>
       <div class="container mx-auto px-4 sm:px-6 relative z-10">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
           <!-- Company Info -->
           <div class="col-span-1 md:col-span-2">
             <div class="flex items-center mb-6">
-              <img src="assets/pharmahub-logo.png" alt="PharmaHub" class="h-12 w-auto" />
+              <img
+                src="assets/pharmahub-logo.png"
+                alt="PharmaHub"
+                class="h-12 w-auto"
+              />
             </div>
             <p class="text-gray-300 mb-4 leading-relaxed">
-              PharmaHub adalah platform terpercaya untuk kebutuhan obat dan kesehatan Anda. 
-              Kami menyediakan obat-obatan berkualitas dengan layanan yang profesional dan terpercaya.
+              PharmaHub adalah platform terpercaya untuk kebutuhan obat dan
+              kesehatan Anda. Kami menyediakan obat-obatan berkualitas dengan
+              layanan yang profesional dan terpercaya.
             </p>
             <div class="flex space-x-4">
               <a href="#" class="text-gray-300 hover:text-white transition">
@@ -399,11 +468,41 @@
           <div>
             <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
             <ul class="space-y-2">
-              <li><a href="index.html" class="text-gray-300 hover:text-white transition">Beranda</a></li>
-              <li><a href="produk.html" class="text-gray-300 hover:text-white transition">Semua Produk</a></li>
-              <li><a href="notifikasi.html" class="text-gray-300 hover:text-white transition">Notifikasi</a></li>
-              <li><a href="riwayat.html" class="text-gray-300 hover:text-white transition">Riwayat</a></li>
-              <li><a href="keranjang.html" class="text-gray-300 hover:text-white transition">Keranjang</a></li>
+              <li>
+                <a
+                  href="index.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Beranda</a
+                >
+              </li>
+              <li>
+                <a
+                  href="produk.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Semua Produk</a
+                >
+              </li>
+              <li>
+                <a
+                  href="notifikasi.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Notifikasi</a
+                >
+              </li>
+              <li>
+                <a
+                  href="riwayat.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Riwayat</a
+                >
+              </li>
+              <li>
+                <a
+                  href="keranjang.html"
+                  class="text-gray-300 hover:text-white transition"
+                  >Keranjang</a
+                >
+              </li>
             </ul>
           </div>
 
@@ -438,9 +537,15 @@
               &copy; 2024 PharmaHub. All rights reserved.
             </p>
             <div class="flex space-x-6 text-sm">
-              <a href="#" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
-              <a href="#" class="text-gray-400 hover:text-white transition">Terms of Service</a>
-              <a href="#" class="text-gray-400 hover:text-white transition">FAQ</a>
+              <a href="#" class="text-gray-400 hover:text-white transition"
+                >Privacy Policy</a
+              >
+              <a href="#" class="text-gray-400 hover:text-white transition"
+                >Terms of Service</a
+              >
+              <a href="#" class="text-gray-400 hover:text-white transition"
+                >FAQ</a
+              >
             </div>
           </div>
         </div>
