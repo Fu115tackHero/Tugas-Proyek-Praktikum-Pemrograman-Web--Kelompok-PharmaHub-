@@ -1,67 +1,258 @@
-/**
- * PharmaHub Login Page JavaScript
- * File ini berisi logika khusus untuk halaman login
- */
-
-// Initialize form validation
-function initializeFormValidation() {
-    const form = document.querySelector("form");
-    if (!form) return;
-
-    form.addEventListener("submit", function (e) {
-        e.preventDefault();
-
-        const inputs = document.querySelectorAll("input");
-        let isValid = true;
-
-        inputs.forEach((input) => {
-            if (!input.value && input.type !== 'checkbox') {
-                input.classList.add("border-red-500");
-                isValid = false;
-            } else {
-                input.classList.remove("border-red-500");
-            }
-        });
-
-        if (isValid) {
-            handleLogin();
-        }
-    });
-}
-
-// Handle login process
-function handleLogin() {
-    const button = document.querySelector('button[type="submit"]');
-    if (!button) return;
-
-    const originalText = button.textContent;
-
-    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Signing in...';
-    button.disabled = true;
-
-    // Simulate login process
-    setTimeout(() => {
-        button.innerHTML = originalText;
-        button.disabled = false;
-        alert("Login successful! (This is a demo)");
-    }, 1500);
-}
-
-// Initialize input focus effects
-function initializeInputEffects() {
-    document.querySelectorAll("input").forEach((input) => {
-        input.addEventListener("focus", function () {
-            this.parentElement.classList.add("ring-2", "ring-blue-200", "rounded-lg");
-        });
-
-        input.addEventListener("blur", function () {
-            this.parentElement.classList.remove("ring-2", "ring-blue-200", "rounded-lg");
-        });
-    });
-}
-
-// Initialize page
+// Login page functionality with authentication
 document.addEventListener('DOMContentLoaded', function() {
-    initializeFormValidation();
-    initializeInputEffects();
+    initializeLogin();
+    setupEventListeners();
 });
+
+// Demo user accounts
+const demoAccounts = {
+    'customer@pharmahub.com': {
+        password: 'customer123',
+        role: 'customer',
+        name: 'Customer Demo',
+        redirectUrl: 'index.html'
+    },
+    'admin@pharmahub.com': {
+        password: 'admin123',
+        role: 'admin',
+        name: 'Admin PharmaHub',
+        redirectUrl: 'admin/index.html'
+    }
+};
+
+function initializeLogin() {
+    // Check if user is already logged in
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+        // Redirect based on role
+        if (currentUser.role === 'admin') {
+            window.location.href = 'admin/index.html';
+        } else {
+            window.location.href = 'index.html';
+        }
+        return;
+    }
+    
+    // Update demo credentials display based on selected role
+    updateDemoCredentials();
+}
+
+function setupEventListeners() {
+    const loginForm = document.getElementById('loginForm');
+    const userRoleSelect = document.getElementById('userRole');
+    const togglePasswordBtn = document.getElementById('togglePassword');
+    
+    // Form submission
+    loginForm.addEventListener('submit', handleLogin);
+    
+    // Role selection change
+    userRoleSelect.addEventListener('change', updateDemoCredentials);
+    
+    // Password toggle
+    togglePasswordBtn.addEventListener('click', togglePasswordVisibility);
+}
+
+function updateDemoCredentials() {
+    const userRole = document.getElementById('userRole').value;
+    const demoCredentialsDiv = document.getElementById('demoCredentials');
+    
+    if (userRole === 'admin') {
+        demoCredentialsDiv.innerHTML = `
+            <p class="font-medium text-blue-800 mb-2">
+                <i class="fas fa-info-circle mr-1"></i>Demo Admin Credentials:
+            </p>
+            <div class="text-blue-700">
+                <p><strong>Email:</strong> admin@pharmahub.com</p>
+                <p><strong>Password:</strong> admin123</p>
+            </div>
+        `;
+    } else {
+        demoCredentialsDiv.innerHTML = `
+            <p class="font-medium text-blue-800 mb-2">
+                <i class="fas fa-info-circle mr-1"></i>Demo Customer Credentials:
+            </p>
+            <div class="text-blue-700">
+                <p><strong>Email:</strong> customer@pharmahub.com</p>
+                <p><strong>Password:</strong> customer123</p>
+            </div>
+        `;
+    }
+}
+
+function togglePasswordVisibility() {
+    const passwordInput = document.getElementById('loginPassword');
+    const toggleIcon = document.querySelector('#togglePassword i');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleIcon.className = 'fas fa-eye-slash';
+    } else {
+        passwordInput.type = 'password';
+        toggleIcon.className = 'fas fa-eye';
+    }
+}
+
+async function handleLogin(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const role = document.getElementById('userRole').value;
+    const remember = document.getElementById('remember').checked;
+    
+    // Validate inputs
+    if (!email || !password) {
+        showToast('Harap isi semua field!', 'error');
+        return;
+    }
+    
+    // Show loading state
+    setLoginButtonState(true);
+    
+    try {
+        // Check against demo accounts
+        const account = demoAccounts[email];
+        
+        if (!account) {
+            throw new Error('Email tidak ditemukan!');
+        }
+        
+        if (account.password !== password) {
+            throw new Error('Password salah!');
+        }
+        
+        if (account.role !== role) {
+            throw new Error(`Email ini terdaftar sebagai ${account.role}, bukan ${role}!`);
+        }
+        
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Create user session
+        const userSession = {
+            email: account.email || email,
+            name: account.name,
+            role: account.role,
+            loginTime: new Date().toISOString(),
+            sessionId: generateSessionId()
+        };
+        
+        // Save to localStorage using the same key as main.js
+        localStorage.setItem('pharmaHubUser', JSON.stringify(userSession));
+        
+        if (remember) {
+            localStorage.setItem('pharmahub-remember-user', 'true');
+        }
+        
+        showToast(`Selamat datang, ${userSession.name}!`, 'success');
+        
+        // Redirect after success
+        setTimeout(() => {
+            window.location.href = account.redirectUrl;
+        }, 1500);
+        
+    } catch (error) {
+        showToast(error.message, 'error');
+        setLoginButtonState(false);
+    }
+}
+
+function setLoginButtonState(loading) {
+    const button = document.getElementById('loginButton');
+    const buttonText = document.getElementById('loginButtonText');
+    const spinner = document.getElementById('loginSpinner');
+    
+    if (loading) {
+        button.disabled = true;
+        button.classList.add('opacity-75', 'cursor-not-allowed');
+        buttonText.textContent = 'Memproses...';
+        spinner.classList.remove('hidden');
+    } else {
+        button.disabled = false;
+        button.classList.remove('opacity-75', 'cursor-not-allowed');
+        buttonText.textContent = 'Masuk ke Dashboard';
+        spinner.classList.add('hidden');
+    }
+}
+
+function generateSessionId() {
+    return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+function getCurrentUser() {
+    try {
+        const userStr = localStorage.getItem('pharmaHubUser');
+        
+        if (!userStr) {
+            return null;
+        }
+        
+        const user = JSON.parse(userStr);
+        
+        // Check if session is still valid (24 hours)
+        const loginTime = new Date(user.loginTime);
+        const now = new Date();
+        const hoursDiff = (now - loginTime) / (1000 * 60 * 60);
+        
+        if (hoursDiff > 24) {
+            clearUserSession();
+            return null;
+        }
+        
+        return user;
+    } catch (error) {
+        clearUserSession();
+        return null;
+    }
+}
+
+function clearUserSession() {
+    localStorage.removeItem('pharmaHubUser');
+    localStorage.removeItem('userProfile');
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toast-message');
+    
+    toastMessage.textContent = message;
+    
+    // Set toast color based on type
+    toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 z-50 ${
+        type === 'success' ? 'bg-green-500' : 
+        type === 'error' ? 'bg-red-500' : 
+        type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+    } text-white`;
+    
+    // Show toast
+    toast.classList.remove('translate-x-full');
+    
+    // Hide after 3 seconds
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+    }, 3000);
+}
+
+// Authentication guard function for admin pages
+function requireAuth(allowedRoles = []) {
+    const currentUser = getCurrentUser();
+    
+    if (!currentUser) {
+        window.location.href = '../Login.html';
+        return false;
+    }
+    
+    if (allowedRoles.length > 0 && !allowedRoles.includes(currentUser.role)) {
+        showToast('Anda tidak memiliki akses ke halaman ini!', 'error');
+        setTimeout(() => {
+            if (currentUser.role === 'admin') {
+                window.location.href = 'index.html';
+            } else {
+                window.location.href = '../index.html';
+            }
+        }, 2000);
+        return false;
+    }
+    
+    return true;
+}

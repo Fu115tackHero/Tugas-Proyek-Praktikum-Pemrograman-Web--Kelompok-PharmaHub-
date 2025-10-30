@@ -3,7 +3,7 @@
  * File ini berisi logika khusus untuk halaman produk dan filtering
  */
 
-import { initializeMobileMenu, updateCartCount, showToast } from '../components/utils.js';
+import { initializeMobileMenu, showToast } from '../components/utils.js';
 import { products } from '../data/productData.js';
 
 // Add category and prescriptionRequired properties to imported products
@@ -172,9 +172,12 @@ document.addEventListener("DOMContentLoaded", function() {
     // Initialize mobile menu
     initializeMobileMenu();
     
-    // Render products and update cart count
+    // Render products and update cart count using main.js function
     renderProducts(allProducts);
-    updateCartCount();
+    // Use the global updateCartItemCount function from main.js instead
+    if (window.PharmaHub && window.PharmaHub.updateCartItemCount) {
+        window.PharmaHub.updateCartItemCount();
+    }
     
     // Setup search functionality
     setupSearch("search-input", "search-results");

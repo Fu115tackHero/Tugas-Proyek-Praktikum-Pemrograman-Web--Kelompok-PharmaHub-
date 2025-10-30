@@ -146,9 +146,14 @@ function updateCartItemCount() {
     // Only count items that are not saved for later
     const activeItems = cart.filter(item => !item.savedForLater);
     const totalItems = activeItems.reduce((sum, item) => sum + item.quantity, 0);
-    const cartCountElement = document.getElementById('cart-item-count');
+    const cartCountElement = document.getElementById('cart-count');
     if (cartCountElement) {
-        cartCountElement.textContent = totalItems;
+        if (totalItems > 0) {
+            cartCountElement.textContent = totalItems;
+            cartCountElement.classList.remove('hidden');
+        } else {
+            cartCountElement.classList.add('hidden');
+        }
     }
 }
 
@@ -476,6 +481,140 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ==========================================
+// PROFILE NAVIGATION FUNCTIONS
+// ==========================================
+
+// Initialize profile display
+function initializeProfile() {
+    const currentUser = getCurrentUser();
+    updateProfileDisplay(currentUser);
+    
+    // Only setup profile dropdown if user is logged in
+    if (currentUser) {
+        setupProfileDropdown();
+    }
+}
+
+function setupProfileDropdown() {
+    const profileBtn = document.getElementById('profileBtn');
+    const profileDropdown = document.getElementById('profileDropdown');
+    
+    if (profileBtn && profileDropdown) {
+        let hoverTimeout;
+        
+        // Show dropdown on hover
+        profileBtn.addEventListener('mouseenter', function() {
+            clearTimeout(hoverTimeout);
+            profileDropdown.classList.remove('hidden');
+            profileDropdown.classList.add('show');
+        });
+        
+        // Hide dropdown when mouse leaves (with delay)
+        profileBtn.addEventListener('mouseleave', function() {
+            hoverTimeout = setTimeout(() => {
+                profileDropdown.classList.add('hidden');
+                profileDropdown.classList.remove('show');
+            }, 300); // 300ms delay before hiding
+        });
+        
+        // Keep dropdown open when hovering over it
+        profileDropdown.addEventListener('mouseenter', function() {
+            clearTimeout(hoverTimeout);
+            profileDropdown.classList.remove('hidden');
+            profileDropdown.classList.add('show');
+        });
+        
+        // Hide dropdown when mouse leaves dropdown
+        profileDropdown.addEventListener('mouseleave', function() {
+            hoverTimeout = setTimeout(() => {
+                profileDropdown.classList.add('hidden');
+                profileDropdown.classList.remove('show');
+            }, 300);
+        });
+        
+        // Toggle dropdown on click (fallback for mobile)
+        profileBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            profileDropdown.classList.toggle('hidden');
+            profileDropdown.classList.toggle('show');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function() {
+            profileDropdown.classList.add('hidden');
+            profileDropdown.classList.remove('show');
+        });
+        
+        // Prevent dropdown from closing when clicking inside it
+        profileDropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+}
+
+function updateProfileDisplay(user) {
+    const loginButtonContainer = document.getElementById('loginButtonContainer');
+    const profileContainer = document.getElementById('profileContainer');
+    const mobileLoginContainer = document.getElementById('mobileLoginContainer');
+    const mobileProfileContainer = document.getElementById('mobileProfileContainer');
+    const navProfileImage = document.getElementById('navProfileImage');
+    const navUserName = document.getElementById('navUserName');
+    const navUserEmail = document.getElementById('navUserEmail');
+    
+    if (user) {
+        // User is logged in - show profile circle, hide login button
+        if (loginButtonContainer) loginButtonContainer.classList.add('hidden');
+        if (profileContainer) profileContainer.classList.remove('hidden');
+        if (mobileLoginContainer) mobileLoginContainer.classList.add('hidden');
+        if (mobileProfileContainer) mobileProfileContainer.classList.remove('hidden');
+        
+        if (navUserName) navUserName.textContent = user.name || 'User';
+        if (navUserEmail) navUserEmail.textContent = user.email || 'user@email.com';
+        
+        // Update profile image
+        if (navProfileImage) {
+            const profileData = JSON.parse(localStorage.getItem('userProfile')) || {};
+            if (profileData.profileImage) {
+                navProfileImage.src = profileData.profileImage;
+            } else {
+                const userName = user.name || 'User';
+                navProfileImage.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=3b82f6&color=fff&size=40&rounded=true`;
+            }
+        }
+    } else {
+        // User is not logged in - show login button, hide profile circle
+        if (loginButtonContainer) loginButtonContainer.classList.remove('hidden');
+        if (profileContainer) profileContainer.classList.add('hidden');
+        if (mobileLoginContainer) mobileLoginContainer.classList.remove('hidden');
+        if (mobileProfileContainer) mobileProfileContainer.classList.add('hidden');
+    }
+}
+
+function getCurrentUser() {
+    const userSession = localStorage.getItem('pharmaHubUser');
+    if (!userSession) return null;
+    
+    try {
+        const user = JSON.parse(userSession);
+        
+        // Check if session is still valid (24 hours)
+        const loginTime = new Date(user.loginTime);
+        const now = new Date();
+        const hoursDiff = (now - loginTime) / (1000 * 60 * 60);
+        
+        if (hoursDiff > 24) {
+            localStorage.removeItem('pharmaHubUser');
+            return null;
+        }
+        
+        return user;
+    } catch (error) {
+        localStorage.removeItem('pharmaHubUser');
+        return null;
+    }
+}
+
+// ==========================================
 // EXPORT FUNCTIONS (for use in other scripts)
 // ==========================================
 
@@ -489,10 +628,40 @@ window.PharmaHub = {
     checkout,
     saveForLater,
     formatCurrency,
-    showToast
+    showToast,
+    initializeProfile,
+    updateProfileDisplay,
+    getCurrentUser,
+    updateCartItemCount
 };
 
 // Make critical functions available globally for onclick handlers
 window.removeItem = removeItem;
 window.updateQuantity = updateQuantity;
 window.saveForLater = saveForLater;
+
+// Profile navigation functions
+window.goToProfile = function() {
+    window.location.href = 'profile.html';
+};
+
+window.handleNavLogout = function() {
+    if (confirm('Apakah Anda yakin ingin logout?')) {
+        localStorage.removeItem('pharmaHubUser');
+        localStorage.removeItem('userProfile'); // Also remove profile data
+        showToast('Logout berhasil!', 'success');
+        
+        // Update display immediately without page reload
+        updateProfileDisplay(null);
+        
+        // Optional: reload page after a short delay to reset state
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    }
+};
+
+// Initialize profile when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeProfile();
+});

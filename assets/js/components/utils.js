@@ -16,22 +16,18 @@ export function initializeMobileMenu() {
 // Update cart count display
 export function updateCartCount() {
     const cart = JSON.parse(localStorage.getItem("pharmahub-cart")) || [];
-    const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
-    const cartCount = document.getElementById("cart-count");
-    const cartCountMobile = document.getElementById("cart-count-mobile");
-
-    if (totalItems > 0) {
-        if (cartCount) {
-            cartCount.textContent = totalItems;
-            cartCount.classList.remove("hidden");
+    // Only count items that are not saved for later
+    const activeItems = cart.filter(item => !item.savedForLater);
+    const totalItems = activeItems.reduce((sum, item) => sum + item.quantity, 0);
+    const cartCountElement = document.getElementById('cart-count');
+    
+    if (cartCountElement) {
+        if (totalItems > 0) {
+            cartCountElement.textContent = totalItems;
+            cartCountElement.classList.remove('hidden');
+        } else {
+            cartCountElement.classList.add('hidden');
         }
-        if (cartCountMobile) {
-            cartCountMobile.textContent = totalItems;
-            cartCountMobile.classList.remove("hidden");
-        }
-    } else {
-        if (cartCount) cartCount.classList.add("hidden");
-        if (cartCountMobile) cartCountMobile.classList.add("hidden");
     }
 }
 

@@ -99,6 +99,29 @@
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+/* Profile and Login Button Transition */
+#loginButtonContainer, #profileContainer {
+    transition: all 0.3s ease;
+    opacity: 1;
+}
+
+#loginButtonContainer.hidden, #profileContainer.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Profile Dropdown Animation */
+.profile-dropdown {
+    transition: all 0.2s ease;
+    transform: translateY(-10px);
+    opacity: 0;
+}
+
+.profile-dropdown.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
 /* Button Hover Effects */
 .btn-primary {
     transition: all 0.2s ease;
@@ -293,4 +316,117 @@
 
 .search-result-item:last-child {
     border-bottom: none;
+}
+
+/* Profile Button and Dropdown Styles */
+.profile-btn {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.profile-btn::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+}
+
+.profile-btn:hover::before {
+    opacity: 0.2;
+}
+
+.profile-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+    border-color: #3b82f6 !important;
+}
+
+/* Profile Container Hover Effect */
+.profile-btn:hover + .profile-dropdown,
+.profile-dropdown:hover {
+    display: block !important;
+    opacity: 1;
+    visibility: visible;
+}
+
+.profile-dropdown {
+    animation: fadeInDown 0.3s ease-out;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+    opacity: 0;
+    visibility: hidden;
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.95);
+}
+
+.profile-dropdown.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.profile-dropdown:hover {
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Profile Image Hover Effect */
+.profile-image {
+    transition: all 0.3s ease;
+}
+
+.profile-image:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+}
+
+/* Profile Status Indicator */
+.profile-status {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    background-color: #10b981;
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Dropdown Menu Items */
+.dropdown-item {
+    transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background-color: #f3f4f6;
+    transform: translateX(4px);
+}
+
+.dropdown-item i {
+    color: #6b7280;
+    transition: color 0.2s ease;
+}
+
+.dropdown-item:hover i {
+    color: #3b82f6;
 }

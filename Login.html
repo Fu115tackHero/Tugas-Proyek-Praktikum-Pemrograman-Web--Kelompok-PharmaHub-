@@ -37,13 +37,29 @@
             <div class=>
               <img src="assets/pharmahub-logo.png" alt="Logo PharmaHub" class="w-24" />
             </div>
-            <!-- <h1 class="text-2xl font-bold text-blue-900">ParmaHub</h1> -->
           </div>
           <h2 class="text-2xl font-bold text-blue-900 mb-2">Selamat Datang</h2>
           <p class="text-gray-500">Sign in untuk Mendapat Fitur Lengkap</p>
         </div>
 
-        <form class="space-y-5">
+        <form id="loginForm" class="space-y-5">
+          <div class="relative">
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >Login Sebagai</label
+            >
+            <div class="relative">
+              <select
+                id="userRole"
+                class="w-full border border-gray-300 rounded-lg px-4 py-3 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300 appearance-none bg-white"
+              >
+                <option value="customer">Customer</option>
+                <option value="admin">Admin Apotek</option>
+              </select>
+              <i class="fas fa-user-tag absolute left-3 top-3.5 text-gray-400"></i>
+              <i class="fas fa-chevron-down absolute right-3 top-3.5 text-gray-400"></i>
+            </div>
+          </div>
+
           <div class="relative">
             <label class="block text-sm font-medium text-gray-700 mb-1"
               >Username atau email</label
@@ -51,8 +67,10 @@
             <div class="relative">
               <input
                 type="text"
+                id="loginEmail"
                 placeholder="Masukkan email"
                 class="w-full border border-gray-300 rounded-lg px-4 py-3 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300"
+                required
               />
               <i
                 class="fas fa-envelope absolute left-3 top-3.5 text-gray-400"
@@ -67,16 +85,36 @@
             <div class="relative">
               <input
                 type="password"
+                id="loginPassword"
                 placeholder="Masukkan password"
-                class="w-full border border-gray-300 rounded-lg px-4 py-3 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300"
+                class="w-full border border-gray-300 rounded-lg px-4 py-3 pl-10 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300"
+                required
               />
               <i class="fas fa-lock absolute left-3 top-3.5 text-gray-400"></i>
+              <button
+                type="button"
+                id="togglePassword"
+                class="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600"
+              >
+                <i class="fas fa-eye"></i>
+              </button>
             </div>
             <a
               href="#"
               class="text-sm text-blue-500 float-right mt-2 hover:underline transition-colors duration-300"
               >Lupa Password?</a
             >
+          </div>
+
+          <!-- Demo Credentials Info -->
+          <div id="demoCredentials" class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+            <p class="font-medium text-blue-800 mb-2">
+              <i class="fas fa-info-circle mr-1"></i>Demo Credentials:
+            </p>
+            <div class="text-blue-700 space-y-1">
+              <p><strong>Customer:</strong> customer@pharmahub.com / customer123</p>
+              <p><strong>Admin:</strong> admin@pharmahub.com / admin123</p>
+            </div>
           </div>
 
           <div class="flex items-center">
@@ -92,9 +130,11 @@
 
           <button
             type="submit"
+            id="loginButton"
             class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg font-medium"
           >
-            Masuk ke Dashboard
+            <span id="loginButtonText">Masuk ke Dashboard</span>
+            <i id="loginSpinner" class="fas fa-spinner fa-spin ml-2 hidden"></i>
           </button>
 
           <div class="text-center mt-4">
@@ -107,30 +147,51 @@
               >
             </p>
           </div>
+          
         </form>
       </div>
 
-      <!-- Right Section: Illustration -->
-      <div class="login-illustration-bg hidden md:flex md:w-1/2 relative items-center justify-center">
-        <!-- Illustration Container -->
-        <div class="relative z-10 w-4/5 text-center">
-          <img
-            src="assets/pharmacist.jpg"
-            alt="Pharmacist Illustration"
-            class="w-full max-w-xs mx-auto drop-shadow-2xl rounded-lg"
-          />
-          <div class="mt-6 text-gray-800">
-            <h3 class="text-xl font-bold mb-2 text-gray-900">
-              Pharmacy Management Made Easy
-            </h3>
-            <p class="text-gray-700">
-              Access patient records, manage inventory, and streamline workflows
+      <!-- Right Section: Welcome Image -->
+      <div
+        class="hidden md:block md:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 relative overflow-hidden"
+      >
+        <div class="absolute inset-0 bg-opacity-20 bg-white"></div>
+        <div class="relative z-10 h-full flex flex-col justify-center items-center p-10">
+          <div class="text-center text-white">
+            <div class="mb-8">
+              <i class="fas fa-stethoscope text-8xl mb-4 opacity-90"></i>
+            </div>
+            <h2 class="text-4xl font-bold mb-4">
+              Sistem Informasi <br />
+              Farmasi Terpadu
+            </h2>
+            <p class="text-xl opacity-90 mb-8">
+              Kelola obat dan resep dengan mudah dan efisien
             </p>
+            <div class="flex justify-center space-x-6">
+              <div class="flex items-center">
+                <i class="fas fa-check-circle text-green-300 mr-2"></i>
+                <span>Manajemen Stok</span>
+              </div>
+              <div class="flex items-center">
+                <i class="fas fa-check-circle text-green-300 mr-2"></i>
+                <span>Resep Digital</span>
+              </div>
+            </div>
           </div>
         </div>
+        <div class="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-black opacity-30"></div>
       </div>
     </div>
 
-    <script type="module" src="assets/js/pages/login.js"></script>
+    <!-- Toast Notification -->
+    <div
+      id="toast"
+      class="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300 z-50"
+    >
+      <span id="toast-message">Pesan toast</span>
+    </div>
+
+    <script src="assets/js/pages/login.js"></script>
   </body>
 </html>
