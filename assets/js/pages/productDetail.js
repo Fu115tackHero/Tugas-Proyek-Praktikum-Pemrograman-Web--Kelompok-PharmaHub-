@@ -4,7 +4,7 @@
  */
 
 import { productData } from '../data/productDetailData.js';
-import { initializeMobileMenu, updateCartCount, showToast, formatCurrency } from '../components/utils.js';
+import { initializeMobileMenu, showToast, formatCurrency } from '../components/utils.js';
 
 let quantity = 1;
 
@@ -109,8 +109,10 @@ document.addEventListener('DOMContentLoaded', function() {
     initTabs();
     initQuantityControls();
 
-    // Update cart count
-    updateCartCount();
+    // Update cart count using main.js function
+    if (window.PharmaHub && window.PharmaHub.updateCartItemCount) {
+        window.PharmaHub.updateCartItemCount();
+    }
 
     // Add to cart button event listener
     document.getElementById('add-to-cart-btn').addEventListener('click', () => {
@@ -125,7 +127,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         localStorage.setItem('pharmahub-cart', JSON.stringify(cart));
-        updateCartCount();
+        if (window.PharmaHub && window.PharmaHub.updateCartItemCount) {
+            window.PharmaHub.updateCartItemCount();
+        }
         showToast(`${product.name} berhasil ditambahkan ke keranjang!`);
 
         // Reset quantity to 1

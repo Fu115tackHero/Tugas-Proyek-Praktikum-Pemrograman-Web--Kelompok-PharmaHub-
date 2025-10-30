@@ -1,7 +1,7 @@
 /**
  * PharmaHub Checkout Page JavaScript
  */
-import { initializeMobileMenu, updateCartCount } from '../components/utils.js';
+import { initializeMobileMenu } from '../components/utils.js';
 
 function initPaymentToggle() {
   document.querySelectorAll('input[name="payment"]').forEach(radio => {
@@ -55,7 +55,10 @@ function initPage() {
   initializeMobileMenu();
   initPaymentToggle();
   initQuantityControls();
-  updateCartCount();
+  // Use the global updateCartItemCount function from main.js
+  if (window.PharmaHub && window.PharmaHub.updateCartItemCount) {
+    window.PharmaHub.updateCartItemCount();
+  }
 }
 
 document.addEventListener('DOMContentLoaded', initPage);
