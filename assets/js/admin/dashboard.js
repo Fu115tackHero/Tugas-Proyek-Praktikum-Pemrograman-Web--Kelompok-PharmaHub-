@@ -104,3 +104,17 @@ function formatCurrency(amount) {
         minimumFractionDigits: 0
     }).format(amount).replace('IDR', 'Rp');
 }
+
+// Logout function - accessible globally
+window.logout = function() {
+    if (confirm('Apakah Anda yakin ingin logout?')) {
+        // Clear all user data
+        localStorage.removeItem('pharmaHubUser');
+        localStorage.removeItem('userProfile');
+        localStorage.removeItem('pharmahub-remember-user');
+        
+        // Redirect to login page
+        alert('Logout berhasil!');
+        window.location.href = '../Login.html';
+    }
+};

@@ -32,56 +32,28 @@ function initializeLogin() {
         }
         return;
     }
-    
-    // Update demo credentials display based on selected role
-    updateDemoCredentials();
 }
 
 function setupEventListeners() {
     const loginForm = document.getElementById('loginForm');
-    const userRoleSelect = document.getElementById('userRole');
     const togglePasswordBtn = document.getElementById('togglePassword');
     
     // Form submission
-    loginForm.addEventListener('submit', handleLogin);
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
     
-    // Role selection change
-    userRoleSelect.addEventListener('change', updateDemoCredentials);
-    
-    // Password toggle
-    togglePasswordBtn.addEventListener('click', togglePasswordVisibility);
-}
-
-function updateDemoCredentials() {
-    const userRole = document.getElementById('userRole').value;
-    const demoCredentialsDiv = document.getElementById('demoCredentials');
-    
-    if (userRole === 'admin') {
-        demoCredentialsDiv.innerHTML = `
-            <p class="font-medium text-blue-800 mb-2">
-                <i class="fas fa-info-circle mr-1"></i>Demo Admin Credentials:
-            </p>
-            <div class="text-blue-700">
-                <p><strong>Email:</strong> admin@pharmahub.com</p>
-                <p><strong>Password:</strong> admin123</p>
-            </div>
-        `;
-    } else {
-        demoCredentialsDiv.innerHTML = `
-            <p class="font-medium text-blue-800 mb-2">
-                <i class="fas fa-info-circle mr-1"></i>Demo Customer Credentials:
-            </p>
-            <div class="text-blue-700">
-                <p><strong>Email:</strong> customer@pharmahub.com</p>
-                <p><strong>Password:</strong> customer123</p>
-            </div>
-        `;
+    // Password toggle (if exists)
+    if (togglePasswordBtn) {
+        togglePasswordBtn.addEventListener('click', togglePasswordVisibility);
     }
 }
 
 function togglePasswordVisibility() {
     const passwordInput = document.getElementById('loginPassword');
     const toggleIcon = document.querySelector('#togglePassword i');
+    
+    if (!passwordInput || !toggleIcon) return;
     
     if (passwordInput.type === 'password') {
         passwordInput.type = 'text';
@@ -97,7 +69,6 @@ async function handleLogin(e) {
     
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
-    const role = document.getElementById('userRole').value;
     const remember = document.getElementById('remember').checked;
     
     // Validate inputs
@@ -119,10 +90,6 @@ async function handleLogin(e) {
         
         if (account.password !== password) {
             throw new Error('Password salah!');
-        }
-        
-        if (account.role !== role) {
-            throw new Error(`Email ini terdaftar sebagai ${account.role}, bukan ${role}!`);
         }
         
         // Simulate API delay

@@ -647,17 +647,19 @@ window.goToProfile = function() {
 
 window.handleNavLogout = function() {
     if (confirm('Apakah Anda yakin ingin logout?')) {
+        // Remove user data from localStorage
         localStorage.removeItem('pharmaHubUser');
-        localStorage.removeItem('userProfile'); // Also remove profile data
+        localStorage.removeItem('userProfile');
+        
+        // Clear any other session data
+        localStorage.removeItem('pharmahub-remember-user');
+        
         showToast('Logout berhasil!', 'success');
         
-        // Update display immediately without page reload
-        updateProfileDisplay(null);
-        
-        // Optional: reload page after a short delay to reset state
+        // Redirect to index page after a short delay
         setTimeout(() => {
-            window.location.reload();
-        }, 1000);
+            window.location.href = 'index.html';
+        }, 800);
     }
 };
 
