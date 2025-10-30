@@ -220,8 +220,12 @@
       </div>
 
       <!-- History Content -->
-      <div class="bg-white rounded-lg shadow-md">
-        <!-- Empty State -->
+      <div id="history-container" class="space-y-4">
+        <!-- History items will be rendered here by JavaScript -->
+      </div>
+
+      <!-- Empty State (will be shown by JS when no orders) -->
+      <div id="empty-state" class="bg-white rounded-lg shadow-md hidden">
         <div class="text-center py-16 px-6">
           <div class="mb-6">
             <i class="fas fa-receipt text-6xl text-gray-300"></i>
