@@ -43,17 +43,61 @@
           >
         </nav>
 
-        <!-- Tombol Login & Actions -->
+        <!-- Tombol Keranjang & Profile -->
         <div class="flex items-center space-x-4">
           <a href="keranjang.html" class="text-blue-600 font-semibold relative">
             <i class="fas fa-shopping-cart text-xl"></i>
             <span class="text-sm ml-1">Keranjang</span>
           </a>
-          <a
-            href="Login.html"
-            class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition hidden md:block"
-            >Login</a
-          >
+          
+          <!-- Login Button (shown when not logged in) -->
+          <div id="loginButtonContainer" class="relative">
+            <a 
+              href="Login.html"
+              class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 text-sm"
+            >
+              <i class="fas fa-sign-in-alt mr-2"></i>Login
+            </a>
+          </div>
+          
+          <!-- Profile Picture Button (shown when logged in) -->
+          <div id="profileContainer" class="relative hidden">
+            <button 
+              id="profileBtn"
+              class="profile-btn w-10 h-10 rounded-full overflow-hidden border-2 border-gray-300 hover:border-blue-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              title="Profile Menu"
+            >
+              <img 
+                id="navProfileImage" 
+                src="https://ui-avatars.com/api/?name=User&background=3b82f6&color=fff&size=40&rounded=true" 
+                alt="Profile" 
+                class="profile-image w-full h-full object-cover"
+              >
+            </button>
+            
+            <!-- Profile Dropdown (hidden by default) -->
+            <div id="profileDropdown" class="profile-dropdown absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden">
+              <div class="px-4 py-3 border-b border-gray-100">
+                <p class="text-sm font-medium text-gray-900" id="navUserName">Guest User</p>
+                <p class="text-sm text-gray-500" id="navUserEmail">Hover untuk melihat menu</p>
+              </div>
+              <a href="profile.html" class="dropdown-item block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                <i class="fas fa-user mr-2"></i>Pengaturan Profil
+              </a>
+              <a href="riwayat.html" class="dropdown-item block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                <i class="fas fa-history mr-2"></i>Riwayat Pesanan
+              </a>
+              <div class="border-t border-gray-100 mt-1">
+                <button 
+                  id="navLogoutBtn"
+                  onclick="handleNavLogout()"
+                  class="dropdown-item block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </button>
+              </div>
+            </div>
+          </div>
 
           <!-- Mobile Menu Button -->
           <button id="menu-btn" class="md:hidden flex flex-col space-y-1">
@@ -76,11 +120,23 @@
             >Notifikasi</a
           >
           <a href="riwayat.html" class="hover:text-blue-600 py-2">Riwayat</a>
-          <a
-            href="Login.html"
-            class="bg-blue-600 text-white px-4 py-2 rounded-md text-center hover:bg-blue-700 mt-2"
-            >Login</a
-          >
+          
+          <!-- Mobile Login Button (shown when not logged in) -->
+          <div id="mobileLoginContainer" class="border-t border-gray-200 pt-2 mt-2">
+            <a href="Login.html" class="flex items-center hover:text-blue-600 py-2">
+              <i class="fas fa-sign-in-alt mr-2"></i>Login
+            </a>
+          </div>
+          
+          <!-- Mobile Profile Menu (shown when logged in) -->
+          <div id="mobileProfileContainer" class="border-t border-gray-200 pt-2 mt-2 hidden">
+            <a href="profile.html" class="flex items-center hover:text-blue-600 py-2">
+              <i class="fas fa-user mr-2"></i>Profil
+            </a>
+            <button onclick="handleNavLogout()" class="flex items-center hover:text-blue-600 py-2 w-full text-left">
+              <i class="fas fa-sign-out-alt mr-2"></i>Logout
+            </button>
+          </div>
         </nav>
       </div>
     </header>

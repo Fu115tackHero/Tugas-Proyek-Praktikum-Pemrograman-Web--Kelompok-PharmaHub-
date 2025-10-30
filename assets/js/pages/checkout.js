@@ -139,7 +139,10 @@ function initPage() {
   initializeMobileMenu();
   initPaymentToggle();
   initQuantityControls();
-  updateCartCount();
+  // Use the global updateCartItemCount function from main.js
+  if (window.PharmaHub && window.PharmaHub.updateCartItemCount) {
+    window.PharmaHub.updateCartItemCount();
+  }
 }
 
 document.addEventListener("DOMContentLoaded", initPage);
