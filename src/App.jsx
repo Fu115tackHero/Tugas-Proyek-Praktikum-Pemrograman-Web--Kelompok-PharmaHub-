@@ -17,6 +17,8 @@ import Profile from './pages/Profile';
 import History from './pages/History';
 import Notifications from './pages/Notifications';
 import Debug from './pages/Debug';
+import ForgetPassword from './pages/Forget-Password'; // <-- TAMBAHKAN INI
+// ... impor lainnya
 
 // Admin
 import AdminLayout from './admin/components/AdminLayout';
@@ -66,6 +68,7 @@ function App() {
             {/* Routes without Layout (No Navbar/Footer) */}
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
+            <Route path="forget-password" element={<ForgetPassword />} />
 
             {/* Admin Routes */}
             <Route path="/admin" element={
