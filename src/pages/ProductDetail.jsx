@@ -123,19 +123,19 @@ const ProductDetail = () => {
 
               {/* Used For */}
               <div>
-                <h3 className="font-semibold text-gray-800 mb-2">Used For:</h3>
+                <h3 className="font-semibold text-gray-800 mb-2">Kegunaan:</h3>
                 <p className="text-gray-600">{product.uses}</p>
               </div>
 
               {/* How it works */}
               <div>
-                <h3 className="font-semibold text-gray-800 mb-2">How it works:</h3>
+                <h3 className="font-semibold text-gray-800 mb-2">Cara Kerja:</h3>
                 <p className="text-gray-600">{product.description}</p>
               </div>
 
               {/* Generics */}
               <div>
-                <h3 className="font-semibold text-gray-800 mb-2">Generics:</h3>
+                <h3 className="font-semibold text-gray-800 mb-2">Generik:</h3>
                 <span className="text-blue-600 font-medium">{product.genericName}</span>
               </div>
 
