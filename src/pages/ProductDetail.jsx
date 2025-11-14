@@ -1,21 +1,21 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getProductById } from '../data/products';
-import { useCart } from '../context/CartContext';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { getProductById } from "../data/products";
+import { useCart } from "../context/CartContext";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  
+
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState('precaution');
+  const [activeTab, setActiveTab] = useState("ingredients");
 
   useEffect(() => {
     const foundProduct = getProductById(id);
     if (!foundProduct) {
-      navigate('/products');
+      navigate("/products");
     } else {
       setProduct(foundProduct);
     }
@@ -45,10 +45,36 @@ const ProductDetail = () => {
   };
 
   const tabs = [
-    { id: 'precaution', label: 'Peringatan', icon: 'fa-exclamation-triangle', data: product.precaution },
-    { id: 'sideEffects', label: 'Efek Samping', icon: 'fa-heartbeat', data: product.sideEffects },
-    { id: 'interactions', label: 'Interaksi Obat', icon: 'fa-pills', data: product.interactions },
-    { id: 'indication', label: 'Indikasi', icon: 'fa-notes-medical', data: product.indication }
+    {
+      id: "ingredients",
+      label: "Kandungan",
+      icon: "fa-flask",
+      data: product.ingredients,
+    },
+    {
+      id: "precaution",
+      label: "Peringatan",
+      icon: "fa-exclamation-triangle",
+      data: product.precaution,
+    },
+    {
+      id: "sideEffects",
+      label: "Efek Samping",
+      icon: "fa-heartbeat",
+      data: product.sideEffects,
+    },
+    {
+      id: "interactions",
+      label: "Interaksi Obat",
+      icon: "fa-pills",
+      data: product.interactions,
+    },
+    {
+      id: "indication",
+      label: "Indikasi",
+      icon: "fa-notes-medical",
+      data: product.indication,
+    },
   ];
 
   return (
@@ -58,13 +84,19 @@ const ProductDetail = () => {
         <nav className="mb-6">
           <ol className="flex items-center space-x-2 text-sm">
             <li className="flex">
-              <Link to="/" className="text-gray-500 hover:text-blue-600 transition">
+              <Link
+                to="/"
+                className="text-gray-500 hover:text-blue-600 transition"
+              >
                 <i className="fas fa-home"></i>
               </Link>
             </li>
             <li className="flex items-center">
               <i className="fas fa-chevron-right text-gray-400 text-xs mx-2"></i>
-              <Link to="/products" className="text-gray-500 hover:text-blue-600 transition">
+              <Link
+                to="/products"
+                className="text-gray-500 hover:text-blue-600 transition"
+              >
                 Produk
               </Link>
             </li>
@@ -86,7 +118,8 @@ const ProductDetail = () => {
                   alt={product.name}
                   className="w-full h-auto max-w-md object-contain rounded-lg transition-transform duration-300 hover:scale-105"
                   onError={(e) => {
-                    e.target.src = 'https://via.placeholder.com/400x400?text=No+Image';
+                    e.target.src =
+                      "https://via.placeholder.com/400x400?text=No+Image";
                   }}
                 />
               </div>
@@ -115,7 +148,7 @@ const ProductDetail = () => {
               <div className="border-t border-b border-gray-200 py-4">
                 <div className="flex items-center justify-between">
                   <span className="text-2xl font-bold text-blue-600">
-                    Rp {product.price.toLocaleString('id-ID')}
+                    Rp {product.price.toLocaleString("id-ID")}
                   </span>
                   <span className="text-sm text-gray-500">Per kemasan</span>
                 </div>
@@ -129,14 +162,18 @@ const ProductDetail = () => {
 
               {/* How it works */}
               <div>
-                <h3 className="font-semibold text-gray-800 mb-2">Cara Kerja:</h3>
+                <h3 className="font-semibold text-gray-800 mb-2">
+                  Cara Kerja:
+                </h3>
                 <p className="text-gray-600">{product.description}</p>
               </div>
 
               {/* Generics */}
               <div>
                 <h3 className="font-semibold text-gray-800 mb-2">Generik:</h3>
-                <span className="text-blue-600 font-medium">{product.genericName}</span>
+                <span className="text-blue-600 font-medium">
+                  {product.genericName}
+                </span>
               </div>
 
               {/* Quantity and Add to Cart */}
@@ -187,7 +224,9 @@ const ProductDetail = () => {
 
               {/* Additional Info */}
               <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-gray-800 mb-2">Informasi Penting:</h4>
+                <h4 className="font-semibold text-gray-800 mb-2">
+                  Informasi Penting:
+                </h4>
                 <ul className="text-sm text-gray-600 space-y-1">
                   <li>• Pastikan membaca aturan pakai sebelum mengonsumsi</li>
                   <li>• Simpan di tempat sejuk dan kering</li>
@@ -201,14 +240,14 @@ const ProductDetail = () => {
           {/* Tabs */}
           <div className="border-t border-gray-200">
             <div className="flex border-b border-gray-200 overflow-x-auto">
-              {tabs.map(tab => (
+              {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`px-6 py-3 font-medium transition-all whitespace-nowrap ${
                     activeTab === tab.id
-                      ? 'text-blue-600 border-b-2 border-blue-600'
-                      : 'text-gray-600 hover:text-blue-600'
+                      ? "text-blue-600 border-b-2 border-blue-600"
+                      : "text-gray-600 hover:text-blue-600"
                   }`}
                 >
                   {tab.label}
@@ -218,19 +257,49 @@ const ProductDetail = () => {
 
             {/* Tab Content */}
             <div className="p-6">
-              {tabs.map(tab => (
+              {tabs.map((tab) => (
                 <div
                   key={tab.id}
-                  className={activeTab === tab.id ? 'block' : 'hidden'}
+                  className={activeTab === tab.id ? "block" : "hidden"}
                 >
-                  <h4 className="font-semibold text-gray-800 mb-3">{tab.label}:</h4>
+                  <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+                    <i className={`fas ${tab.icon} mr-2 text-blue-600`}></i>
+                    {tab.label}:
+                  </h4>
                   <div className="text-gray-600 space-y-2">
-                    {tab.data && tab.data.map((item, index) => (
-                      <p key={index} className="flex items-start">
-                        <span className="mr-2">•</span>
-                        <span>{item}</span>
+                    {tab.data && tab.data.length > 0 ? (
+                      <>
+                        {tab.id === "ingredients" ? (
+                          <div className="bg-blue-50 p-4 rounded-lg">
+                            <h5 className="font-medium text-gray-800 mb-3">
+                              Komposisi per tablet/kapsul:
+                            </h5>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              {tab.data.map((item, index) => (
+                                <div
+                                  key={index}
+                                  className="flex items-center py-1"
+                                >
+                                  <i className="fas fa-circle text-blue-400 text-xs mr-2"></i>
+                                  <span className="text-sm">{item}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          tab.data.map((item, index) => (
+                            <p key={index} className="flex items-start">
+                              <span className="mr-2">•</span>
+                              <span>{item}</span>
+                            </p>
+                          ))
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-gray-500 italic">
+                        Informasi {tab.label.toLowerCase()} tidak tersedia.
                       </p>
-                    ))}
+                    )}
                   </div>
                 </div>
               ))}
@@ -246,8 +315,9 @@ const ProductDetail = () => {
               <div>
                 <h3 className="font-semibold text-red-800 mb-1">Perhatian!</h3>
                 <p className="text-red-700 text-sm">
-                  Obat ini memerlukan resep dokter. Pastikan Anda memiliki resep yang valid sebelum melakukan pembelian.
-                  Konsultasikan dengan dokter atau apoteker kami untuk informasi lebih lanjut.
+                  Obat ini memerlukan resep dokter. Pastikan Anda memiliki resep
+                  yang valid sebelum melakukan pembelian. Konsultasikan dengan
+                  dokter atau apoteker kami untuk informasi lebih lanjut.
                 </p>
               </div>
             </div>

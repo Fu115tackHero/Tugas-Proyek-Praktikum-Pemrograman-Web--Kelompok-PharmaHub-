@@ -9,33 +9,42 @@ export const products = [
     brand: "Sanbe Farma",
     price: 12000,
     image: "/images/allproducts/paracetamol-500mg.jpg",
-    description: "Untuk menurunkan demam dan meredakan sakit kepala atau nyeri ringan.",
+    description:
+      "Untuk menurunkan demam dan meredakan sakit kepala atau nyeri ringan.",
     uses: "Menurunkan demam, meredakan nyeri ringan hingga sedang seperti sakit kepala, sakit gigi, nyeri otot.",
     genericName: "Paracetamol",
     prescriptionRequired: false,
     category: "Obat Nyeri & Demam",
     stock: 100,
+    ingredients: [
+      "Paracetamol 500 mg",
+      "Mikrokristalin selulosa",
+      "Natrium starch glikolat",
+      "Polivinilpirolidon",
+      "Magnesium stearat",
+      "Talk",
+    ],
     precaution: [
       "Jangan melebihi dosis yang dianjurkan (maksimal 4 gram per hari untuk dewasa)",
       "Konsultasikan dengan dokter jika memiliki riwayat penyakit hati",
-      "Hindari konsumsi alkohol selama pengobatan"
+      "Hindari konsumsi alkohol selama pengobatan",
     ],
     sideEffects: [
       "Jarang terjadi efek samping jika digunakan sesuai dosis",
       "Reaksi alergi kulit (ruam, gatal) pada beberapa orang",
-      "Gangguan hati jika dikonsumsi berlebihan"
+      "Gangguan hati jika dikonsumsi berlebihan",
     ],
     interactions: [
       "Warfarin: dapat meningkatkan risiko perdarahan",
       "Obat epilepsi: dapat mengurangi efektivitas paracetamol",
-      "Alkohol: meningkatkan risiko kerusakan hati"
+      "Alkohol: meningkatkan risiko kerusakan hati",
     ],
     indication: [
       "Demam pada anak dan dewasa",
       "Sakit kepala ringan hingga sedang",
       "Nyeri otot dan sendi ringan",
-      "Sakit gigi"
-    ]
+      "Sakit gigi",
+    ],
   },
   {
     id: 2,
@@ -43,33 +52,43 @@ export const products = [
     brand: "Kimia Farma",
     price: 15000,
     image: "/images/allproducts/ibuprofen-400mg.jpg",
-    description: "Obat antiinflamasi non-steroid untuk nyeri otot, sendi, atau sakit gigi.",
+    description:
+      "Obat antiinflamasi non-steroid untuk nyeri otot, sendi, atau sakit gigi.",
     uses: "Mengurangi peradangan, menurunkan demam, meredakan nyeri otot dan sendi.",
     genericName: "Ibuprofen",
     prescriptionRequired: false,
     category: "Obat Nyeri & Demam",
-    stock: 85,
+    stock: 75,
+    ingredients: [
+      "Ibuprofen 400 mg",
+      "Laktosa monohidrat",
+      "Pati jagung",
+      "Natrium kroskarmelosa",
+      "Silika koloid anhidrat",
+      "Magnesium stearat",
+      "Hypromellose",
+    ],
     precaution: [
       "Konsumsi bersama makanan untuk mengurangi iritasi lambung",
       "Hindari jika memiliki riwayat tukak lambung",
-      "Hati-hati pada penderita hipertensi dan penyakit jantung"
+      "Hati-hati pada penderita hipertensi dan penyakit jantung",
     ],
     sideEffects: [
       "Gangguan pencernaan (mual, nyeri perut)",
       "Pusing dan sakit kepala",
-      "Ruam kulit pada beberapa kasus"
+      "Ruam kulit pada beberapa kasus",
     ],
     interactions: [
       "Aspirin: meningkatkan risiko perdarahan",
       "ACE inhibitor: dapat mengurangi efek penurun tekanan darah",
-      "Lithium: dapat meningkatkan kadar lithium dalam darah"
+      "Lithium: dapat meningkatkan kadar lithium dalam darah",
     ],
     indication: [
       "Nyeri dan peradangan pada arthritis",
       "Nyeri otot dan keseleo",
       "Sakit gigi dan nyeri pascaoperasi",
-      "Demam"
-    ]
+      "Demam",
+    ],
   },
   {
     id: 3,
@@ -77,33 +96,43 @@ export const products = [
     brand: "Kalbe Farma",
     price: 8000,
     image: "/images/allproducts/promag.jpg",
-    description: "Meredakan sakit maag, nyeri ulu hati, dan gangguan asam lambung.",
+    description:
+      "Meredakan sakit maag, nyeri ulu hati, dan gangguan asam lambung.",
     uses: "Meredakan sakit maag, nyeri ulu hati, kembung, dan mual akibat asam lambung berlebih.",
     genericName: "Antasida",
     prescriptionRequired: false,
     category: "Obat Pencernaan",
     stock: 120,
+    ingredients: [
+      "Aluminum hydroxide 200 mg",
+      "Magnesium hydroxide 200 mg",
+      "Simethicone 25 mg",
+      "Sorbitol",
+      "Sukrosa",
+      "Natrium siklamat",
+      "Peppermint oil",
+    ],
     precaution: [
       "Konsumsi 1-2 jam setelah makan atau saat gejala muncul",
       "Hindari konsumsi bersamaan dengan obat lain (jarak minimal 2 jam)",
-      "Konsultasikan dengan dokter jika gejala berlanjut lebih dari 2 minggu"
+      "Konsultasikan dengan dokter jika gejala berlanjut lebih dari 2 minggu",
     ],
     sideEffects: [
       "Konstipasi atau diare ringan",
       "Mual pada beberapa kasus",
-      "Perubahan warna feses menjadi kehitaman (normal)"
+      "Perubahan warna feses menjadi kehitaman (normal)",
     ],
     interactions: [
       "Antibiotik: dapat mengurangi penyerapan antibiotik",
       "Digoxin: dapat mengurangi efektivitas digoxin",
-      "Obat tiroid: dapat mengganggu penyerapan hormon tiroid"
+      "Obat tiroid: dapat mengganggu penyerapan hormon tiroid",
     ],
     indication: [
       "Gastritis dan sakit maag",
       "Nyeri ulu hati (heartburn)",
       "Kembung dan begah",
-      "Gangguan pencernaan akibat asam lambung"
-    ]
+      "Gangguan pencernaan akibat asam lambung",
+    ],
   },
   {
     id: 4,
@@ -116,28 +145,36 @@ export const products = [
     genericName: "Loperamide",
     prescriptionRequired: false,
     category: "Obat Pencernaan",
-    stock: 75,
+    stock: 60,
+    ingredients: [
+      "Loperamide hydrochloride 2 mg",
+      "Laktosa monohidrat",
+      "Pati jagung",
+      "Polivinilpirolidon",
+      "Magnesium stearat",
+      "Silika koloid",
+    ],
     precaution: [
       "Jangan gunakan jika diare disertai demam tinggi atau darah",
       "Hentikan penggunaan jika gejala memburuk setelah 2 hari",
-      "Perbanyak minum air untuk mencegah dehidrasi"
+      "Perbanyak minum air untuk mencegah dehidrasi",
     ],
     sideEffects: [
       "Konstipasi jika digunakan berlebihan",
       "Pusing dan mengantuk",
-      "Mual dan kembung ringan"
+      "Mual dan kembung ringan",
     ],
     interactions: [
       "Antibiotik: hindari penggunaan bersamaan tanpa konsultasi dokter",
       "Opioid: dapat meningkatkan efek sedasi",
-      "Quinidine: dapat meningkatkan konsentrasi loperamide"
+      "Quinidine: dapat meningkatkan konsentrasi loperamide",
     ],
     indication: [
       "Diare akut non-spesifik",
       "Diare wisatawan",
       "Diare kronik (dengan pengawasan dokter)",
-      "Mengurangi output ileostomi"
-    ]
+      "Mengurangi output ileostomi",
+    ],
   },
   {
     id: 5,
@@ -151,27 +188,36 @@ export const products = [
     prescriptionRequired: false,
     category: "Obat Alergi",
     stock: 90,
+    ingredients: [
+      "Cetirizine dihydrochloride 10 mg",
+      "Mikrokristalin selulosa",
+      "Laktosa monohidrat",
+      "Natrium starch glikolat",
+      "Magnesium stearat",
+      "Hypromellose",
+      "Titanium dioxide",
+    ],
     precaution: [
       "Dapat menyebabkan kantuk pada beberapa orang",
       "Hindari mengemudi atau mengoperasikan mesin berat",
-      "Kurangi dosis pada penderita gangguan ginjal"
+      "Kurangi dosis pada penderita gangguan ginjal",
     ],
     sideEffects: [
       "Kantuk ringan (lebih jarang daripada antihistamin generasi pertama)",
       "Mulut kering",
-      "Sakit kepala ringan"
+      "Sakit kepala ringan",
     ],
     interactions: [
       "Alkohol: dapat meningkatkan efek sedasi",
       "Teofilin: dapat mengurangi clearance cetirizine",
-      "Ritonavir: dapat meningkatkan konsentrasi cetirizine"
+      "Ritonavir: dapat meningkatkan konsentrasi cetirizine",
     ],
     indication: [
       "Rhinitis alergi musiman dan tahunan",
       "Urtikaria kronik",
       "Dermatitis atopik",
-      "Alergi makanan ringan"
-    ]
+      "Alergi makanan ringan",
+    ],
   },
   {
     id: 6,
@@ -184,28 +230,34 @@ export const products = [
     genericName: "Salbutamol",
     prescriptionRequired: false,
     category: "Obat Pernapasan",
-    stock: 50,
+    stock: 45,
+    ingredients: [
+      "Salbutamol sulfate 100 mcg per actuation",
+      "HFA-134a propellant",
+      "Ethanol",
+      "Oleic acid",
+    ],
     precaution: [
       "Kocok inhaler sebelum digunakan",
       "Bilas mulut setelah penggunaan",
-      "Jangan melebihi dosis yang dianjurkan"
+      "Jangan melebihi dosis yang dianjurkan",
     ],
     sideEffects: [
       "Tremor ringan pada tangan",
       "Jantung berdebar",
-      "Sakit kepala ringan"
+      "Sakit kepala ringan",
     ],
     interactions: [
       "Beta-blocker: dapat mengurangi efektivitas salbutamol",
       "Diuretik: dapat meningkatkan risiko hipokalemia",
-      "Antidepresan trisiklik: dapat meningkatkan efek kardiovaskular"
+      "Antidepresan trisiklik: dapat meningkatkan efek kardiovaskular",
     ],
     indication: [
       "Asma bronkial",
       "Penyakit paru obstruktif kronik (PPOK)",
       "Bronkospasme akut",
-      "Pencegahan asma akibat aktivitas"
-    ]
+      "Pencegahan asma akibat aktivitas",
+    ],
   },
   {
     id: 7,
@@ -218,28 +270,36 @@ export const products = [
     genericName: "Povidone Iodine",
     prescriptionRequired: false,
     category: "Antiseptik",
-    stock: 110,
+    stock: 150,
+    ingredients: [
+      "Povidone iodine 10%",
+      "Nonoxynol-9",
+      "Sodium phosphate",
+      "Citric acid",
+      "Sodium hydroxide",
+      "Purified water",
+    ],
     precaution: [
       "Hanya untuk penggunaan luar",
       "Hindari kontak dengan mata",
-      "Jangan gunakan pada luka yang luas atau dalam"
+      "Jangan gunakan pada luka yang luas atau dalam",
     ],
     sideEffects: [
       "Iritasi kulit ringan pada penggunaan pertama",
       "Reaksi alergi pada orang sensitif terhadap iodine",
-      "Perubahan warna kulit sementara"
+      "Perubahan warna kulit sementara",
     ],
     interactions: [
       "Hidrogen peroksida: dapat mengurangi efektivitas",
       "Obat topikal lain: hindari penggunaan bersamaan",
-      "Silver sulfadiazine: dapat bereaksi dan mengurangi efektivitas"
+      "Silver sulfadiazine: dapat bereaksi dan mengurangi efektivitas",
     ],
     indication: [
       "Luka kecil dan goresan",
       "Antiseptik sebelum injeksi",
       "Pembersihan kulit sebelum operasi kecil",
-      "Pencegahan infeksi pada luka minor"
-    ]
+      "Pencegahan infeksi pada luka minor",
+    ],
   },
   {
     id: 8,
@@ -247,33 +307,41 @@ export const products = [
     brand: "Pharos Indonesia",
     price: 5000,
     image: "/images/allproducts/oralit.jpg",
-    description: "Larutan rehidrasi untuk mencegah dehidrasi akibat diare atau muntah.",
+    description:
+      "Larutan rehidrasi untuk mencegah dehidrasi akibat diare atau muntah.",
     uses: "Mengganti cairan dan elektrolit yang hilang akibat diare, muntah, atau berkeringat berlebihan.",
     genericName: "Oralit",
     prescriptionRequired: false,
     category: "Obat Pencernaan",
-    stock: 150,
+    stock: 200,
+    ingredients: [
+      "Sodium chloride 2.6 g",
+      "Potassium chloride 1.5 g",
+      "Glucose anhydrous 13.5 g",
+      "Trisodium citrate dihydrate 2.9 g",
+      "Zinc sulfate 0.03 g (per sachet)",
+    ],
     precaution: [
       "Larutkan dalam air matang dingin",
       "Habiskan dalam 24 jam setelah dilarutkan",
-      "Konsultasikan dokter jika dehidrasi berat"
+      "Konsultasikan dokter jika dehidrasi berat",
     ],
     sideEffects: [
       "Mual jika diminum terlalu cepat",
       "Muntah pada kasus dehidrasi berat",
-      "Rasa tidak enak di mulut (normal)"
+      "Rasa tidak enak di mulut (normal)",
     ],
     interactions: [
       "Tidak ada interaksi obat yang signifikan",
       "Aman dikombinasikan dengan obat diare",
-      "Dapat diberikan bersama antibiotik jika diperlukan"
+      "Dapat diberikan bersama antibiotik jika diperlukan",
     ],
     indication: [
       "Dehidrasi ringan hingga sedang",
       "Diare akut pada anak dan dewasa",
       "Muntah-muntah",
-      "Kehilangan cairan akibat berkeringat berlebihan"
-    ]
+      "Kehilangan cairan akibat berkeringat berlebihan",
+    ],
   },
   {
     id: 9,
@@ -287,27 +355,36 @@ export const products = [
     prescriptionRequired: false,
     category: "Vitamin & Suplemen",
     stock: 95,
+    ingredients: [
+      "Cholecalciferol (Vitamin D3) 1000 IU",
+      "Mikrokristalin selulosa",
+      "Laktosa monohidrat",
+      "Croscarmellose sodium",
+      "Magnesium stearat",
+      "Gelatin (kapsul)",
+      "Minyak kelapa sawit",
+    ],
     precaution: [
       "Konsumsi setelah makan untuk mengurangi iritasi lambung",
       "Jangan melebihi dosis yang dianjurkan",
-      "Konsultasikan dengan dokter jika sedang hamil atau menyusui"
+      "Konsultasikan dengan dokter jika sedang hamil atau menyusui",
     ],
     sideEffects: [
       "Gangguan pencernaan ringan pada dosis tinggi",
       "Diare jika dikonsumsi berlebihan",
-      "Batu ginjal pada konsumsi jangka panjang dosis tinggi"
+      "Batu ginjal pada konsumsi jangka panjang dosis tinggi",
     ],
     interactions: [
       "Warfarin: dapat meningkatkan efek antikoagulan",
       "Aspirin: dapat mengurangi penyerapan vitamin C",
-      "Suplemen zat besi: dapat meningkatkan penyerapan zat besi"
+      "Suplemen zat besi: dapat meningkatkan penyerapan zat besi",
     ],
     indication: [
       "Defisiensi vitamin C",
       "Meningkatkan daya tahan tubuh",
       "Membantu penyembuhan luka",
-      "Pencegahan sariawan"
-    ]
+      "Pencegahan sariawan",
+    ],
   },
   {
     id: 10,
@@ -315,33 +392,43 @@ export const products = [
     brand: "Sanbe Farma",
     price: 40000,
     image: "/images/allproducts/amoxicillin-500mg.jpg",
-    description: "Untuk infeksi bakteri ringan, seperti infeksi tenggorokan atau kulit.",
+    description:
+      "Untuk infeksi bakteri ringan, seperti infeksi tenggorokan atau kulit.",
     uses: "Mengobati infeksi bakteri pada saluran pernapasan, kulit, dan saluran kemih.",
     genericName: "Amoxicillin",
     prescriptionRequired: true,
     category: "Antibiotik",
-    stock: 60,
+    stock: 50,
+    ingredients: [
+      "Amoxicillin trihydrate 500 mg",
+      "Mikrokristalin selulosa",
+      "Natrium starch glikolat",
+      "Polivinilpirolidon",
+      "Magnesium stearat",
+      "Silika koloid",
+      "Hypromellose",
+    ],
     precaution: [
       "WAJIB dengan resep dokter",
       "Habiskan antibiotik sesuai durasi yang diresepkan",
-      "Jangan gunakan jika alergi penisilin"
+      "Jangan gunakan jika alergi penisilin",
     ],
     sideEffects: [
       "Diare ringan",
       "Mual dan muntah",
-      "Ruam kulit (reaksi alergi)"
+      "Ruam kulit (reaksi alergi)",
     ],
     interactions: [
       "Probenecid: dapat meningkatkan kadar amoxicillin",
       "Warfarin: dapat meningkatkan efek antikoagulan",
-      "Pil KB: dapat mengurangi efektivitas kontrasepsi"
+      "Pil KB: dapat mengurangi efektivitas kontrasepsi",
     ],
     indication: [
       "Infeksi saluran pernapasan",
       "Infeksi kulit dan jaringan lunak",
       "Infeksi saluran kemih",
-      "Otitis media"
-    ]
+      "Otitis media",
+    ],
   },
   {
     id: 11,
@@ -354,28 +441,33 @@ export const products = [
     genericName: "Omeprazole",
     prescriptionRequired: true,
     category: "Obat Pencernaan",
-    stock: 70,
+    stock: 40,
+    ingredients: [
+      "Omeprazole 20 mg",
+      "Laktosa monohidrat",
+      "Natrium bikarbonat",
+      "Natrium lauril sulfat",
+      "Krospovidon",
+      "Hypromellose",
+      "Magnesium stearat",
+    ],
     precaution: [
       "WAJIB dengan resep dokter",
       "Konsumsi 30 menit sebelum makan",
-      "Hindari penggunaan jangka panjang tanpa pengawasan dokter"
+      "Hindari penggunaan jangka panjang tanpa pengawasan dokter",
     ],
-    sideEffects: [
-      "Sakit kepala",
-      "Diare atau konstipasi",
-      "Mual ringan"
-    ],
+    sideEffects: ["Sakit kepala", "Diare atau konstipasi", "Mual ringan"],
     interactions: [
       "Warfarin: dapat meningkatkan risiko perdarahan",
       "Clopidogrel: dapat mengurangi efektivitas clopidogrel",
-      "Ketoconazole: dapat mengurangi penyerapan ketoconazole"
+      "Ketoconazole: dapat mengurangi penyerapan ketoconazole",
     ],
     indication: [
       "Tukak lambung dan duodenum",
       "GERD (Gastroesophageal Reflux Disease)",
       "Sindrom Zollinger-Ellison",
-      "Eradikasi H. pylori"
-    ]
+      "Eradikasi H. pylori",
+    ],
   },
   {
     id: 12,
@@ -388,28 +480,37 @@ export const products = [
     genericName: "Vitamin D3",
     prescriptionRequired: false,
     category: "Vitamin & Suplemen",
-    stock: 80,
+    stock: 110,
+    ingredients: [
+      "Vitamin C (Ascorbic acid) 500 mg",
+      "Mikrokristalin selulosa",
+      "Croscarmellose sodium",
+      "Hypromellose",
+      "Magnesium stearat",
+      "Silika koloid",
+      "Titanium dioxide",
+    ],
     precaution: [
       "Konsumsi bersama makanan berlemak untuk penyerapan optimal",
       "Pantau kadar vitamin D dalam darah secara berkala",
-      "Hindari overdosis vitamin D"
+      "Hindari overdosis vitamin D",
     ],
     sideEffects: [
       "Mual jika overdosis",
       "Konstipasi pada dosis tinggi",
-      "Hiperkalsemia jika dikonsumsi berlebihan"
+      "Hiperkalsemia jika dikonsumsi berlebihan",
     ],
     interactions: [
       "Thiazide diuretics: dapat meningkatkan risiko hiperkalsemia",
       "Digoxin: peningkatan kalsium dapat meningkatkan toksisitas digoxin",
-      "Suplemen kalsium: dapat meningkatkan penyerapan kalsium"
+      "Suplemen kalsium: dapat meningkatkan penyerapan kalsium",
     ],
     indication: [
       "Defisiensi vitamin D",
       "Osteoporosis dan osteomalacia",
       "Rakhitis pada anak",
-      "Hipoparatiroidisme"
-    ]
+      "Hipoparatiroidisme",
+    ],
   },
   {
     id: 13,
@@ -417,33 +518,53 @@ export const products = [
     brand: "Centrum",
     price: 55000,
     image: "/images/allproducts/multivitamin-complete.jpg",
-    description: "Kombinasi lengkap vitamin dan mineral untuk kesehatan optimal.",
+    description:
+      "Kombinasi lengkap vitamin dan mineral untuk kesehatan optimal.",
     uses: "Memenuhi kebutuhan vitamin dan mineral harian untuk menjaga kesehatan tubuh.",
     genericName: "Multivitamin",
     prescriptionRequired: false,
     category: "Vitamin & Suplemen",
-    stock: 100,
+    stock: 130,
+    ingredients: [
+      "Vitamin A 5000 IU",
+      "Vitamin C 60 mg",
+      "Vitamin D3 400 IU",
+      "Vitamin E 30 IU",
+      "Vitamin B1 1.5 mg",
+      "Vitamin B2 1.7 mg",
+      "Vitamin B6 2 mg",
+      "Vitamin B12 6 mcg",
+      "Niacin 20 mg",
+      "Folic acid 400 mcg",
+      "Biotin 30 mcg",
+      "Pantothenic acid 10 mg",
+      "Calcium 162 mg",
+      "Iron 18 mg",
+      "Magnesium 100 mg",
+      "Zinc 15 mg",
+      "Selenium 20 mcg",
+    ],
     precaution: [
       "Konsumsi setelah makan",
       "Jangan melebihi dosis yang dianjurkan",
-      "Simpan di tempat sejuk dan kering"
+      "Simpan di tempat sejuk dan kering",
     ],
     sideEffects: [
       "Mual jika dikonsumsi saat perut kosong",
       "Perubahan warna urin (normal)",
-      "Gangguan pencernaan ringan"
+      "Gangguan pencernaan ringan",
     ],
     interactions: [
       "Antibiotik: dapat mengurangi penyerapan beberapa antibiotik",
       "Warfarin: vitamin K dapat mempengaruhi efek antikoagulan",
-      "Levothyroxine: dapat mengurangi penyerapan hormon tiroid"
+      "Levothyroxine: dapat mengurangi penyerapan hormon tiroid",
     ],
     indication: [
       "Defisiensi vitamin dan mineral",
       "Malnutrisi",
       "Periode pemulihan setelah sakit",
-      "Kebutuhan nutrisi meningkat"
-    ]
+      "Kebutuhan nutrisi meningkat",
+    ],
   },
   {
     id: 14,
@@ -456,28 +577,36 @@ export const products = [
     genericName: "Alcohol",
     prescriptionRequired: false,
     category: "Antiseptik",
-    stock: 130,
+    stock: 300,
+    ingredients: [
+      "Ethyl alcohol 70%",
+      "Carbomer 940",
+      "Triethanolamine",
+      "Tocopheryl acetate (Vitamin E)",
+      "Aloe vera extract",
+      "Purified water",
+    ],
     precaution: [
       "Hanya untuk penggunaan luar",
       "Hindari kontak dengan mata",
-      "Jauhkan dari api dan sumber panas"
+      "Jauhkan dari api dan sumber panas",
     ],
     sideEffects: [
       "Kulit kering dengan penggunaan berlebihan",
       "Iritasi pada kulit sensitif",
-      "Dermatitis kontak pada penggunaan berulang"
+      "Dermatitis kontak pada penggunaan berulang",
     ],
     interactions: [
       "Tidak ada interaksi obat yang signifikan",
       "Dapat merusak beberapa jenis plastik",
-      "Dapat mengurangi efektivitas hand sanitizer berbasis alkohol lain"
+      "Dapat mengurangi efektivitas hand sanitizer berbasis alkohol lain",
     ],
     indication: [
       "Antiseptik tangan",
       "Sterilisasi alat medis",
       "Desinfeksi permukaan",
-      "Pembersihan sebelum injeksi"
-    ]
+      "Pembersihan sebelum injeksi",
+    ],
   },
   {
     id: 15,
@@ -490,29 +619,37 @@ export const products = [
     genericName: "Captopril",
     prescriptionRequired: true,
     category: "Obat Jantung & Hipertensi",
-    stock: 65,
+    stock: 40,
+    ingredients: [
+      "Captopril 25 mg",
+      "Mikrokristalin selulosa",
+      "Laktosa monohidrat",
+      "Croscarmellose sodium",
+      "Magnesium stearat",
+      "Hypromellose",
+    ],
     precaution: [
       "WAJIB dengan resep dokter",
       "Monitor tekanan darah secara teratur",
-      "Konsumsi 1 jam sebelum makan"
+      "Konsumsi 1 jam sebelum makan",
     ],
     sideEffects: [
       "Batuk kering",
       "Hipotensi (tekanan darah rendah)",
-      "Peningkatan kadar kalium"
+      "Peningkatan kadar kalium",
     ],
     interactions: [
       "Diuretik: dapat meningkatkan efek penurun tekanan darah",
       "Suplemen kalium: dapat menyebabkan hiperkalemia",
-      "NSAIDs: dapat mengurangi efek antihipertensi"
+      "NSAIDs: dapat mengurangi efek antihipertensi",
     ],
     indication: [
       "Hipertensi (tekanan darah tinggi)",
       "Gagal jantung",
       "Nefropati diabetik",
-      "Pasca infark miokard"
-    ]
-  }
+      "Pasca infark miokard",
+    ],
+  },
 ];
 
 // Product categories
@@ -525,26 +662,27 @@ export const categories = [
   "Antiseptik",
   "Vitamin & Suplemen",
   "Antibiotik",
-  "Obat Jantung & Hipertensi"
+  "Obat Jantung & Hipertensi",
 ];
 
 // Helper function to get product by ID
 export const getProductById = (id) => {
-  return products.find(product => product.id === parseInt(id));
+  return products.find((product) => product.id === parseInt(id));
 };
 
 // Helper function to filter products by category
 export const getProductsByCategory = (category) => {
   if (category === "Semua Produk") return products;
-  return products.filter(product => product.category === category);
+  return products.filter((product) => product.category === category);
 };
 
 // Helper function to search products
 export const searchProducts = (query) => {
   const lowerQuery = query.toLowerCase();
-  return products.filter(product => 
-    product.name.toLowerCase().includes(lowerQuery) ||
-    product.description.toLowerCase().includes(lowerQuery) ||
-    product.brand.toLowerCase().includes(lowerQuery)
+  return products.filter(
+    (product) =>
+      product.name.toLowerCase().includes(lowerQuery) ||
+      product.description.toLowerCase().includes(lowerQuery) ||
+      product.brand.toLowerCase().includes(lowerQuery),
   );
 };
