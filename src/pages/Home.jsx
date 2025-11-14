@@ -1,48 +1,129 @@
 import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { products } from '../data/products';
 
 const Home = () => {
   // Get featured products (first 8 products)
   const featuredProducts = products.slice(0, 8);
 
+  // Image slider state
+  const [currentSlide, setCurrentSlide] = useState(0);
+  
+  const slides = [
+    {
+      title: 'One Stop Solution',
+      subtitle: 'for Your Medicine Needs',
+      description: 'Kami tersedia 24/7. Pesan obat kapan saja dan nikmati layanan cepat dan terpercaya.',
+      image: '/images/home-decor-pic.png',
+      bgColor: 'from-blue-50 to-blue-100'
+    },
+    {
+      title: 'Belanja Online',
+      subtitle: 'Mudah & Aman',
+      description: 'Pesan obat dari rumah dengan sistem keranjang belanja yang praktis dan pembayaran yang aman.',
+      image: '/images/home-decor-pic1.png',
+      bgColor: 'from-green-50 to-green-100'
+    },
+    {
+      title: 'Obat Original',
+      subtitle: 'Harga Terjangkau',
+      description: '15+ produk obat berkualitas dengan harga bersaing. Resep dokter atau obat bebas tersedia.',
+      image: '/images/home-decor-pic2.png',
+      bgColor: 'from-purple-50 to-purple-100'
+    }
+  ];
+
+  // Auto slide every 5 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [slides.length]);
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % slides.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  };
+
+  const goToSlide = (index) => {
+    setCurrentSlide(index);
+  };
+
   return (
     <div className="bg-gradient-to-b from-blue-50 to-blue-100 text-gray-800">
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 sm:px-6 py-12 md:py-16 flex flex-col-reverse md:flex-row items-center min-h-[500px]">
-        {/* Text */}
-        <div className="w-full md:w-1/2 space-y-6 text-center md:text-left mt-8 md:mt-0">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-blue-700 leading-tight">
-            One Stop <span className="text-blue-500">Solution</span><br />for Your Medicine Needs
-          </h1>
-          <p className="text-gray-600 text-lg sm:text-xl">
-            Kami tersedia 24/7. Pesan obat kapan saja dan nikmati layanan cepat dan terpercaya.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-            <Link
-              to="/products"
-              className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition text-center text-base"
-            >
-              Mulai Belanja Sekarang
-            </Link>
-            <Link
-              to="/products"
-              className="border-2 border-blue-600 text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 transition text-center text-base"
-            >
-              Lihat Daftar Obat
-            </Link>
-          </div>
-        </div>
+      {/* Hero Section with Slider */}
+      <section className={`bg-gradient-to-b ${slides[currentSlide].bgColor} transition-colors duration-500 min-h-screen flex items-center relative`}>
+        {/* Navigation Arrows (anchored to section edges) */}
+        <button
+          onClick={prevSlide}
+          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-3 rounded-full shadow-lg transition z-40 hidden md:block"
+          aria-label="Previous slide"
+        >
+          <i className="fas fa-chevron-left"></i>
+        </button>
+        <button
+          onClick={nextSlide}
+          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-3 rounded-full shadow-lg transition z-40 hidden md:block"
+          aria-label="Next slide"
+        >
+          <i className="fas fa-chevron-right"></i>
+        </button>
 
-        {/* Ilustrasi */}
-        <div className="w-full md:w-1/2 flex justify-center items-center mb-10 md:mb-0">
-          <img
-            src="/images/home-decor-pic.png"
-            alt="Pharmacy Illustration"
-            className="w-full max-w-md md:max-w-lg lg:max-w-xl h-auto"
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
-          />
+        <div className="container mx-auto px-4 sm:px-6 py-12 md:py-16 relative w-full">
+          {/* Slider Content */}
+          <div className="flex flex-col-reverse md:flex-row items-center justify-between gap-8 md:gap-12">
+            {/* Text */}
+            <div className="w-full md:w-1/2 space-y-6 text-center md:text-left">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-blue-700 leading-tight animate-fade-in">
+                {slides[currentSlide].title}{' '}
+                <span className="text-blue-500">{slides[currentSlide].subtitle}</span>
+              </h1>
+              <p className="text-gray-600 text-lg sm:text-xl animate-fade-in">
+                {slides[currentSlide].description}
+              </p>
+              <div className="flex justify-center md:justify-start mt-6">
+                <Link
+                  to="/products"
+                  className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition text-center text-base shadow-lg hover:shadow-xl transform hover:scale-105 duration-300"
+                >
+                  Mulai Belanja Sekarang
+                </Link>
+              </div>
+            </div>
+
+            {/* Image */}
+            <div className="w-full md:w-1/2 flex justify-center items-center mb-8 md:mb-0">
+              <img
+                src={slides[currentSlide].image}
+                alt="Pharmacy Illustration"
+                className="w-full max-w-sm md:max-w-md lg:max-w-lg h-auto object-contain animate-slide-in"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Dots Indicator - Moved below hero section */}
+          <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2 z-30">
+            {slides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`w-3 h-3 rounded-full transition-all ${
+                  currentSlide === index
+                    ? 'bg-blue-600 w-8'
+                    : 'bg-gray-400 hover:bg-gray-500'
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
         </div>
       </section>
 
