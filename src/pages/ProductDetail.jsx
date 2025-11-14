@@ -171,7 +171,7 @@ const ProductDetail = () => {
                     className="bg-white border-2 border-blue-600 text-blue-600 py-4 rounded-lg font-semibold hover:bg-blue-50 transition flex items-center justify-center space-x-2"
                   >
                     <i className="fas fa-shopping-cart"></i>
-                    <span>Add To Cart</span>
+                    <span>Masukkan Ke Keranjang</span>
                   </button>
 
                   {/* Checkout Button */}
