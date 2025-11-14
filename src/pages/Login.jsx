@@ -55,7 +55,7 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }; 
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center min-h-screen">
@@ -120,12 +120,12 @@ const Login = () => {
                 />
                 <i className="fas fa-lock absolute left-3 top-3.5 text-gray-400"></i>
               </div>
-              <a
-                href="#"
+              <Link
+                to="/forget-password"
                 className="text-sm text-blue-500 float-right mt-2 hover:underline transition-colors duration-300"
               >
                 Lupa Password?
-              </a>
+              </Link>
             </div>
 
             <div className="flex items-center">
