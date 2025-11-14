@@ -1,22 +1,22 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useCart } from '../context/CartContext';
+import { Link, useNavigate } from "react-router-dom";
+import { useCart } from "../context/CartContext";
 
 const Cart = () => {
   const navigate = useNavigate();
-  const { 
-    cart, 
+  const {
+    cart,
     savedForLater,
-    removeFromCart, 
-    updateQuantity, 
-    clearCart, 
+    removeFromCart,
+    updateQuantity,
+    clearCart,
     getCartTotal,
     saveForLater,
     moveToCart,
-    removeFromSaved
+    removeFromSaved,
   } = useCart();
 
   const handleQuantityChange = (productId, delta) => {
-    const item = cart.find(item => item.id === productId);
+    const item = cart.find((item) => item.id === productId);
     if (item) {
       const newQuantity = item.quantity + delta;
       if (newQuantity > 0) {
@@ -27,10 +27,10 @@ const Cart = () => {
 
   const handleCheckout = () => {
     if (cart.length === 0) {
-      alert('Keranjang Anda kosong');
+      alert("Keranjang Anda kosong");
       return;
     }
-    navigate('/checkout');
+    navigate("/checkout");
   };
 
   const subtotal = getCartTotal();
@@ -50,10 +50,12 @@ const Cart = () => {
                 className="flex items-center text-blue-600 hover:text-blue-700 transition"
               >
                 <i className="fas fa-arrow-left mr-2"></i>
-                Back to shop
+                Kembali belanja
               </button>
               <div className="hidden sm:block w-px h-6 bg-gray-300"></div>
-              <h1 className="text-2xl font-bold text-gray-800">Keranjang Belanja</h1>
+              <h1 className="text-2xl font-bold text-gray-800">
+                Keranjang Belanja
+              </h1>
             </div>
             <div className="text-sm text-gray-600">
               <span>{cart.length}</span> item dalam keranjang
@@ -100,7 +102,8 @@ const Cart = () => {
                             alt={item.name}
                             className="w-16 h-16 object-cover rounded-lg"
                             onError={(e) => {
-                              e.target.src = 'https://via.placeholder.com/64x64?text=No+Image';
+                              e.target.src =
+                                "https://via.placeholder.com/64x64?text=No+Image";
                             }}
                           />
                           <div>
@@ -110,19 +113,22 @@ const Cart = () => {
                             >
                               {item.name}
                             </Link>
-                            <p className="text-sm text-gray-600">Obat untuk kesehatan</p>
+                            <p className="text-sm text-gray-600">
+                              Obat untuk kesehatan
+                            </p>
                             <div className="flex items-center mt-2">
                               <button
                                 onClick={() => removeFromCart(item.id)}
                                 className="text-red-600 hover:text-red-700 text-sm font-medium"
                               >
-                                <i className="fas fa-trash mr-1"></i> Remove
+                                <i className="fas fa-trash mr-1"></i> Hapus
                               </button>
                               <button
                                 onClick={() => saveForLater(item.id)}
                                 className="text-blue-600 hover:text-blue-700 text-sm font-medium ml-4"
                               >
-                                <i className="far fa-bookmark mr-1"></i> Save for later
+                                <i className="far fa-bookmark mr-1"></i> Simpan
+                                untuk nanti
                               </button>
                             </div>
                           </div>
@@ -137,7 +143,9 @@ const Cart = () => {
                             >
                               <i className="fas fa-minus text-gray-600"></i>
                             </button>
-                            <span className="w-8 text-center">{item.quantity}</span>
+                            <span className="w-8 text-center">
+                              {item.quantity}
+                            </span>
                             <button
                               onClick={() => handleQuantityChange(item.id, 1)}
                               className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition"
@@ -149,10 +157,13 @@ const Cart = () => {
                           {/* Price */}
                           <div className="text-right">
                             <p className="font-medium text-gray-800">
-                              Rp {(item.price * item.quantity).toLocaleString('id-ID')}
+                              Rp{" "}
+                              {(item.price * item.quantity).toLocaleString(
+                                "id-ID"
+                              )}
                             </p>
                             <p className="text-sm text-gray-500">
-                              Rp {item.price.toLocaleString('id-ID')}/pcs
+                              Rp {item.price.toLocaleString("id-ID")}/pcs
                             </p>
                           </div>
                         </div>
@@ -167,7 +178,7 @@ const Cart = () => {
                       className="text-red-600 hover:text-red-700 text-sm font-medium flex items-center"
                     >
                       <i className="fas fa-trash mr-2"></i>
-                      Remove all
+                      Hapus semua
                     </button>
                   </div>
                 </>
@@ -178,7 +189,7 @@ const Cart = () => {
             {savedForLater.length > 0 && (
               <div className="mt-6">
                 <h2 className="text-xl font-bold text-gray-800 mb-4">
-                  Saved for Later ({savedForLater.length})
+                  Disimpan untuk Nanti ({savedForLater.length})
                 </h2>
                 <div className="bg-white rounded-lg shadow-sm divide-y divide-gray-200">
                   {savedForLater.map((item) => (
@@ -192,7 +203,8 @@ const Cart = () => {
                           alt={item.name}
                           className="w-16 h-16 object-cover rounded-lg grayscale opacity-60"
                           onError={(e) => {
-                            e.target.src = 'https://via.placeholder.com/64x64?text=No+Image';
+                            e.target.src =
+                              "https://via.placeholder.com/64x64?text=No+Image";
                           }}
                         />
                         <div>
@@ -202,25 +214,30 @@ const Cart = () => {
                           >
                             {item.name}
                           </Link>
-                          <p className="text-sm text-gray-500">Obat untuk kesehatan</p>
+                          <p className="text-sm text-gray-500">
+                            Obat untuk kesehatan
+                          </p>
                           <div className="flex items-center mt-2">
                             <button
                               onClick={() => removeFromSaved(item.id)}
                               className="text-red-600 hover:text-red-700 text-sm font-medium"
                             >
-                              <i className="fas fa-trash mr-1"></i> Remove
+                              <i className="fas fa-trash mr-1"></i> Hapus
                             </button>
                             <button
                               onClick={() => moveToCart(item.id)}
                               className="text-blue-600 hover:text-blue-700 text-sm font-medium ml-4"
                             >
-                              <i className="fas fa-shopping-cart mr-1"></i> Move to cart
+                              <i className="fas fa-shopping-cart mr-1"></i>{" "}
+                              Pindahkan ke keranjang
                             </button>
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                        <p className="text-sm text-gray-500">
+                          Jml: {item.quantity}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -235,17 +252,19 @@ const Cart = () => {
               {/* Coupon Section */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-gray-700 font-medium">Have a coupon?</span>
+                  <span className="text-gray-700 font-medium">
+                    Punya kupon?
+                  </span>
                   <i className="fas fa-tag text-gray-400"></i>
                 </div>
                 <div className="flex">
                   <input
                     type="text"
-                    placeholder="Add coupon"
+                    placeholder="Masukkan kupon"
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   <button className="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700 transition font-medium">
-                    Apply
+                    Terapkan
                   </button>
                 </div>
               </div>
@@ -254,20 +273,22 @@ const Cart = () => {
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal:</span>
-                  <span>Rp {subtotal.toLocaleString('id-ID')}</span>
+                  <span>Rp {subtotal.toLocaleString("id-ID")}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
-                  <span>Discount:</span>
-                  <span className="text-red-600">-Rp {discount.toLocaleString('id-ID')}</span>
+                  <span>Diskon:</span>
+                  <span className="text-red-600">
+                    -Rp {discount.toLocaleString("id-ID")}
+                  </span>
                 </div>
                 <div className="flex justify-between text-gray-600">
-                  <span>Tax:</span>
-                  <span>+Rp {tax.toLocaleString('id-ID')}</span>
+                  <span>Pajak:</span>
+                  <span>+Rp {tax.toLocaleString("id-ID")}</span>
                 </div>
                 <hr className="border-gray-200" />
                 <div className="flex justify-between text-lg font-semibold text-gray-800">
                   <span>Total:</span>
-                  <span>Rp {total.toLocaleString('id-ID')}</span>
+                  <span>Rp {total.toLocaleString("id-ID")}</span>
                 </div>
               </div>
 
@@ -276,7 +297,7 @@ const Cart = () => {
                 onClick={handleCheckout}
                 className="block w-full bg-blue-800 text-white py-3 rounded-lg font-semibold hover:bg-blue-900 transition text-center mb-4"
               >
-                Checkout
+                Bayar Sekarang
               </button>
 
               {/* Payment Methods */}
