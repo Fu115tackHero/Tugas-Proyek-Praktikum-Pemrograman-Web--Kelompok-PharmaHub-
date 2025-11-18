@@ -63,7 +63,7 @@ const Navbar = () => {
   const cartCount = getCartItemsCount();
 
   return (
-    <header className="bg-white shadow-md sticky top-0 z-50">
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-blue-100 shadow-sm transition-all duration-300">
       <div className="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
         {/* Logo */}
         <Link to="/" className="flex items-center">

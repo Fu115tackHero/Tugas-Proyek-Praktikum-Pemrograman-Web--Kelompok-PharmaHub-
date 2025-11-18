@@ -134,51 +134,75 @@ const Products = () => {
           </div>
         </div>
 
-        {/* Products Grid */}
+        {/* Products Grid (BAGIAN INI YANG DIMODIFIKASI UTAMA) */}
         {filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
               <Link
                 key={product.id}
                 to={`/product/${product.id}`}
-                className={`bg-white rounded-xl shadow hover:shadow-lg transition p-5 text-center flex flex-col ${
-                  product.prescriptionRequired ? 'border-l-4 border-red-500' : ''
+                // Class 'group' di sini sangat penting untuk trigger animasi child elements
+                className={`group bg-white rounded-2xl shadow-md hover:shadow-glass hover:-translate-y-2 transition-all duration-300 p-5 flex flex-col border border-transparent hover:border-blue-100 relative overflow-hidden ${
+                  product.prescriptionRequired ? 'ring-1 ring-red-100' : ''
                 }`}
               >
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-32 h-32 object-cover mx-auto mb-4 rounded-lg"
-                  onError={(e) => {
-                    e.target.src = 'https://via.placeholder.com/150?text=No+Image';
-                  }}
-                />
-                <h3 className="font-semibold text-gray-800">{product.name}</h3>
-                <p className="text-gray-600 text-sm mt-1">
-                  {product.description.length > 80 
-                    ? product.description.substring(0, 80) + '...' 
-                    : product.description}
-                </p>
-                {product.prescriptionRequired && (
-                  <div className="mt-2 mb-2">
-                    <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded">
-                      Perlu Resep Dokter
-                    </span>
+                {/* Elemen Dekoratif: Lingkaran background yang muncul saat hover */}
+                <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
+                <div className="relative z-10 flex flex-col h-full">
+                  {/* Gambar Produk dengan efek scale */}
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-32 h-32 object-cover mx-auto mb-4 rounded-lg group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      e.target.src = 'https://via.placeholder.com/150?text=No+Image';
+                    }}
+                  />
+                  
+                  {/* Badge Kategori (Tambahan baru untuk estetika) */}
+                  <div className="text-xs text-blue-500 font-medium mb-1 uppercase tracking-wide">
+                      {product.category}
                   </div>
-                )}
-                <div className="mt-auto">
-                  <p className="text-blue-600 font-bold mt-4">
-                    Rp {product.price.toLocaleString('id-ID')}
+
+                  {/* Nama Produk */}
+                  <h3 className="font-bold text-gray-800 text-lg mb-1 group-hover:text-blue-600 transition-colors">
+                      {product.name}
+                  </h3>
+                  
+                  {/* Deskripsi */}
+                  <p className="text-gray-600 text-sm mt-1 mb-3 flex-grow">
+                    {product.description.length > 80 
+                      ? product.description.substring(0, 80) + '...' 
+                      : product.description}
                   </p>
-                  <div className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition w-full flex items-center justify-center">
-                    <i className="fas fa-eye mr-2"></i>
-                    Lihat Detail
+                  
+                  {/* Badge Resep Dokter */}
+                  {product.prescriptionRequired && (
+                    <div className="mb-3">
+                      <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded">
+                        Perlu Resep Dokter
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Bagian Bawah: Harga dan Tombol Action */}
+                  <div className="mt-auto pt-4 flex items-center justify-between border-t border-gray-100">
+                    <p className="text-blue-600 font-bold text-lg">
+                      Rp {product.price.toLocaleString('id-ID')}
+                    </p>
+                    
+                    {/* Tombol Panah yang berubah warna saat hover card */}
+                    <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300 shadow-sm">
+                      <i className="fas fa-arrow-right"></i>
+                    </div>
                   </div>
                 </div>
               </Link>
             ))}
           </div>
         ) : (
+          /* Empty State */
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <i className="fas fa-search text-gray-400 text-6xl mb-4"></i>
             <h3 className="text-2xl font-semibold text-gray-800 mb-2">

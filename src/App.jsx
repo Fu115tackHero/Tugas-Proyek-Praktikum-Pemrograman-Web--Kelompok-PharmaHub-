@@ -17,7 +17,7 @@ import Profile from './pages/Profile';
 import History from './pages/History';
 import Notifications from './pages/Notifications';
 import Debug from './pages/Debug';
-import ForgetPassword from './pages/Forget-Password'; // <-- TAMBAHKAN INI
+import ForgetPassword from './pages/Forget-Password'; 
 // ... impor lainnya
 
 // Admin

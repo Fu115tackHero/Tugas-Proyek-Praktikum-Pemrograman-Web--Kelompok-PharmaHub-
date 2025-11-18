@@ -38,9 +38,9 @@ const Home = () => {
           <img
             src="/images/home-decor-pic.png"
             alt="Pharmacy Illustration"
-            className="w-full max-w-md md:max-w-lg lg:max-w-xl h-auto"
+            className="w-full max-w-sm md:max-w-md lg:max-w-lg h-auto object-contain animate-slide-in animate-float drop-shadow-2xl"
             onError={(e) => {
-              e.target.style.display = 'none';
+            e.target.style.display = 'none';
             }}
           />
         </div>

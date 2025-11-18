@@ -19,13 +19,52 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState(0);
 
   // Redirect if already logged in
   if (isAuthenticated) {
     navigate('/');
     return null;
   }
+// ... (sebelum 'handleChange')
 
+  // FUNGSI BARU untuk cek kekuatan password
+  const checkPasswordStrength = (password) => {
+    let score = 0;
+    if (!password) return 0;
+
+    // Kriteria:
+    const criteria = {
+      length: password.length >= 8,
+      lowercase: /[a-z]/.test(password),
+      uppercase: /[A-Z]/.test(password),
+      number: /[0-9]/.test(password),
+      symbol: /[^a-zA-Z0-9]/.test(password) // Cek simbol (apapun selain huruf/angka)
+    };
+
+    // Beri skor berdasarkan kriteria
+    // Skor 1: Sangat Lemah (hanya 1-2 kriteria terpenuhi, misal: 'abcdefgh' ATAU 'abc')
+    // Skor 2: Lemah (3 kriteria, misal: 'Abcdefgh')
+    // Skor 3: Sedang (4 kriteria, misal: 'Abcdefgh123')
+    // Skor 4: Kuat (Semua 5 kriteria, misal: 'Abcdefgh123!')
+
+    let criteriaMet = 0;
+    if (criteria.length) criteriaMet++;
+    if (criteria.lowercase) criteriaMet++;
+    if (criteria.uppercase) criteriaMet++;
+    if (criteria.number) criteriaMet++; 
+    if (criteria.symbol) criteriaMet++;
+
+    if (password.length > 0 && criteriaMet <= 2) score = 1; // Sangat Lemah
+    else if (criteriaMet === 3) score = 2; // Lemah
+    else if (criteriaMet === 4) score = 3; // Sedang
+    else if (criteriaMet === 5) score = 4; // Kuat
+
+    // Jika panjangnya 0, skor tetap 0
+    if (password.length === 0) score = 0;
+
+    return score;
+  };
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -36,6 +75,7 @@ const Register = () => {
     
     // Real-time password validation
     if (name === 'confirmPassword' || name === 'password') {
+        setPasswordStrength(checkPasswordStrength(value));
       if (name === 'confirmPassword') {
         if (value && formData.password !== value) {
           setPasswordError('Password tidak cocok');
@@ -48,6 +88,12 @@ const Register = () => {
         } else {
           setPasswordError('');
         }
+      }
+
+      if (value && formData.password !== value) {
+        setPasswordError('Password tidak cocok');
+      } else {
+        setPasswordError('');
       }
     }
   };
@@ -235,7 +281,33 @@ const Register = () => {
                   <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-gray-400 hover:text-gray-600`}></i>
                 </button>
               </div>
-              <p className="mt-1 text-xs text-gray-500">Minimal 8 karakter</p>
+
+              {/* --- BAGIAN BARU --- */}
+            {/* Indikator Bar */}
+            <div className="w-full h-2 rounded-full bg-gray-200 mt-2">
+              <div 
+                className="h-full rounded-full transition-all duration-300"
+                style={{ 
+                  width: `${passwordStrength * 25}%`, // 0%, 25%, 50%, 75%, 100%
+                  backgroundColor: 
+                    passwordStrength === 0 ? 'transparent' :
+                    passwordStrength === 1 ? '#ef4444' : // Tailwind red-500
+                    passwordStrength === 2 ? '#f97316' : // Tailwind orange-500
+                    passwordStrength === 3 ? '#eab308' : // Tailwind yellow-500
+                    '#22c55e'  // Tailwind green-500
+                }}
+              ></div>
+            </div>
+            
+            {/* Label Kekuatan (Menggantikan <p> yang lama) */}
+            <p className="mt-1 text-xs">
+              {passwordStrength === 0 && <span className="text-gray-500">Minimal 8 karakter, gunakan huruf besar, angka, & simbol</span>}
+              {passwordStrength === 1 && <span className="text-red-500">Kekuatan: Sangat Lemah</span>}
+              {passwordStrength === 2 && <span className="text-orange-500">Kekuatan: Lemah</span>}
+              {passwordStrength === 3 && <span className="text-yellow-600">Kekuatan: Sedang</span>}
+              {passwordStrength === 4 && <span className="text-green-500">Kekuatan: Kuat</span>}
+            </p>
+
             </div>
 
             {/* Confirm Password */}
