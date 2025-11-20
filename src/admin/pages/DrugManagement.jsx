@@ -20,28 +20,28 @@ const DrugManagement = () => {
     stock: '',
     description: '',
     image: '',
-    requiresPrescription: false,
+    prescriptionRequired: false,
     // Detail fields
     brand: '',
     uses: '',
     howItWorks: '',
-    generic: '',
+    genericName: '',
     importantInfo: [],
     ingredients: [],
-    warnings: [],
+    precaution: [],
     sideEffects: [],
-    drugInteractions: [],
-    indications: []
+    interactions: [],
+    indication: []
   });
 
   // Temporary inputs for adding items to arrays
   const [tempInputs, setTempInputs] = useState({
     importantInfo: '',
     ingredients: '',
-    warnings: '',
+    precaution: '',
     sideEffects: '',
-    drugInteractions: '',
-    indications: ''
+    interactions: '',
+    indication: ''
   });
 
   useEffect(() => {
@@ -91,7 +91,7 @@ const DrugManagement = () => {
       const updatedGenerics = [...availableGenerics, newGeneric.trim()].sort();
       setAvailableGenerics(updatedGenerics);
       localStorage.setItem('drugGenerics', JSON.stringify(updatedGenerics));
-      setFormData({ ...formData, generic: newGeneric.trim() });
+      setFormData({ ...formData, genericName: newGeneric.trim() });
       setNewGeneric('');
       setShowAddGeneric(false);
     }
@@ -103,7 +103,7 @@ const DrugManagement = () => {
                           drug.description.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = !categoryFilter || drug.category === categoryFilter;
       const matchesPrescription = !prescriptionFilter || 
-                                drug.requiresPrescription.toString() === prescriptionFilter;
+                                (drug.prescriptionRequired || drug.requiresPrescription || false).toString() === prescriptionFilter;
       
       return matchesSearch && matchesCategory && matchesPrescription;
     });
@@ -119,25 +119,25 @@ const DrugManagement = () => {
       stock: '',
       description: '',
       image: '',
-      requiresPrescription: false,
+      prescriptionRequired: false,
       brand: '',
       uses: '',
       howItWorks: '',
-      generic: '',
+      genericName: '',
       importantInfo: [],
       ingredients: [],
-      warnings: [],
+      precaution: [],
       sideEffects: [],
-      drugInteractions: [],
-      indications: []
+      interactions: [],
+      indication: []
     });
     setTempInputs({
       importantInfo: '',
       ingredients: '',
-      warnings: '',
+      precaution: '',
       sideEffects: '',
-      drugInteractions: '',
-      indications: ''
+      interactions: '',
+      indication: ''
     });
     setShowModal(true);
   };
@@ -151,25 +151,25 @@ const DrugManagement = () => {
       stock: drug.stock,
       description: drug.description,
       image: drug.image || '',
-      requiresPrescription: drug.requiresPrescription,
+      prescriptionRequired: drug.prescriptionRequired || drug.requiresPrescription || false,
       brand: drug.brand || '',
       uses: drug.uses || '',
       howItWorks: drug.howItWorks || '',
-      generic: drug.generic || '',
+      genericName: drug.genericName || drug.generic || '',
       importantInfo: drug.importantInfo || [],
       ingredients: drug.ingredients || [],
-      warnings: drug.warnings || [],
+      precaution: drug.precaution || drug.warnings || [],
       sideEffects: drug.sideEffects || [],
-      drugInteractions: drug.drugInteractions || [],
-      indications: drug.indications || []
+      interactions: drug.interactions || drug.drugInteractions || [],
+      indication: drug.indication || drug.indications || []
     });
     setTempInputs({
       importantInfo: '',
       ingredients: '',
-      warnings: '',
+      precaution: '',
       sideEffects: '',
-      drugInteractions: '',
-      indications: ''
+      interactions: '',
+      indication: ''
     });
     setShowModal(true);
   };
@@ -245,7 +245,7 @@ const DrugManagement = () => {
         stock: 50,
         description: 'Obat penurun demam dan pereda nyeri',
         image: '/images/products/paracetamol.png',
-        requiresPrescription: false
+        prescriptionRequired: false
       },
       {
         id: 'drug_002',
@@ -255,7 +255,7 @@ const DrugManagement = () => {
         stock: 30,
         description: 'Obat anti inflamasi untuk nyeri dan demam',
         image: '/images/products/ibuprofen.jpg',
-        requiresPrescription: false
+        prescriptionRequired: false
       },
       {
         id: 'drug_003',
@@ -265,7 +265,7 @@ const DrugManagement = () => {
         stock: 75,
         description: 'Obat alergi dan antihistamin',
         image: '/images/products/cetirizine.jpeg',
-        requiresPrescription: false
+        prescriptionRequired: false
       },
       {
         id: 'drug_004',
@@ -275,7 +275,7 @@ const DrugManagement = () => {
         stock: 8,
         description: 'Obat maag dan asam lambung',
         image: '/images/products/promag.jpg',
-        requiresPrescription: false
+        prescriptionRequired: false
       },
       {
         id: 'drug_005',
@@ -285,7 +285,7 @@ const DrugManagement = () => {
         stock: 40,
         description: 'Larutan elektrolit untuk dehidrasi',
         image: '/images/products/oralit.jpeg',
-        requiresPrescription: false
+        prescriptionRequired: false
       }
     ];
   };
@@ -422,12 +422,12 @@ const DrugManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          drug.requiresPrescription
+                          (drug.prescriptionRequired || drug.requiresPrescription)
                             ? 'bg-yellow-100 text-yellow-800'
                             : 'bg-green-100 text-green-800'
                         }`}
                       >
-                        {drug.requiresPrescription ? 'Resep Dokter' : 'Obat Bebas'}
+                        {(drug.prescriptionRequired || drug.requiresPrescription) ? 'Resep Dokter' : 'Obat Bebas'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -544,9 +544,9 @@ const DrugManagement = () => {
                 <div className="flex items-center mt-4">
                   <input
                     type="checkbox"
-                    checked={formData.requiresPrescription}
+                    checked={formData.prescriptionRequired}
                     onChange={(e) =>
-                      setFormData({ ...formData, requiresPrescription: e.target.checked })
+                      setFormData({ ...formData, prescriptionRequired: e.target.checked })
                     }
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
@@ -577,8 +577,8 @@ const DrugManagement = () => {
                         Pilih Generik
                       </label>
                       <select
-                        value={formData.generic}
-                        onChange={(e) => setFormData({ ...formData, generic: e.target.value })}
+                        value={formData.genericName}
+                        onChange={(e) => setFormData({ ...formData, genericName: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       >
                         <option value="">Pilih Generik</option>
@@ -728,34 +728,34 @@ const DrugManagement = () => {
                   </div>
                 </div>
 
-                {/* Warnings Section */}
+                {/* Precaution Section */}
                 <div className="border-b pb-4">
                   <h4 className="text-md font-semibold text-gray-800 mb-3">Peringatan</h4>
                   <div className="space-y-2">
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        value={tempInputs.warnings}
-                        onChange={(e) => setTempInputs({ ...tempInputs, warnings: e.target.value })}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addArrayItem('warnings'))}
+                        value={tempInputs.precaution}
+                        onChange={(e) => setTempInputs({ ...tempInputs, precaution: e.target.value })}
+                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addArrayItem('precaution'))}
                         placeholder="Tambah peringatan"
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       />
                       <button
                         type="button"
-                        onClick={() => addArrayItem('warnings')}
+                        onClick={() => addArrayItem('precaution')}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                       >
                         Tambah
                       </button>
                     </div>
                     <ul className="space-y-1">
-                      {formData.warnings.map((item, idx) => (
+                      {formData.precaution.map((item, idx) => (
                         <li key={idx} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
                           <span className="text-sm">• {item}</span>
                           <button
                             type="button"
-                            onClick={() => removeArrayItem('warnings', idx)}
+                            onClick={() => removeArrayItem('precaution', idx)}
                             className="text-red-600 hover:text-red-800"
                           >
                             <i className="fas fa-times"></i>
@@ -804,34 +804,34 @@ const DrugManagement = () => {
                   </div>
                 </div>
 
-                {/* Drug Interactions Section */}
+                {/* Interactions Section */}
                 <div className="border-b pb-4">
                   <h4 className="text-md font-semibold text-gray-800 mb-3">Interaksi Obat</h4>
                   <div className="space-y-2">
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        value={tempInputs.drugInteractions}
-                        onChange={(e) => setTempInputs({ ...tempInputs, drugInteractions: e.target.value })}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addArrayItem('drugInteractions'))}
+                        value={tempInputs.interactions}
+                        onChange={(e) => setTempInputs({ ...tempInputs, interactions: e.target.value })}
+                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addArrayItem('interactions'))}
                         placeholder="Tambah interaksi obat"
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       />
                       <button
                         type="button"
-                        onClick={() => addArrayItem('drugInteractions')}
+                        onClick={() => addArrayItem('interactions')}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                       >
                         Tambah
                       </button>
                     </div>
                     <ul className="space-y-1">
-                      {formData.drugInteractions.map((item, idx) => (
+                      {formData.interactions.map((item, idx) => (
                         <li key={idx} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
                           <span className="text-sm">• {item}</span>
                           <button
                             type="button"
-                            onClick={() => removeArrayItem('drugInteractions', idx)}
+                            onClick={() => removeArrayItem('interactions', idx)}
                             className="text-red-600 hover:text-red-800"
                           >
                             <i className="fas fa-times"></i>
@@ -842,34 +842,34 @@ const DrugManagement = () => {
                   </div>
                 </div>
 
-                {/* Indications Section */}
+                {/* Indication Section */}
                 <div className="pb-4">
                   <h4 className="text-md font-semibold text-gray-800 mb-3">Indikasi</h4>
                   <div className="space-y-2">
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        value={tempInputs.indications}
-                        onChange={(e) => setTempInputs({ ...tempInputs, indications: e.target.value })}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addArrayItem('indications'))}
+                        value={tempInputs.indication}
+                        onChange={(e) => setTempInputs({ ...tempInputs, indication: e.target.value })}
+                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addArrayItem('indication'))}
                         placeholder="Tambah indikasi"
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       />
                       <button
                         type="button"
-                        onClick={() => addArrayItem('indications')}
+                        onClick={() => addArrayItem('indication')}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                       >
                         Tambah
                       </button>
                     </div>
                     <ul className="space-y-1">
-                      {formData.indications.map((item, idx) => (
+                      {formData.indication.map((item, idx) => (
                         <li key={idx} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
                           <span className="text-sm">• {item}</span>
                           <button
                             type="button"
-                            onClick={() => removeArrayItem('indications', idx)}
+                            onClick={() => removeArrayItem('indication', idx)}
                             className="text-red-600 hover:text-red-800"
                           >
                             <i className="fas fa-times"></i>

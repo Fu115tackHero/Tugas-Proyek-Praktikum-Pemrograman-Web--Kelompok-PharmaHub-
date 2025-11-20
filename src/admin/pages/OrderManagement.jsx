@@ -30,7 +30,15 @@ const OrderManagement = () => {
   const loadOrders = () => {
     const savedOrders = localStorage.getItem('adminOrders');
     if (savedOrders) {
-      setOrders(JSON.parse(savedOrders));
+      const parsedOrders = JSON.parse(savedOrders);
+      // Add backward compatibility for old orders without new fields
+      const updatedOrders = parsedOrders.map(order => ({
+        ...order,
+        customerEmail: order.customerEmail || `${order.customerName.toLowerCase().replace(/\s/g, '.')}@email.com`,
+        paymentMethod: order.paymentMethod || 'cod',
+        paymentStatus: order.paymentStatus || (order.paymentMethod === 'online' ? 'pending' : 'unpaid')
+      }));
+      setOrders(updatedOrders);
     } else {
       const defaultOrders = getDefaultOrders();
       localStorage.setItem('adminOrders', JSON.stringify(defaultOrders));
@@ -173,10 +181,13 @@ const OrderManagement = () => {
       {
         id: 'ORD001',
         customerName: 'Budi Santoso',
+        customerEmail: 'budi.santoso@email.com',
         customerPhone: '081234567890',
         date: new Date().toISOString(),
         status: 'pending',
         total: 85000,
+        paymentMethod: 'online',
+        paymentStatus: 'paid',
         items: [
           { name: 'Paracetamol 500mg', quantity: 2, price: 5000 },
           { name: 'Vitamin C 1000mg', quantity: 5, price: 15000 }
@@ -186,10 +197,13 @@ const OrderManagement = () => {
       {
         id: 'ORD002',
         customerName: 'Siti Rahayu',
+        customerEmail: 'siti.rahayu@email.com',
         customerPhone: '081298765432',
         date: new Date(Date.now() - 3600000).toISOString(),
         status: 'preparing',
         total: 50000,
+        paymentMethod: 'cod',
+        paymentStatus: 'unpaid',
         items: [
           { name: 'Amoxicillin 500mg', quantity: 2, price: 25000 }
         ],
@@ -198,14 +212,33 @@ const OrderManagement = () => {
       {
         id: 'ORD003',
         customerName: 'Ahmad Fauzi',
+        customerEmail: 'ahmad.fauzi@email.com',
         customerPhone: '081234509876',
         date: new Date(Date.now() - 7200000).toISOString(),
         status: 'ready',
         total: 36000,
+        paymentMethod: 'online',
+        paymentStatus: 'paid',
         items: [
           { name: 'Promag', quantity: 3, price: 12000 }
         ],
         notes: ''
+      },
+      {
+        id: 'ORD004',
+        customerName: 'Rina Wijaya',
+        customerEmail: 'rina.wijaya@email.com',
+        customerPhone: '081345678901',
+        date: new Date(Date.now() - 10800000).toISOString(),
+        status: 'completed',
+        total: 120000,
+        paymentMethod: 'online',
+        paymentStatus: 'pending',
+        items: [
+          { name: 'Antacid Plus', quantity: 2, price: 20000 },
+          { name: 'Vitamin D3', quantity: 1, price: 80000 }
+        ],
+        notes: 'Mohon verifikasi pembayaran'
       }
     ];
   };
@@ -325,6 +358,33 @@ const OrderManagement = () => {
                     <h3 className="text-lg font-semibold text-gray-900">Pesanan #{order.id}</h3>
                     <p className="text-sm text-gray-600">{formatDate(order.date)} • {order.customerName}</p>
                     <p className="text-sm text-gray-600">{order.customerPhone}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        order.paymentMethod === 'cod' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {order.paymentMethod === 'cod' ? 'Bayar di Tempat' : 'Transfer Online'}
+                      </span>
+                      {order.paymentMethod === 'cod' && (
+                        <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">
+                          <i className="fas fa-money-bill-wave mr-1"></i>
+                          Belum Dibayar
+                        </span>
+                      )}
+                      {order.paymentMethod === 'online' && order.paymentStatus === 'paid' && (
+                        <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                          <i className="fas fa-check-circle mr-1"></i>
+                          Lunas
+                        </span>
+                      )}
+                      {order.paymentMethod === 'online' && order.paymentStatus === 'pending' && (
+                        <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                          <i className="fas fa-clock mr-1"></i>
+                          Menunggu
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-semibold text-gray-900">{formatCurrency(order.total)}</p>
@@ -407,8 +467,50 @@ const OrderManagement = () => {
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2">Informasi Pelanggan</h4>
                   <p className="text-sm text-gray-600">Nama: {currentOrder.customerName}</p>
+                  <p className="text-sm text-gray-600">Email: {currentOrder.customerEmail}</p>
                   <p className="text-sm text-gray-600">Telepon: {currentOrder.customerPhone}</p>
                   <p className="text-sm text-gray-600">Tanggal: {formatDate(currentOrder.date)}</p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Informasi Pembayaran</h4>
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      currentOrder.paymentMethod === 'cod' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {currentOrder.paymentMethod === 'cod' ? 'Bayar di Tempat' : 'Transfer Online'}
+                    </span>
+                    
+                    {currentOrder.paymentMethod === 'cod' ? (
+                      <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">
+                        <i className="fas fa-money-bill-wave mr-1"></i>
+                        Belum Dibayar
+                      </span>
+                    ) : (
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        currentOrder.paymentStatus === 'paid' 
+                          ? 'bg-green-100 text-green-800' 
+                          : currentOrder.paymentStatus === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        <i className={`fas ${
+                          currentOrder.paymentStatus === 'paid' 
+                            ? 'fa-check-circle' 
+                            : currentOrder.paymentStatus === 'pending'
+                            ? 'fa-clock'
+                            : 'fa-times-circle'
+                        } mr-1`}></i>
+                        {currentOrder.paymentStatus === 'paid' 
+                          ? 'Pembayaran Terverifikasi' 
+                          : currentOrder.paymentStatus === 'pending'
+                          ? 'Menunggu Pembayaran'
+                          : 'Pembayaran Gagal'}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div>
