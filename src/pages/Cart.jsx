@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 
@@ -10,10 +11,40 @@ const Cart = () => {
     updateQuantity,
     clearCart,
     getCartTotal,
+    getDiscountAmount,
+    applyCoupon,
+    removeCoupon,
+    appliedCoupon,
+    availableCoupons,
     saveForLater,
     moveToCart,
     removeFromSaved,
   } = useCart();
+
+  const [couponInput, setCouponInput] = useState("");
+  const [couponMessage, setCouponMessage] = useState("");
+  const [couponError, setCouponError] = useState(false);
+
+  const handleApplyCoupon = () => {
+    const result = applyCoupon(couponInput);
+    setCouponMessage(result.message);
+    setCouponError(!result.success);
+
+    if (result.success) {
+      setCouponInput("");
+      // Clear message after 3 seconds
+      setTimeout(() => {
+        setCouponMessage("");
+      }, 3000);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    removeCoupon();
+    setCouponInput("");
+    setCouponMessage("");
+    setCouponError(false);
+  };
 
   const handleQuantityChange = (productId, delta) => {
     const item = cart.find((item) => item.id === productId);
@@ -34,7 +65,7 @@ const Cart = () => {
   };
 
   const subtotal = getCartTotal();
-  const discount = 0;
+  const discount = getDiscountAmount();
   const tax = Math.round(subtotal * 0.1); // 10% tax
   const total = subtotal + tax - discount;
 
@@ -257,16 +288,74 @@ const Cart = () => {
                   </span>
                   <i className="fas fa-tag text-gray-400"></i>
                 </div>
-                <div className="flex">
-                  <input
-                    type="text"
-                    placeholder="Masukkan kupon"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700 transition font-medium">
-                    Terapkan
-                  </button>
-                </div>
+
+                {appliedCoupon ? (
+                  /* Kupon sudah diterapkan */
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center">
+                        <i className="fas fa-check-circle text-green-600 mr-2"></i>
+                        <span className="font-semibold text-green-700">
+                          {appliedCoupon}
+                        </span>
+                      </div>
+                      <button
+                        onClick={handleRemoveCoupon}
+                        className="text-red-600 hover:text-red-700 text-sm"
+                      >
+                        <i className="fas fa-times"></i>
+                      </button>
+                    </div>
+                    <p className="text-sm text-green-600">
+                      {availableCoupons[appliedCoupon]?.description}
+                    </p>
+                  </div>
+                ) : (
+                  /* Form input kupon */
+                  <div>
+                    <div className="flex">
+                      <input
+                        type="text"
+                        placeholder="Masukkan kode kupon"
+                        value={couponInput}
+                        onChange={(e) =>
+                          setCouponInput(e.target.value.toUpperCase())
+                        }
+                        onKeyPress={(e) => {
+                          if (e.key === "Enter") {
+                            handleApplyCoupon();
+                          }
+                        }}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      <button
+                        onClick={handleApplyCoupon}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700 transition font-medium"
+                      >
+                        Terapkan
+                      </button>
+                    </div>
+                    {couponMessage && (
+                      <p
+                        className={`text-sm mt-2 ${
+                          couponError ? "text-red-600" : "text-green-600"
+                        }`}
+                      >
+                        {couponMessage}
+                      </p>
+                    )}
+                    {/* Available coupons hint */}
+                    <div className="mt-3 text-xs text-gray-500">
+                      <p className="font-medium mb-1">Kupon tersedia:</p>
+                      <ul className="space-y-1">
+                        <li>• SEHAT10 - Diskon 10%</li>
+                        <li>• SEHAT50K - Diskon Rp 50.000</li>
+                        <li>• NEWUSER - Diskon 15%</li>
+                        <li>• GRATIS20K - Gratis Rp 20.000</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Order Summary */}
@@ -275,14 +364,14 @@ const Cart = () => {
                   <span>Subtotal:</span>
                   <span>Rp {subtotal.toLocaleString("id-ID")}</span>
                 </div>
+                {discount > 0 && (
+                  <div className="flex justify-between text-green-600 font-medium">
+                    <span>Diskon ({appliedCoupon}):</span>
+                    <span>-Rp {discount.toLocaleString("id-ID")}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-gray-600">
-                  <span>Diskon:</span>
-                  <span className="text-red-600">
-                    -Rp {discount.toLocaleString("id-ID")}
-                  </span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Pajak:</span>
+                  <span>Pajak (10%):</span>
                   <span>+Rp {tax.toLocaleString("id-ID")}</span>
                 </div>
                 <hr className="border-gray-200" />
