@@ -6,12 +6,20 @@ import { useAuth } from "../context/AuthContext";
 const Checkout = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { cart, getCartTotal, clearCart } = useCart();
+  const {
+    cart,
+    getCartTotal,
+    getDiscountAmount,
+    appliedCoupon,
+    availableCoupons,
+    clearCart,
+  } = useCart();
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
+    notes: "",
     paymentMethod: "midtrans_online", // 'midtrans_online' atau 'bayar_ditempat'
   });
 
@@ -31,8 +39,9 @@ const Checkout = () => {
 
   // Perhitungan Biaya (Tanpa Biaya Kirim)
   const subtotal = getCartTotal();
+  const discount = getDiscountAmount();
   const tax = Math.round(subtotal * 0.1); // Pajak 10% (contoh)
-  const total = subtotal + tax;
+  const total = subtotal + tax - discount;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -59,11 +68,65 @@ const Checkout = () => {
 
       // Simulasi sukses langsung
       await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // --- SIMPAN RIWAYAT PESANAN UNTUK BAYAR DI TEMPAT ---
+      const orderHistory = JSON.parse(
+        localStorage.getItem("order_history") || "[]"
+      );
+      const newOrder = {
+        id: orderId,
+        customerName: formData.name,
+        customerPhone: formData.phone,
+        date: new Date().toISOString(),
+        items: cart.map((item) => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        total: total,
+        status: orderStatus,
+        notes: formData.notes || "",
+        paymentMethod: formData.paymentMethod,
+        userId: user?.id || "guest",
+        discount: discount,
+        couponCode: appliedCoupon || null,
+      };
+      localStorage.setItem(
+        "order_history",
+        JSON.stringify([...orderHistory, newOrder])
+      );
+
+      // Simpan untuk admin OrderManagement
+      const adminOrders = JSON.parse(
+        localStorage.getItem("adminOrders") || "[]"
+      );
+      const adminOrder = {
+        id: orderId,
+        customerName: formData.name,
+        customerPhone: formData.phone,
+        date: new Date().toISOString(),
+        status: "pending",
+        total: total,
+        items: cart.map((item) => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        notes: formData.notes || "",
+      };
+      localStorage.setItem(
+        "adminOrders",
+        JSON.stringify([...adminOrders, adminOrder])
+      );
+
+      setLoading(false);
+      alert(alertMessage);
+      clearCart();
+      navigate("/history");
+      return; // Exit early untuk bayar di tempat
     } else {
       // --- LOGIKA UNTUK MIDTRANS (ONLINE) ---
-      console.log("Memulai proses pembayaran online...");
-      orderStatus = "Lunas (Menunggu Pengambilan)"; // Asumsi lunas setelah callback
-      alertMessage = "Simulasi Pembayaran Berhasil! Pesanan Anda siap diambil.";
+      console.log("Memulai proses pembayaran online dengan Midtrans...");
 
       // 1. Kumpulkan data untuk Midtrans
       const transactionDetails = {
@@ -84,6 +147,16 @@ const Checkout = () => {
         name: item.name,
       }));
 
+      // Menambahkan diskon jika ada
+      if (discount > 0) {
+        itemDetails.push({
+          id: "DISCOUNT",
+          price: -discount,
+          quantity: 1,
+          name: `Diskon (${appliedCoupon})`,
+        });
+      }
+
       // Menambahkan pajak sebagai item terpisah
       itemDetails.push({
         id: "TAX",
@@ -92,57 +165,309 @@ const Checkout = () => {
         name: "Pajak (PPN 10%)",
       });
 
-      // Data lengkap yang akan dikirim ke backend Anda
+      // Data lengkap yang akan dikirim ke backend
       const midtransPayload = {
         transaction_details: transactionDetails,
         customer_details: customerDetails,
         item_details: itemDetails,
-        // Menghilangkan info shipping
       };
 
-      // --- SIMULASI PANGGILAN BACKEND ---
-      // 1. Kirim `midtransPayload` ke backend Anda.
-      // 2. Backend Anda memanggil Midtrans & dapat 'token'.
-      // 3. Backend Anda mengirim 'token' kembali ke frontend.
-      // 4. Frontend memanggil `window.snap.pay(token)`.
+      try {
+        // Panggil backend API untuk membuat transaksi
+        const response = await fetch("/api/create-transaction", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(midtransPayload),
+        });
 
-      console.log(
-        "Data untuk dikirim ke Backend (Persiapan Midtrans):",
-        midtransPayload
-      );
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      // --- AKHIR SIMULASI ---
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.message || "Gagal membuat transaksi");
+        }
+
+        // Dapatkan token dari backend
+        const snapToken = result.token;
+
+        // Cek apakah demo mode
+        if (result.demo_mode) {
+          console.log("⚠️  Demo Mode Detected - Simulating Payment");
+
+          // Simulasi pemilihan hasil pembayaran
+          const simulatePayment = () => {
+            return new Promise((resolve) => {
+              // Show custom dialog untuk simulasi
+              const paymentResult = window.confirm(
+                "🔧 DEMO MODE - Simulasi Pembayaran\n\n" +
+                  "Klik OK untuk simulasi pembayaran BERHASIL\n" +
+                  "Klik Cancel untuk simulasi pembayaran PENDING"
+              );
+
+              setTimeout(() => {
+                resolve(paymentResult ? "success" : "pending");
+              }, 1000);
+            });
+          };
+
+          const status = await simulatePayment();
+
+          if (status === "success") {
+            // Simulasi sukses
+            console.log("✅ Simulated payment success");
+
+            const orderHistory = JSON.parse(
+              localStorage.getItem("order_history") || "[]"
+            );
+            const newOrder = {
+              id: orderId,
+              customerName: formData.name,
+              customerPhone: formData.phone,
+              date: new Date().toISOString(),
+              items: cart.map((item) => ({
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+              })),
+              total: total,
+              status: "Lunas (Menunggu Pengambilan)",
+              notes: formData.notes || "",
+              paymentMethod: formData.paymentMethod,
+              userId: user?.id || "guest",
+              discount: discount,
+              couponCode: appliedCoupon || null,
+              paymentDetails: { demo: true, status: "success" },
+            };
+            localStorage.setItem(
+              "order_history",
+              JSON.stringify([...orderHistory, newOrder])
+            );
+
+            const adminOrders = JSON.parse(
+              localStorage.getItem("adminOrders") || "[]"
+            );
+            const adminOrder = {
+              id: orderId,
+              customerName: formData.name,
+              customerPhone: formData.phone,
+              date: new Date().toISOString(),
+              status: "paid",
+              total: total,
+              items: cart.map((item) => ({
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+              })),
+              notes: formData.notes || "",
+            };
+            localStorage.setItem(
+              "adminOrders",
+              JSON.stringify([...adminOrders, adminOrder])
+            );
+
+            clearCart();
+            alert("✅ Pembayaran berhasil! (Demo Mode)");
+            navigate("/history");
+          } else {
+            // Simulasi pending
+            console.log("⏳ Simulated payment pending");
+
+            const orderHistory = JSON.parse(
+              localStorage.getItem("order_history") || "[]"
+            );
+            const newOrder = {
+              id: orderId,
+              customerName: formData.name,
+              customerPhone: formData.phone,
+              date: new Date().toISOString(),
+              items: cart.map((item) => ({
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+              })),
+              total: total,
+              status: "Menunggu Pembayaran",
+              notes: formData.notes || "",
+              paymentMethod: formData.paymentMethod,
+              userId: user?.id || "guest",
+              discount: discount,
+              couponCode: appliedCoupon || null,
+              paymentDetails: { demo: true, status: "pending" },
+            };
+            localStorage.setItem(
+              "order_history",
+              JSON.stringify([...orderHistory, newOrder])
+            );
+
+            const adminOrders = JSON.parse(
+              localStorage.getItem("adminOrders") || "[]"
+            );
+            const adminOrder = {
+              id: orderId,
+              customerName: formData.name,
+              customerPhone: formData.phone,
+              date: new Date().toISOString(),
+              status: "pending",
+              total: total,
+              items: cart.map((item) => ({
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+              })),
+              notes: formData.notes || "",
+            };
+            localStorage.setItem(
+              "adminOrders",
+              JSON.stringify([...adminOrders, adminOrder])
+            );
+
+            clearCart();
+            alert("⏳ Pembayaran pending! (Demo Mode)");
+            navigate("/history");
+          }
+
+          setLoading(false);
+          return;
+        }
+
+        // REAL MIDTRANS: Panggil Midtrans Snap
+        window.snap.pay(snapToken, {
+          onSuccess: function (result) {
+            console.log("Payment success:", result);
+
+            // Simpan order sebagai Lunas
+            const orderHistory = JSON.parse(
+              localStorage.getItem("order_history") || "[]"
+            );
+            const newOrder = {
+              id: orderId,
+              customerName: formData.name,
+              customerPhone: formData.phone,
+              date: new Date().toISOString(),
+              items: cart.map((item) => ({
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+              })),
+              total: total,
+              status: "Lunas (Menunggu Pengambilan)",
+              notes: formData.notes || "",
+              paymentMethod: formData.paymentMethod,
+              userId: user?.id || "guest",
+              discount: discount,
+              couponCode: appliedCoupon || null,
+              paymentDetails: result,
+            };
+            localStorage.setItem(
+              "order_history",
+              JSON.stringify([...orderHistory, newOrder])
+            );
+
+            // Simpan untuk admin
+            const adminOrders = JSON.parse(
+              localStorage.getItem("adminOrders") || "[]"
+            );
+            const adminOrder = {
+              id: orderId,
+              customerName: formData.name,
+              customerPhone: formData.phone,
+              date: new Date().toISOString(),
+              status: "paid",
+              total: total,
+              items: cart.map((item) => ({
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+              })),
+              notes: formData.notes || "",
+            };
+            localStorage.setItem(
+              "adminOrders",
+              JSON.stringify([...adminOrders, adminOrder])
+            );
+
+            clearCart();
+            navigate("/history");
+          },
+          onPending: function (result) {
+            console.log("Payment pending:", result);
+
+            // Simpan order sebagai Pending
+            const orderHistory = JSON.parse(
+              localStorage.getItem("order_history") || "[]"
+            );
+            const newOrder = {
+              id: orderId,
+              customerName: formData.name,
+              customerPhone: formData.phone,
+              date: new Date().toISOString(),
+              items: cart.map((item) => ({
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+              })),
+              total: total,
+              status: "Menunggu Pembayaran",
+              notes: formData.notes || "",
+              paymentMethod: formData.paymentMethod,
+              userId: user?.id || "guest",
+              discount: discount,
+              couponCode: appliedCoupon || null,
+              paymentDetails: result,
+            };
+            localStorage.setItem(
+              "order_history",
+              JSON.stringify([...orderHistory, newOrder])
+            );
+
+            // Simpan untuk admin
+            const adminOrders = JSON.parse(
+              localStorage.getItem("adminOrders") || "[]"
+            );
+            const adminOrder = {
+              id: orderId,
+              customerName: formData.name,
+              customerPhone: formData.phone,
+              date: new Date().toISOString(),
+              status: "pending",
+              total: total,
+              items: cart.map((item) => ({
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+              })),
+              notes: formData.notes || "",
+            };
+            localStorage.setItem(
+              "adminOrders",
+              JSON.stringify([...adminOrders, adminOrder])
+            );
+
+            clearCart();
+            navigate("/history");
+          },
+          onError: function (result) {
+            console.log("Payment error:", result);
+            setLoading(false);
+            alert("Pembayaran gagal. Silakan coba lagi.");
+          },
+          onClose: function () {
+            console.log("Customer closed the popup without finishing payment");
+            setLoading(false);
+            alert(
+              "Anda menutup halaman pembayaran. Silakan coba lagi jika ingin melanjutkan."
+            );
+          },
+        });
+      } catch (error) {
+        console.error("Error creating transaction:", error);
+        setLoading(false);
+        alert(`Gagal memproses pembayaran: ${error.message}`);
+      }
+
+      return; // Exit setelah memanggil Snap
     }
-
-    // --- SIMPAN RIWAYAT PESANAN (Berlaku untuk semua metode) ---
-    const orderHistory = JSON.parse(
-      localStorage.getItem("order_history") || "[]"
-    );
-    const newOrder = {
-      id: orderId,
-      date: new Date().toISOString(),
-      items: cart.map((item) => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-      })),
-      total: total,
-      status: orderStatus, // Status baru yang dinamis
-      paymentMethod: formData.paymentMethod,
-      userId: user.id,
-    };
-    localStorage.setItem(
-      "order_history",
-      JSON.stringify([...orderHistory, newOrder])
-    );
-
-    setLoading(false);
-    alert(alertMessage);
-
-    // Kosongkan keranjang & arahkan ke riwayat
-    clearCart();
-    navigate("/history");
   };
 
   // Teks Tombol Dinamis
@@ -231,6 +556,21 @@ const Checkout = () => {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Untuk notifikasi pesanan siap"
                     required
+                  />
+                </div>
+
+                {/* Catatan */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Catatan (Opsional)
+                  </label>
+                  <textarea
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Contoh: Mohon disiapkan secepatnya, ada resep dokter"
+                    rows="3"
                   />
                 </div>
               </div>
@@ -331,6 +671,15 @@ const Checkout = () => {
                     <span>Subtotal:</span>
                     <span>Rp {subtotal.toLocaleString("id-ID")}</span>
                   </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-green-600 font-medium">
+                      <div className="flex items-center">
+                        <i className="fas fa-tag mr-2 text-sm"></i>
+                        <span>Diskon ({appliedCoupon}):</span>
+                      </div>
+                      <span>-Rp {discount.toLocaleString("id-ID")}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-gray-600">
                     <span>Pajak (10%):</span>
                     <span>Rp {tax.toLocaleString("id-ID")}</span>
@@ -340,6 +689,15 @@ const Checkout = () => {
                     <span>Total:</span>
                     <span>Rp {total.toLocaleString("id-ID")}</span>
                   </div>
+                  {discount > 0 && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-2">
+                      <p className="text-sm text-green-700 text-center">
+                        <i className="fas fa-check-circle mr-1"></i>
+                        Anda hemat Rp {discount.toLocaleString("id-ID")} dengan
+                        kupon ini!
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Tombol Bayar */}
