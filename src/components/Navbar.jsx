@@ -16,6 +16,11 @@ const Navbar = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   
+  // --- SIMULASI JUMLAH NOTIFIKASI ---
+  // Ubah angka ini menjadi > 0 (misal: 3) untuk melihat titik merah muncul.
+  // Nantinya, variabel ini bisa Anda hubungkan ke Context/API notifikasi Anda.
+  const unreadNotifications = 0; 
+
   const profileRef = useRef(null);
   const searchRef = useRef(null);
 
@@ -63,7 +68,7 @@ const Navbar = () => {
   const cartCount = getCartItemsCount();
 
   return (
-    <header className="bg-white shadow-md sticky top-0 z-50">
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow-sm transition-all duration-300 border-b border-white/20">
       <div className="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
         {/* Logo */}
         <Link to="/" className="flex items-center">
@@ -86,8 +91,8 @@ const Navbar = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Cari obat, vitamin, atau produk kesehatan..."
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Cari obat, vitamin, dll..."
+              className="w-full pl-4 pr-10 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <button className="absolute right-3 top-2 text-gray-500 hover:text-blue-600">
               <i className="fas fa-search"></i>
@@ -149,6 +154,15 @@ const Navbar = () => {
             <i className="fas fa-search text-xl"></i>
           </button>
 
+          {/* Notifikasi Mobile (Lonceng) */}
+          <Link to="/notifications" className="md:hidden text-gray-700 relative">
+            <i className="fas fa-bell text-xl"></i>
+            {/* PERUBAHAN: Titik merah hanya muncul jika unreadNotifications > 0 */}
+            {unreadNotifications > 0 && (
+              <span className="absolute top-0 right-0 block h-2 w-2 rounded-full ring-1 ring-white bg-red-500"></span>
+            )}
+          </Link>
+
           {/* Cart */}
           <Link to="/cart" className="relative">
             <i className="fas fa-shopping-cart text-gray-700 text-xl"></i>
@@ -167,10 +181,10 @@ const Navbar = () => {
                 className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-300 hover:border-blue-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 <img
-                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=3b82f6&color=fff&size=40&rounded=true`}
-                  alt="Profile"
-                  className="w-full h-full object-cover"
-                />
+                src={user?.photo ? user.photo : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=3b82f6&color=fff&size=40&rounded=true`}
+                alt="Profile"
+                 className="w-full h-full object-cover"
+              />
               </button>
 
               {/* Profile Dropdown */}
@@ -236,8 +250,8 @@ const Navbar = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Cari obat, vitamin, atau produk kesehatan..."
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Cari obat..."
+              className="w-full pl-4 pr-10 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <button className="absolute right-3 top-2 text-gray-500 hover:text-blue-600">
               <i className="fas fa-search"></i>
@@ -291,13 +305,6 @@ const Navbar = () => {
               onClick={() => setShowMobileMenu(false)}
             >
               Produk
-            </Link>
-            <Link
-              to="/notifications"
-              className="px-4 py-3 hover:bg-gray-50 transition"
-              onClick={() => setShowMobileMenu(false)}
-            >
-              Notifikasi
             </Link>
             <Link
               to="/history"

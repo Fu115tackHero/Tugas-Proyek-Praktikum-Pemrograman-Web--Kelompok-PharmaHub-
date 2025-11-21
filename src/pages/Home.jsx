@@ -219,7 +219,12 @@ const Home = () => {
           {featuredProducts.map((product) => (
             <div
               key={product.id}
-              className="bg-white rounded-xl shadow hover:shadow-lg transition p-6 text-center flex flex-col"
+              className={`
+                group relative bg-white rounded-2xl p-5 flex flex-col border border-transparent
+                transition-all duration-300 ease-out
+                hover:shadow-2xl hover:-translate-y-2 hover:border-blue-200
+                ${product.prescriptionRequired ? 'border-l-4 border-l-red-500' : ''}
+              `}
             >
               <img
                 src={product.image}

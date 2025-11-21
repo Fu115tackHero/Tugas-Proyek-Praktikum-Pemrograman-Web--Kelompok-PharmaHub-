@@ -571,7 +571,7 @@ export const products = [
     name: "Alcohol 70%",
     brand: "OneMed",
     price: 15000,
-    image: "/images/allproducts/alcohol-70%.jpg",
+    image: "/images/allproducts/alcohol-70-percent.jpg",
     description: "Antiseptik untuk membersihkan tangan dan permukaan.",
     uses: "Membersihkan tangan, sterilisasi alat, dan desinfeksi permukaan.",
     genericName: "Alcohol",

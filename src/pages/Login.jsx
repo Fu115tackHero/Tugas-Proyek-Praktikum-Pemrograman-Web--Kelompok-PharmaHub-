@@ -11,10 +11,14 @@ const Login = () => {
     password: "",
     remember: false,
   });
+  
+  // State untuk mengontrol visibilitas password
+  const [showPassword, setShowPassword] = useState(false);
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Redirect if already logged in (using useEffect to avoid setState during render)
+  // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated) {
       navigate("/");
@@ -36,13 +40,12 @@ const Login = () => {
     setError("");
 
     try {
-      // Simulate API delay
+      // Simulasi API delay
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       const result = login(formData.email, formData.password);
 
       if (result.success) {
-        // Check if user is admin and redirect accordingly
         if (formData.email === "admin@pharmahub.com") {
           navigate("/admin");
         } else {
@@ -114,15 +117,26 @@ const Login = () => {
               </label>
               <div className="relative">
                 <input
-                  type="password"
+                  // Ubah tipe input berdasarkan state showPassword
+                  type={showPassword ? "text" : "password"}
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Masukkan password"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300"
+                  // Tambahkan pr-10 agar teks tidak tertutup ikon mata
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 pl-10 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300"
                   required
                 />
                 <i className="fas fa-lock absolute left-3 top-3.5 text-gray-400"></i>
+                
+                {/* Tombol Toggle Mata */}
+                <button
+                  type="button" // Penting: type button agar tidak submit form
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                >
+                  <i className={`fas ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+                </button>
               </div>
               <Link
                 to="/forget-password"

@@ -82,23 +82,26 @@ body {
 }
 
 /* Custom Scrollbar for Better UX */
+/* --- Custom Scrollbar Gaya Anak IT --- */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 12px; /* Lebar scrollbar */
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #f1f5f9; /* Warna jalur lintasan (slate-100) */
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+  /* Gradasi biru biar nampak modern, bukan biru polos */
+  background: linear-gradient(to bottom, #3b82f6, #2563eb); 
+  border-radius: 10px;
+  border: 3px solid #f1f5f9; /* Kasih border putih dikit biar nampak melayang */
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #1d4ed8; /* Biru makin gelap pas di-hover */
 }
-
 /* Mobile Menu Animation */
 .mobile-menu {
   transition: all 0.3s ease;
