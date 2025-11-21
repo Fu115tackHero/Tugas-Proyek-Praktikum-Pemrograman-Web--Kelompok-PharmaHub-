@@ -13,6 +13,8 @@ const DrugManagement = () => {
   const [availableGenerics, setAvailableGenerics] = useState([]);
   const [newGeneric, setNewGeneric] = useState('');
   const [showAddGeneric, setShowAddGeneric] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -112,6 +114,8 @@ const DrugManagement = () => {
 
   const openAddModal = () => {
     setCurrentDrug(null);
+    setImagePreview(null);
+    setImageFile(null);
     setFormData({
       name: '',
       category: '',
@@ -144,6 +148,8 @@ const DrugManagement = () => {
 
   const openEditModal = (drug) => {
     setCurrentDrug(drug);
+    setImagePreview(drug.image || null);
+    setImageFile(null);
     setFormData({
       name: drug.name,
       category: drug.category,
@@ -189,6 +195,41 @@ const DrugManagement = () => {
       ...formData,
       [field]: formData[field].filter((_, i) => i !== index)
     });
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validasi tipe file
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        alert('Format file tidak valid. Gunakan JPG, PNG, GIF, atau WEBP.');
+        return;
+      }
+
+      // Validasi ukuran file (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        alert('Ukuran file terlalu besar. Maksimal 5MB.');
+        return;
+      }
+
+      setImageFile(file);
+
+      // Preview image
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+        setFormData({ ...formData, image: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setFormData({ ...formData, image: '' });
   };
 
   const handleSubmit = (e) => {
@@ -530,15 +571,46 @@ const DrugManagement = () => {
                 </div>
 
                 <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    URL Gambar
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Foto Obat
                   </label>
-                  <input
-                    type="text"
-                    value={formData.image}
-                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  
+                  {/* Image Preview */}
+                  {imagePreview && (
+                    <div className="mb-3 relative inline-block">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-32 h-32 object-cover rounded-lg border-2 border-gray-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                      >
+                        <i className="fas fa-times text-xs"></i>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Upload Button */}
+                  <div className="flex items-center gap-3">
+                    <label className="cursor-pointer bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded-lg border-2 border-dashed border-blue-300 flex items-center gap-2 transition-colors">
+                      <i className="fas fa-cloud-upload-alt"></i>
+                      <span className="text-sm font-medium">
+                        {imagePreview ? 'Ganti Foto' : 'Upload Foto'}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                    </label>
+                    <span className="text-xs text-gray-500">
+                      JPG, PNG, GIF, WEBP (Max 5MB)
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex items-center mt-4">
