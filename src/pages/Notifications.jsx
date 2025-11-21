@@ -1,9 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 const Notifications = () => {
   const [activeTab, setActiveTab] = useState('all');
-  const [notifications] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('notifications') || '[]');
+      setNotifications(saved);
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+      setNotifications([]);
+    }
+  }, []);
 
   const counts = {
     all: notifications.length,
@@ -11,6 +21,23 @@ const Notifications = () => {
     promotions: notifications.filter(n => n.type === 'promotion').length,
     system: notifications.filter(n => n.type === 'system').length,
   };
+
+  const handleMarkAllRead = () => {
+    if (notifications.length === 0) return;
+    const updated = notifications.map((n) => ({ ...n, read: true }));
+    setNotifications(updated);
+    localStorage.setItem('notifications', JSON.stringify(updated));
+  };
+
+  const handleClearAll = () => {
+    setNotifications([]);
+    localStorage.removeItem('notifications');
+  };
+
+  const filteredNotifications = notifications.filter((n) => {
+    if (activeTab === 'all') return true;
+    return n.type === activeTab;
+  });
 
   return (
     <main className="container mx-auto px-4 py-8 min-h-screen bg-gray-50">
@@ -25,12 +52,14 @@ const Notifications = () => {
             <button
               className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 transition disabled:text-gray-400 disabled:cursor-not-allowed"
               disabled={notifications.length === 0}
+              onClick={handleMarkAllRead}
             >
               <i className="fas fa-check-double mr-2"></i>Tandai Semua Dibaca
             </button>
             <button
               className="px-4 py-2 text-sm text-red-600 hover:text-red-800 transition disabled:text-gray-400 disabled:cursor-not-allowed"
               disabled={notifications.length === 0}
+              onClick={handleClearAll}
             >
               <i className="fas fa-trash mr-2"></i>Hapus Semua
             </button>
@@ -108,8 +137,7 @@ const Notifications = () => {
 
       {/* Notifications Content */}
       <div className="bg-white rounded-lg shadow-md">
-        {/* Empty State */}
-        {notifications.length === 0 && (
+        {notifications.length === 0 ? (
           <div className="text-center py-16 px-6">
             <div className="mb-6">
               <i className="fas fa-bell-slash text-6xl text-gray-300"></i>
@@ -146,6 +174,43 @@ const Notifications = () => {
                 </Link>
               </p>
             </div>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {filteredNotifications.length === 0 ? (
+              <div className="py-10 text-center text-gray-500">
+                Tidak ada notifikasi untuk filter ini.
+              </div>
+            ) : (
+              filteredNotifications.map((notif) => (
+                <div key={notif.id} className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800 mb-1">
+                      {notif.title || (notif.type === 'order' ? 'Notifikasi Pesanan' : 'Notifikasi')}
+                    </p>
+                    <p className="text-sm text-gray-600 mb-1">{notif.message}</p>
+                    <p className="text-xs text-gray-400">
+                      {new Date(notif.createdAt).toLocaleString('id-ID', {
+                        day: '2-digit', month: 'short', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                  <div className="mt-3 sm:mt-0 flex items-center space-x-2">
+                    {notif.orderId && (
+                      <span className="inline-flex px-2 py-1 rounded-full text-xs font-mono bg-gray-100 text-gray-600">
+                        #{notif.orderId}
+                      </span>
+                    )}
+                    {!notif.read && (
+                      <span className="inline-flex px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                        Baru
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         )}
       </div>
