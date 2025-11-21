@@ -138,12 +138,15 @@ const Products = () => {
         {filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
-              <Link
-                key={product.id}
-                to={`/product/${product.id}`}
-                className={`bg-white rounded-xl shadow hover:shadow-lg transition p-5 text-center flex flex-col ${
-                  product.prescriptionRequired ? 'border-l-4 border-red-500' : ''
-                }`}
+             <Link
+              key={product.id}
+              to={`/product/${product.id}`}
+              className={`
+                group relative bg-white rounded-2xl p-5 flex flex-col border border-transparent
+                transition-all duration-300 ease-out
+                hover:shadow-2xl hover:-translate-y-2 hover:border-blue-200
+                ${product.prescriptionRequired ? 'border-l-4 border-l-red-500' : ''}
+              `}
               >
                 <img
                   src={product.image}

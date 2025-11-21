@@ -1,10 +1,16 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
+// file: src/main.jsx atau src/App.jsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
+// IMPORT INI LEK!
+import { UserProvider } from './context/UserContext'; 
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    {/* BUNGKUS APP DENGAN USERPROVIDER */}
+    <UserProvider>
+      <App />
+    </UserProvider>
+  </React.StrictMode>,
+);
