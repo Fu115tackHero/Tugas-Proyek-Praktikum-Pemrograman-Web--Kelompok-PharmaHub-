@@ -74,6 +74,7 @@ export const AuthProvider = ({ children }) => {
         email: foundUser.email,
         phone: foundUser.phone,
         address: foundUser.address,
+        location: foundUser.location || null,
       };
       
       setUser(userData);
@@ -113,6 +114,7 @@ export const AuthProvider = ({ children }) => {
       email: newUser.email,
       phone: newUser.phone,
       address: newUser.address,
+      location: newUser.location || null,
     };
 
     setUser(userDataToSave);

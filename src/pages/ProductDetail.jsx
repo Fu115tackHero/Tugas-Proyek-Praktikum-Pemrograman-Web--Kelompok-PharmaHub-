@@ -11,6 +11,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("ingredients");
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     const foundProduct = getProductById(id);
@@ -42,7 +43,10 @@ const ProductDetail = () => {
   const handleAddToCart = () => {
     addToCart(product, quantity);
     setQuantity(1);
-    alert("Produk berhasil dimasukkan ke keranjang!");
+    setSuccessMessage("Produk berhasil dimasukkan ke keranjang!");
+    setTimeout(() => {
+      setSuccessMessage("");
+    }, 3000);
   };
 
   // --- PERUBAHAN LOGIKA BELI SEKARANG ---
@@ -89,6 +93,12 @@ const ProductDetail = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 py-8">
       <div className="container mx-auto px-4 sm:px-6">
+        {successMessage && (
+          <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center shadow-sm">
+            <i className="fas fa-check-circle mr-2"></i>
+            <span>{successMessage}</span>
+          </div>
+        )}
         {/* Breadcrumb */}
         <nav className="mb-6">
           <ol className="flex items-center space-x-2 text-sm">

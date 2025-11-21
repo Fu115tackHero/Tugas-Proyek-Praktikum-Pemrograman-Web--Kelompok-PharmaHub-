@@ -117,6 +117,12 @@ const OrderManagement = () => {
     localStorage.setItem('adminOrders', JSON.stringify(updatedOrders));
     setOrders(updatedOrders);
     setShowStatusModal(false);
+
+    const updated = updatedOrders.find((o) => o.id === currentOrder.id);
+    if (updated) {
+      syncOrderHistoryAndNotifications(updated);
+    }
+
     alert('Status pesanan berhasil diperbarui!');
   };
 
@@ -132,6 +138,12 @@ const OrderManagement = () => {
 
     localStorage.setItem('adminOrders', JSON.stringify(updatedOrders));
     setOrders(updatedOrders);
+
+    const cancelled = updatedOrders.find((o) => o.id === orderId);
+    if (cancelled) {
+      syncOrderHistoryAndNotifications(cancelled);
+    }
+
     alert('Pesanan berhasil dibatalkan!');
   };
 
@@ -174,6 +186,83 @@ const OrderManagement = () => {
       hour: '2-digit',
       minute: '2-digit'
     }).format(date);
+  };
+
+  const mapAdminStatusToCustomerStatus = (status, paymentMethod, paymentStatus) => {
+    switch (status) {
+      case 'preparing':
+        return 'Sedang disiapkan di apotek';
+      case 'ready':
+        return 'Siap diambil di apotek';
+      case 'completed':
+        if (paymentMethod === 'online' || paymentStatus === 'paid') {
+          return 'Lunas (Selesai)';
+        }
+        return 'Selesai';
+      case 'cancelled':
+        return 'Dibatalkan oleh apotek';
+      case 'pending':
+      default:
+        if (paymentMethod === 'online' && paymentStatus === 'paid') {
+          return 'Lunas (Menunggu Diproses)';
+        }
+        return 'Menunggu Diproses';
+    }
+  };
+
+  const syncOrderHistoryAndNotifications = (updatedOrder) => {
+    try {
+      const customerStatus = mapAdminStatusToCustomerStatus(
+        updatedOrder.status,
+        updatedOrder.paymentMethod,
+        updatedOrder.paymentStatus
+      );
+
+      const historyRaw = localStorage.getItem('order_history');
+      if (historyRaw) {
+        const history = JSON.parse(historyRaw);
+        const updatedHistory = history.map((order) => {
+          if (order.id === updatedOrder.id) {
+            return {
+              ...order,
+              status: customerStatus,
+              notes: updatedOrder.notes || order.notes,
+              updatedAt: updatedOrder.updatedAt || new Date().toISOString(),
+            };
+          }
+          return order;
+        });
+
+        localStorage.setItem('order_history', JSON.stringify(updatedHistory));
+      }
+
+      let notifications = [];
+      try {
+        notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+      } catch (error) {
+        notifications = [];
+      }
+
+      const newNotification = {
+        id: `NOTIF-STATUS-${Date.now()}`,
+        type: 'order',
+        orderId: updatedOrder.id,
+        status: customerStatus,
+        title: 'Update Status Pesanan',
+        message: `Status pesanan ${updatedOrder.id} diperbarui menjadi ${getStatusText(
+          updatedOrder.status
+        )}.`,
+        createdAt: new Date().toISOString(),
+        read: false,
+      };
+
+      localStorage.setItem(
+        'notifications',
+        JSON.stringify([newNotification, ...notifications])
+      );
+    } catch (error) {
+      console.error('Error syncing order history / notifications:', error);
+    }
   };
 
   const getDefaultOrders = () => {

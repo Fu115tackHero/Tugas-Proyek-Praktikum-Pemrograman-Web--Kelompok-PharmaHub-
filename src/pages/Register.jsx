@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -11,6 +12,7 @@ const Register = () => {
     email: '',
     phone: '',
     address: '',
+    location: null,
     password: '',
     confirmPassword: ''
   });
@@ -23,6 +25,57 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+
+  const registerMapRef = useRef(null);
+  const registerMarkerRef = useRef(null);
+
+  useEffect(() => {
+    if (!window.google || !window.google.maps) {
+      return;
+    }
+
+    const mapElement = document.getElementById('register-map');
+    if (!mapElement || registerMapRef.current) {
+      return;
+    }
+
+    const defaultCenter = formData.location || { lat: -6.2, lng: 106.8 };
+
+    const map = new window.google.maps.Map(mapElement, {
+      center: defaultCenter,
+      zoom: 14,
+    });
+
+    if (formData.location) {
+      registerMarkerRef.current = new window.google.maps.Marker({
+        position: formData.location,
+        map,
+      });
+    }
+
+    map.addListener('click', (event) => {
+      const position = {
+        lat: event.latLng.lat(),
+        lng: event.latLng.lng(),
+      };
+
+      if (registerMarkerRef.current) {
+        registerMarkerRef.current.setMap(null);
+      }
+
+      registerMarkerRef.current = new window.google.maps.Marker({
+        position,
+        map,
+      });
+
+      setFormData((prev) => ({
+        ...prev,
+        location: position,
+      }));
+    });
+
+    registerMapRef.current = map;
+  }, [formData.location]);
 
   // Redirect if already logged in
   if (isAuthenticated) {
@@ -112,6 +165,7 @@ const Register = () => {
         email: formData.email,
         phone: formData.phone,
         address: formData.address,
+        location: formData.location,
         password: formData.password
       });
       
@@ -217,7 +271,7 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Address */}
+            {/* Address + Map Picker */}
             <div>
               <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
                 Alamat <span className="text-red-500">*</span>
@@ -237,6 +291,18 @@ const Register = () => {
                   placeholder="Jl. Contoh No. 123, Jakarta"
                 ></textarea>
               </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Klik pada peta untuk menyimpan titik lokasi alamat Anda (opsional).
+              </p>
+              <div
+                id="register-map"
+                className="mt-2 w-full h-64 rounded-lg border border-gray-200 overflow-hidden"
+              ></div>
+              {formData.location && (
+                <p className="mt-2 text-xs text-gray-500">
+                  Lokasi tersimpan: {formData.location.lat.toFixed(5)}, {formData.location.lng.toFixed(5)}
+                </p>
+              )}
             </div>
 
             {/* Password dengan Indikator Kekuatan */}

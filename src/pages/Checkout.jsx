@@ -24,6 +24,13 @@ const Checkout = () => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [modal, setModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    variant: "success",
+    redirectToHistory: false,
+  });
 
   // Isi data pengguna jika sudah login
   useEffect(() => {
@@ -49,6 +56,40 @@ const Checkout = () => {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const addOrderNotification = (orderId, statusText) => {
+    try {
+      const existingNotifications = JSON.parse(
+        localStorage.getItem("notifications") || "[]"
+      );
+
+      const newNotification = {
+        id: `NOTIF-${Date.now()}`,
+        type: "order",
+        orderId,
+        status: statusText,
+        title: "Status Pesanan",
+        message: `Pesanan ${orderId} ${statusText}.`,
+        createdAt: new Date().toISOString(),
+        read: false,
+      };
+
+      localStorage.setItem(
+        "notifications",
+        JSON.stringify([newNotification, ...existingNotifications])
+      );
+    } catch (error) {
+      console.error("Error saving notification:", error);
+    }
+  };
+
+  const closeModal = () => {
+    setModal((prev) => ({ ...prev, open: false }));
+    if (modal.redirectToHistory) {
+      clearCart();
+      navigate("/history");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -106,6 +147,8 @@ const Checkout = () => {
         customerPhone: formData.phone,
         date: new Date().toISOString(),
         status: "pending",
+        paymentMethod: "cod",
+        paymentStatus: "unpaid",
         total: total,
         items: cart.map((item) => ({
           name: item.name,
@@ -119,10 +162,16 @@ const Checkout = () => {
         JSON.stringify([...adminOrders, adminOrder])
       );
 
+      addOrderNotification(orderId, orderStatus);
+
       setLoading(false);
-      alert(alertMessage);
-      clearCart();
-      navigate("/history");
+      setModal({
+        open: true,
+        title: "Pesanan Dikonfirmasi",
+        message: alertMessage,
+        variant: "success",
+        redirectToHistory: true,
+      });
       return; // Exit early untuk bayar di tempat
     } else {
       // --- LOGIKA UNTUK MIDTRANS (ONLINE) ---
@@ -182,7 +231,28 @@ const Checkout = () => {
           body: JSON.stringify(midtransPayload),
         });
 
-        const result = await response.json();
+        let result;
+        let rawText = "";
+        try {
+          rawText = await response.text();
+          result = rawText ? JSON.parse(rawText) : null;
+        } catch (parseError) {
+          console.error(
+            "Error parsing payment response:",
+            parseError,
+            rawText
+          );
+          throw new Error(
+            "Respon server pembayaran tidak valid. Pastikan server API berjalan dan konfigurasi .env sudah benar."
+          );
+        }
+
+        if (!response.ok || !result) {
+          throw new Error(
+            (result && result.message) ||
+              `Server pembayaran mengembalikan status ${response.status}`
+          );
+        }
 
         if (!result.success) {
           throw new Error(result.message || "Gagal membuat transaksi");
@@ -265,6 +335,8 @@ const Checkout = () => {
               "adminOrders",
               JSON.stringify([...adminOrders, adminOrder])
             );
+
+            addOrderNotification(orderId, "Lunas (Menunggu Pengambilan)");
 
             clearCart();
             alert("✅ Pembayaran berhasil! (Demo Mode)");
@@ -736,6 +808,51 @@ const Checkout = () => {
           </div>
         </form>
       </div>
+
+      {modal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-start">
+              <div
+                className={`mt-1 mr-3 rounded-full p-3 text-lg ${
+                  modal.variant === "success"
+                    ? "bg-green-100 text-green-600"
+                    : modal.variant === "error"
+                    ? "bg-red-100 text-red-600"
+                    : "bg-blue-100 text-blue-600"
+                }`}
+              >
+                <i
+                  className={`fas ${
+                    modal.variant === "success"
+                      ? "fa-check-circle"
+                      : modal.variant === "error"
+                      ? "fa-exclamation-circle"
+                      : "fa-info-circle"
+                  }`}
+                ></i>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-800 mb-1">
+                  {modal.title || "Informasi"}
+                </h3>
+                <p className="text-sm text-gray-600 whitespace-pre-line">
+                  {modal.message}
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="inline-flex items-center px-5 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
