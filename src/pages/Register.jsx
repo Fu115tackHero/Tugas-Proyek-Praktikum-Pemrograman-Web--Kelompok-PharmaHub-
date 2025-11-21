@@ -14,6 +14,10 @@ const Register = () => {
     password: '',
     confirmPassword: ''
   });
+  
+  // --- STATE BARU UNTUK KEKUATAN PASSWORD ---
+  const [passwordStrength, setPasswordStrength] = useState(0); // 0 - 4
+  
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -26,6 +30,31 @@ const Register = () => {
     return null;
   }
 
+  // --- FUNGSI CEK KEKUATAN PASSWORD (REGEX) ---
+  const checkStrength = (pass) => {
+    let score = 0;
+    if (!pass) return 0;
+
+    if (pass.length >= 8) score += 1; // Cek Panjang
+    if (/[A-Z]/.test(pass) && /[a-z]/.test(pass)) score += 1; // Cek Huruf Besar & Kecil
+    if (/[0-9]/.test(pass)) score += 1; // Cek Angka
+    if (/[^A-Za-z0-9]/.test(pass)) score += 1; // Cek Simbol unik
+
+    return score;
+  };
+
+  // --- FUNGSI GET LABEL & WARNA ---
+  const getStrengthLabel = () => {
+    switch (passwordStrength) {
+      case 0: return { label: 'Terlalu Pendek', color: 'bg-gray-200', text: 'text-gray-500' };
+      case 1: return { label: 'Lemah', color: 'bg-red-500', text: 'text-red-500' };
+      case 2: return { label: 'Lemah', color: 'bg-red-500', text: 'text-red-500' };
+      case 3: return { label: 'Lumayan', color: 'bg-yellow-500', text: 'text-yellow-500' };
+      case 4: return { label: 'Sangat Kuat', color: 'bg-green-500', text: 'text-green-500' };
+      default: return { label: '', color: 'bg-gray-200', text: 'text-gray-500' };
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -34,7 +63,12 @@ const Register = () => {
     }));
     setError('');
     
-    // Real-time password validation
+    // Cek kekuatan password realtime
+    if (name === 'password') {
+      setPasswordStrength(checkStrength(value));
+    }
+
+    // Real-time password validation (Match check)
     if (name === 'confirmPassword' || name === 'password') {
       if (name === 'confirmPassword') {
         if (value && formData.password !== value) {
@@ -57,21 +91,20 @@ const Register = () => {
     setLoading(true);
     setError('');
 
-    // Validation
     if (formData.password !== formData.confirmPassword) {
       setError('Password dan konfirmasi password tidak cocok!');
       setLoading(false);
       return;
     }
 
-    if (formData.password.length < 8) {
-      setError('Password minimal 8 karakter!');
+    // Validasi tambahan: Minimal skor 2 (biar gak asal-asalan kali)
+    if (passwordStrength < 2) {
+      setError('Password terlalu lemah! Gunakan kombinasi huruf, angka, dan simbol.');
       setLoading(false);
       return;
     }
 
     try {
-      // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const result = register({
@@ -83,7 +116,6 @@ const Register = () => {
       });
       
       if (result.success) {
-        // Auto redirect to home after successful registration
         navigate('/');
       } else {
         setError(result.message || 'Pendaftaran gagal. Silakan coba lagi.');
@@ -95,10 +127,11 @@ const Register = () => {
     }
   };
 
+  const strengthInfo = getStrengthLabel();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        {/* Header */}
         <div className="text-center">
           <h2 className="text-3xl font-bold text-gray-900">Daftar Akun Baru</h2>
           <p className="mt-2 text-sm text-gray-600">
@@ -109,7 +142,6 @@ const Register = () => {
           </p>
         </div>
 
-        {/* Register Form */}
         <form className="mt-8 space-y-6 bg-white p-8 rounded-xl shadow-lg" onSubmit={handleSubmit}>
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
@@ -207,7 +239,7 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Password */}
+            {/* Password dengan Indikator Kekuatan */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Password <span className="text-red-500">*</span>
@@ -221,7 +253,6 @@ const Register = () => {
                   name="password"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  minLength="8"
                   value={formData.password}
                   onChange={handleChange}
                   className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -235,7 +266,25 @@ const Register = () => {
                   <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-gray-400 hover:text-gray-600`}></i>
                 </button>
               </div>
-              <p className="mt-1 text-xs text-gray-500">Minimal 8 karakter</p>
+              
+              {/* --- VISUALISASI KEKUATAN PASSWORD --- */}
+              {formData.password && (
+                <div className="mt-2">
+                  <div className="flex h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                    {/* Bar 1 */}
+                    <div className={`h-full w-1/4 border-r border-white ${passwordStrength >= 1 ? strengthInfo.color : 'bg-transparent'}`}></div>
+                    {/* Bar 2 */}
+                    <div className={`h-full w-1/4 border-r border-white ${passwordStrength >= 2 ? strengthInfo.color : 'bg-transparent'}`}></div>
+                    {/* Bar 3 */}
+                    <div className={`h-full w-1/4 border-r border-white ${passwordStrength >= 3 ? strengthInfo.color : 'bg-transparent'}`}></div>
+                    {/* Bar 4 */}
+                    <div className={`h-full w-1/4 ${passwordStrength >= 4 ? strengthInfo.color : 'bg-transparent'}`}></div>
+                  </div>
+                  <p className={`text-xs mt-1 text-right ${strengthInfo.text} font-medium`}>
+                    {strengthInfo.label}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Confirm Password */}
