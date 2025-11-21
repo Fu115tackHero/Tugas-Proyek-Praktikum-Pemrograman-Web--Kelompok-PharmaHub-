@@ -42,6 +42,15 @@ const ProductDetail = () => {
   const handleAddToCart = () => {
     addToCart(product, quantity);
     setQuantity(1);
+    alert("Produk berhasil dimasukkan ke keranjang!");
+  };
+
+  // --- PERUBAHAN LOGIKA BELI SEKARANG ---
+  const handleBuyNow = () => {
+    // 1. Masukkan produk ke keranjang
+    addToCart(product, quantity);
+    // 2. Arahkan ke halaman KERANJANG (Cart) agar bisa input diskon
+    navigate("/cart"); 
   };
 
   const tabs = [
@@ -211,14 +220,14 @@ const ProductDetail = () => {
                     <span>Masukkan Ke Keranjang</span>
                   </button>
 
-                  {/* Checkout Button */}
-                  <Link
-                    to="/cart"
+                  {/* Beli Sekarang (Redirects to Cart) */}
+                  <button
+                    onClick={handleBuyNow}
                     className="bg-blue-600 text-white py-4 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center space-x-2"
                   >
                     <i className="fas fa-credit-card"></i>
                     <span>Checkout</span>
-                  </Link>
+                  </button>
                 </div>
               </div>
 

@@ -86,8 +86,9 @@ const Navbar = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Cari obat, vitamin, atau produk kesehatan..."
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Cari obat, vitamin, dll..." // Placeholder diperpendek sedikit agar lebih rapi
+              // TAMBAHKAN CLASS 'pr-10' DI SINI
+              className="w-full pl-4 pr-10 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <button className="absolute right-3 top-2 text-gray-500 hover:text-blue-600">
               <i className="fas fa-search"></i>
@@ -148,6 +149,12 @@ const Navbar = () => {
           >
             <i className="fas fa-search text-xl"></i>
           </button>
+
+          {/* Notifikasi Mobile (Lonceng) */}
+          <Link to="/notifications" className="md:hidden text-gray-700 relative">
+            <i className="fas fa-bell text-xl"></i>
+            <span className="absolute top-0 right-0 block h-2 w-2 rounded-full ring-1 ring-white bg-red-500"></span>
+          </Link>
 
           {/* Cart */}
           <Link to="/cart" className="relative">
@@ -236,8 +243,9 @@ const Navbar = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Cari obat, vitamin, atau produk kesehatan..."
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Cari obat..."
+              // TAMBAHKAN CLASS 'pr-10' DI SINI JUGA
+              className="w-full pl-4 pr-10 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <button className="absolute right-3 top-2 text-gray-500 hover:text-blue-600">
               <i className="fas fa-search"></i>
@@ -291,13 +299,6 @@ const Navbar = () => {
               onClick={() => setShowMobileMenu(false)}
             >
               Produk
-            </Link>
-            <Link
-              to="/notifications"
-              className="px-4 py-3 hover:bg-gray-50 transition"
-              onClick={() => setShowMobileMenu(false)}
-            >
-              Notifikasi
             </Link>
             <Link
               to="/history"
