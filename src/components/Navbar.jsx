@@ -63,7 +63,7 @@ const Navbar = () => {
   const cartCount = getCartItemsCount();
 
   return (
-    <header className="bg-white shadow-md sticky top-0 z-50">
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow-sm transition-all duration-300 border-b border-white/20">
       <div className="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
         {/* Logo */}
         <Link to="/" className="flex items-center">
@@ -167,10 +167,10 @@ const Navbar = () => {
                 className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-300 hover:border-blue-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 <img
-                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=3b82f6&color=fff&size=40&rounded=true`}
-                  alt="Profile"
-                  className="w-full h-full object-cover"
-                />
+                src={user?.photo ? user.photo : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=3b82f6&color=fff&size=40&rounded=true`}
+                alt="Profile"
+                 className="w-full h-full object-cover"
+              />
               </button>
 
               {/* Profile Dropdown */}
