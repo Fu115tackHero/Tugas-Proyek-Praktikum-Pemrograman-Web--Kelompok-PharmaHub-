@@ -1,0 +1,60 @@
+MIT License
+
+Copyright (c) 2025 Kelompok PharmaHub
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+ATTRIBUTION NOTICE:
+
+This database schema was created for PharmaHub - Online Pharmacy Management System
+by Kelompok PharmaHub as part of Praktikum Pemrograman Web project.
+
+If you use this schema in your project, attribution is appreciated but not required.
+Consider giving credit by including a link to the original repository or mentioning
+the authors.
+
+---
+
+DISCLAIMER:
+
+This database schema is provided for educational and development purposes.
+For production use in healthcare/pharmacy applications:
+
+1. Ensure compliance with local healthcare regulations (e.g., HIPAA, GDPR)
+2. Implement proper security measures for sensitive medical data
+3. Consult with legal and healthcare compliance experts
+4. Consider additional encryption for sensitive data (prescriptions, medical records)
+5. Implement audit logging for all data access and modifications
+6. Regular security audits and penetration testing
+
+The authors are not responsible for any misuse or regulatory violations
+arising from the use of this database schema.
+
+---
+
+THIRD-PARTY NOTICES:
+
+This project uses PostgreSQL Database Management System.
+PostgreSQL is Copyright © 1996-2025 by the PostgreSQL Global Development Group.
+PostgreSQL is licensed under the PostgreSQL License, a liberal Open Source license.
+
+For more information about PostgreSQL license, visit:
+https://www.postgresql.org/about/licence/
