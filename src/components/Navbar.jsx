@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { searchProducts } from '../data/products';
+import { getProducts } from '../utils/api';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -39,13 +39,18 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Handle search
-  const handleSearch = (query) => {
+  // Handle search dengan API
+  const handleSearch = async (query) => {
     setSearchQuery(query);
     if (query.trim().length >= 2) {
-      const results = searchProducts(query);
-      setSearchResults(results.slice(0, 5)); // Show max 5 results
-      setShowSearchResults(true);
+      try {
+        const results = await getProducts({ search: query });
+        setSearchResults(results.slice(0, 5)); // Show max 5 results
+        setShowSearchResults(true);
+      } catch (err) {
+        console.error('Search error:', err);
+        setSearchResults([]);
+      }
     } else {
       setSearchResults([]);
       setShowSearchResults(false);

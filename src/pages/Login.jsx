@@ -40,21 +40,26 @@ const Login = () => {
     setError("");
 
     try {
-      // Simulasi API delay
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      console.log('🔐 Login attempt:', formData.email);
+      
+      // Call login API (now properly awaited)
+      const result = await login(formData.email, formData.password);
 
-      const result = login(formData.email, formData.password);
+      console.log('Login result:', result);
 
       if (result.success) {
+        console.log('✅ Login successful!');
         if (formData.email === "admin@pharmahub.com") {
           navigate("/admin");
         } else {
           navigate("/");
         }
       } else {
+        console.log('❌ Login failed:', result.message);
         setError(result.message || "Login gagal. Silakan coba lagi.");
       }
     } catch (err) {
+      console.error('❌ Login error:', err);
       setError("Terjadi kesalahan. Silakan coba lagi.");
     } finally {
       setLoading(false);

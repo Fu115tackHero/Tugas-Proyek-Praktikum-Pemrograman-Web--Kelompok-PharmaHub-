@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { useAuth } from "./AuthContext";
+import { getCart, syncCart } from "../utils/api";
 
 const CartContext = createContext();
 
@@ -11,9 +13,27 @@ export const useCart = () => {
 };
 
 export const CartProvider = ({ children }) => {
+  const { user } = useAuth();
   const [cart, setCart] = useState([]);
   const [savedForLater, setSavedForLater] = useState([]);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
+
+  // Update currentUserId whenever user changes
+  useEffect(() => {
+    if (user?.id) {
+      console.log('🔄 CartContext: User ID changed to:', user.id);
+      setCurrentUserId(user.id);
+    } else {
+      console.log('🔄 CartContext: User logged out, using guest mode');
+      setCurrentUserId(null);
+    }
+  }, [user?.id]);
+
+  // Get localStorage key berdasarkan user ID
+  const getCartKey = () => currentUserId ? `pharmahub_cart_${currentUserId}` : "pharmahub_cart_guest";
+  const getSavedForLaterKey = () => currentUserId ? `pharmahub_saved_${currentUserId}` : "pharmahub_saved_guest";
+  const getCouponKey = () => currentUserId ? `pharmahub_coupon_${currentUserId}` : "pharmahub_coupon_guest";
 
   // Daftar kupon yang tersedia
   const availableCoupons = {
@@ -35,77 +55,120 @@ export const CartProvider = ({ children }) => {
     },
   };
 
-  // Load cart from localStorage on mount
+  // Load cart dari localStorage saat user berubah
   useEffect(() => {
-    const savedCart = localStorage.getItem("pharmahub_cart");
+    console.log('� CartContext: Loading cart for user ID:', currentUserId || 'guest');
+    
+    const cartKey = getCartKey();
+    console.log('� CartContext: Using cart key:', cartKey);
+    
+    const savedCart = localStorage.getItem(cartKey);
+    console.log('� CartContext: Saved cart data:', savedCart ? `${JSON.parse(savedCart).length} items` : 'none');
+    
     if (savedCart) {
       try {
-        setCart(JSON.parse(savedCart));
+        const parsedCart = JSON.parse(savedCart);
+        setCart(parsedCart);
+        console.log('✅ CartContext: Loaded cart with', parsedCart.length, 'items');
+        
+        // Sync to database jika user logged in
+        if (currentUserId && user?.id) {
+          console.log('🔄 CartContext: Syncing cart to database...');
+          syncCart(user.id, parsedCart).catch(err => {
+            console.error('❌ Failed to sync cart to DB:', err);
+          });
+        }
       } catch (error) {
-        console.error("Error loading cart from localStorage:", error);
+        console.error("❌ CartContext: Error loading cart from localStorage:", error);
+        setCart([]);
       }
+    } else {
+      console.log('📝 CartContext: No saved cart, starting with empty array');
+      setCart([]);
     }
 
-    const savedItems = localStorage.getItem("pharmahub_saved_for_later");
+    const savedForLaterKey = getSavedForLaterKey();
+    const savedItems = localStorage.getItem(savedForLaterKey);
     if (savedItems) {
       try {
         setSavedForLater(JSON.parse(savedItems));
       } catch (error) {
-        console.error("Error loading saved items from localStorage:", error);
+        console.error("❌ Error loading saved items from localStorage:", error);
+        setSavedForLater([]);
       }
+    } else {
+      setSavedForLater([]);
     }
 
-    const savedCoupon = localStorage.getItem("pharmahub_applied_coupon");
+    const couponKey = getCouponKey();
+    const savedCoupon = localStorage.getItem(couponKey);
     if (savedCoupon) {
       try {
         setAppliedCoupon(JSON.parse(savedCoupon));
       } catch (error) {
-        console.error("Error loading coupon from localStorage:", error);
+        console.error("❌ Error loading coupon from localStorage:", error);
+        setAppliedCoupon(null);
       }
+    } else {
+      setAppliedCoupon(null);
     }
-  }, []);
+  }, [currentUserId]); // Reload saat currentUserId berubah
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem("pharmahub_cart", JSON.stringify(cart));
-  }, [cart]);
+    const cartKey = getCartKey();
+    console.log(`💾 CartContext: Saving cart (key: ${cartKey}, items: ${cart.length})`);
+    localStorage.setItem(cartKey, JSON.stringify(cart));
+    
+    // Sync to database jika user logged in
+    if (currentUserId && user?.id && cart.length > 0) {
+      console.log('🔄 CartContext: Syncing cart to database...');
+      syncCart(user.id, cart).catch(err => {
+        console.error('❌ Failed to sync cart to DB:', err);
+      });
+    }
+  }, [cart, currentUserId]);
 
   // Save "saved for later" to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem(
-      "pharmahub_saved_for_later",
-      JSON.stringify(savedForLater)
-    );
-  }, [savedForLater]);
+    const savedForLaterKey = getSavedForLaterKey();
+    localStorage.setItem(savedForLaterKey, JSON.stringify(savedForLater));
+  }, [savedForLater, currentUserId]);
 
   // Save applied coupon to localStorage whenever it changes
   useEffect(() => {
+    const couponKey = getCouponKey();
     if (appliedCoupon) {
-      localStorage.setItem(
-        "pharmahub_applied_coupon",
-        JSON.stringify(appliedCoupon)
-      );
+      localStorage.setItem(couponKey, JSON.stringify(appliedCoupon));
     } else {
-      localStorage.removeItem("pharmahub_applied_coupon");
+      localStorage.removeItem(couponKey);
     }
-  }, [appliedCoupon]);
+  }, [appliedCoupon, currentUserId]);
 
   // Add item to cart
   const addToCart = (product, quantity = 1) => {
+    console.log('🛒 CartContext.addToCart called:', { product: product.name, quantity, userEmail: user?.email });
+    
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.id === product.id);
 
+      let updatedCart;
       if (existingItem) {
         // Update quantity if item already exists
-        return prevCart.map((item) =>
+        updatedCart = prevCart.map((item) =>
           item.id === product.id
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
+        console.log('✅ Item updated in cart');
       } else {
         // Add new item to cart
-        return [...prevCart, { ...product, quantity }];
+        updatedCart = [...prevCart, { ...product, quantity }];
+        console.log('✅ Item added to cart');
       }
+      
+      console.log('💾 New cart state:', updatedCart.length, 'items');
+      return updatedCart;
     });
   };
 

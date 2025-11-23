@@ -1,4 +1,13 @@
 import { useState, useEffect } from 'react';
+import {
+  getProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  getCategories,
+  fileToBase64,
+  validateImage,
+} from '../../utils/api';
 
 const DrugManagement = () => {
   const [drugs, setDrugs] = useState([]);
@@ -11,10 +20,13 @@ const DrugManagement = () => {
   const [currentDrug, setCurrentDrug] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [availableGenerics, setAvailableGenerics] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [newGeneric, setNewGeneric] = useState('');
   const [showAddGeneric, setShowAddGeneric] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -48,6 +60,7 @@ const DrugManagement = () => {
 
   useEffect(() => {
     loadDrugs();
+    loadCategories();
     loadGenerics();
   }, []);
 
@@ -55,14 +68,60 @@ const DrugManagement = () => {
     filterDrugs();
   }, [drugs, searchTerm, categoryFilter, prescriptionFilter]);
 
-  const loadDrugs = () => {
-    const savedDrugs = localStorage.getItem('adminDrugs');
-    if (savedDrugs) {
-      setDrugs(JSON.parse(savedDrugs));
-    } else {
-      const defaultDrugs = getDefaultDrugs();
-      localStorage.setItem('adminDrugs', JSON.stringify(defaultDrugs));
-      setDrugs(defaultDrugs);
+  // Load products from API
+  const loadDrugs = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const products = await getProducts({ active: true });
+      
+      console.log('✅ Products loaded for admin:', products.length);
+      console.log('   Sample product:', products[0]);
+      console.log('   Sample image URL:', products[0]?.image);
+      
+      setDrugs(products);
+    } catch (err) {
+      console.error('Error loading products:', err);
+      setError('Gagal memuat data obat. ' + err.message);
+      // Fallback to localStorage jika API gagal
+      const savedDrugs = localStorage.getItem('adminDrugs');
+      if (savedDrugs) {
+        setDrugs(JSON.parse(savedDrugs));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load categories from API
+  const loadCategories = async () => {
+    try {
+      const categoriesData = await getCategories();
+      // Map to ensure consistent field names
+      const mappedCategories = categoriesData.map(cat => ({
+        id: cat.id,
+        category_id: cat.id, // For consistency
+        name: cat.name,
+        category_name: cat.name, // For consistency
+        description: cat.description,
+        isActive: cat.isActive
+      }));
+      setCategories(mappedCategories);
+      console.log('✅ Categories loaded:', mappedCategories.length);
+    } catch (err) {
+      console.error('Error loading categories:', err);
+      // Fallback ke default categories
+      const fallbackCategories = [
+        { id: 1, category_id: 1, name: 'Obat Nyeri & Demam', category_name: 'Obat Nyeri & Demam' },
+        { id: 2, category_id: 2, name: 'Obat Pencernaan', category_name: 'Obat Pencernaan' },
+        { id: 3, category_id: 3, name: 'Obat Alergi', category_name: 'Obat Alergi' },
+        { id: 4, category_id: 4, name: 'Obat Pernapasan', category_name: 'Obat Pernapasan' },
+        { id: 5, category_id: 5, name: 'Antiseptik', category_name: 'Antiseptik' },
+        { id: 6, category_id: 6, name: 'Vitamin & Suplemen', category_name: 'Vitamin & Suplemen' },
+        { id: 7, category_id: 7, name: 'Antibiotik', category_name: 'Antibiotik' },
+        { id: 8, category_id: 8, name: 'Obat Jantung & Hipertensi', category_name: 'Obat Jantung & Hipertensi' },
+      ];
+      setCategories(fallbackCategories);
     }
   };
 
@@ -197,62 +256,93 @@ const DrugManagement = () => {
     });
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validasi tipe file
-      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-      if (!validTypes.includes(file.type)) {
-        alert('Format file tidak valid. Gunakan JPG, PNG, GIF, atau WEBP.');
-        return;
-      }
-
-      // Validasi ukuran file (max 5MB)
-      const maxSize = 5 * 1024 * 1024; // 5MB
-      if (file.size > maxSize) {
-        alert('Ukuran file terlalu besar. Maksimal 5MB.');
+      // Validasi file
+      const validation = validateImage(file);
+      if (!validation.valid) {
+        alert(validation.error);
         return;
       }
 
       setImageFile(file);
 
       // Preview image
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-        setFormData({ ...formData, image: reader.result });
-      };
-      reader.readAsDataURL(file);
+      try {
+        const base64 = await fileToBase64(file);
+        setImagePreview(base64);
+        setFormData({ ...formData, image: base64, imageFilename: file.name });
+      } catch (error) {
+        console.error('Error reading file:', error);
+        alert('Gagal membaca file gambar.');
+      }
     }
   };
 
   const removeImage = () => {
     setImageFile(null);
     setImagePreview(null);
-    setFormData({ ...formData, image: '' });
+    setFormData({ ...formData, image: '', imageFilename: '' });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const drugData = {
-      ...formData,
-      price: parseInt(formData.price),
-      stock: parseInt(formData.stock),
-      id: currentDrug ? currentDrug.id : `drug_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    };
+    try {
+      setLoading(true);
+      setError(null);
 
-    let updatedDrugs;
-    if (currentDrug) {
-      updatedDrugs = drugs.map(d => d.id === currentDrug.id ? drugData : d);
-    } else {
-      updatedDrugs = [...drugs, drugData];
+      // Find category ID from category name
+      const selectedCategory = categories.find(cat => cat.category_name === formData.category || cat.name === formData.category);
+      const categoryId = selectedCategory ? (selectedCategory.category_id || selectedCategory.id) : null;
+
+      console.log('📝 Submitting product data:', {
+        category: formData.category,
+        categoryId: categoryId,
+        selectedCategory: selectedCategory
+      });
+
+      if (!categoryId) {
+        throw new Error('Kategori tidak valid. Silakan pilih kategori yang tersedia.');
+      }
+
+      const drugData = {
+        ...formData,
+        categoryId: categoryId, // Send category_id as integer
+        price: parseFloat(formData.price),
+        stock: parseInt(formData.stock),
+      };
+
+      console.log('📦 Sending product data:', {
+        name: drugData.name,
+        genericName: drugData.genericName,
+        uses: drugData.uses,
+        howItWorks: drugData.howItWorks,
+        hasImage: !!imageFile,
+        imageFilename: imageFile?.name,
+        hasDetailFields: !!(drugData.genericName || drugData.uses || drugData.howItWorks)
+      });
+
+      if (currentDrug) {
+        // Update existing product
+        await updateProduct(currentDrug.id, drugData, imageFile);
+        alert('Obat berhasil diperbarui!');
+      } else {
+        // Create new product
+        await createProduct(drugData, imageFile);
+        alert('Obat berhasil ditambahkan!');
+      }
+
+      // Reload products
+      await loadDrugs();
+      setShowModal(false);
+    } catch (error) {
+      console.error('Error saving product:', error);
+      alert('Gagal menyimpan obat: ' + error.message);
+    } finally {
+      setLoading(false);
     }
-
-    localStorage.setItem('adminDrugs', JSON.stringify(updatedDrugs));
-    setDrugs(updatedDrugs);
-    setShowModal(false);
-    alert(currentDrug ? 'Obat berhasil diperbarui!' : 'Obat berhasil ditambahkan!');
   };
 
   const openDeleteModal = (drugId) => {
@@ -260,12 +350,19 @@ const DrugManagement = () => {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    const updatedDrugs = drugs.filter(d => d.id !== deleteId);
-    localStorage.setItem('adminDrugs', JSON.stringify(updatedDrugs));
-    setDrugs(updatedDrugs);
-    setShowDeleteModal(false);
-    alert('Obat berhasil dihapus!');
+  const confirmDelete = async () => {
+    try {
+      setLoading(true);
+      await deleteProduct(deleteId);
+      alert('Obat berhasil dihapus!');
+      await loadDrugs();
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      alert('Gagal menghapus obat: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatCurrency = (amount) => {
@@ -274,61 +371,6 @@ const DrugManagement = () => {
       currency: 'IDR',
       minimumFractionDigits: 0
     }).format(amount).replace('IDR', 'Rp');
-  };
-
-  const getDefaultDrugs = () => {
-    return [
-      {
-        id: 'drug_001',
-        name: 'Paracetamol 500mg',
-        category: 'Analgesik',
-        price: 5000,
-        stock: 50,
-        description: 'Obat penurun demam dan pereda nyeri',
-        image: '/images/products/paracetamol.png',
-        prescriptionRequired: false
-      },
-      {
-        id: 'drug_002',
-        name: 'Ibuprofen 400mg',
-        category: 'Analgesik',
-        price: 25000,
-        stock: 30,
-        description: 'Obat anti inflamasi untuk nyeri dan demam',
-        image: '/images/products/ibuprofen.jpg',
-        prescriptionRequired: false
-      },
-      {
-        id: 'drug_003',
-        name: 'Cetirizine 10mg',
-        category: 'Antihistamin',
-        price: 15000,
-        stock: 75,
-        description: 'Obat alergi dan antihistamin',
-        image: '/images/products/cetirizine.jpeg',
-        prescriptionRequired: false
-      },
-      {
-        id: 'drug_004',
-        name: 'Promag',
-        category: 'Antasida',
-        price: 12000,
-        stock: 8,
-        description: 'Obat maag dan asam lambung',
-        image: '/images/products/promag.jpg',
-        prescriptionRequired: false
-      },
-      {
-        id: 'drug_005',
-        name: 'Oralit',
-        category: 'Elektrolit',
-        price: 8000,
-        stock: 40,
-        description: 'Larutan elektrolit untuk dehidrasi',
-        image: '/images/products/oralit.jpeg',
-        prescriptionRequired: false
-      }
-    ];
   };
 
   return (
@@ -343,6 +385,7 @@ const DrugManagement = () => {
           <button
             onClick={openAddModal}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
+            disabled={loading}
           >
             <i className="fas fa-plus mr-2"></i>
             Tambah Obat
@@ -350,8 +393,32 @@ const DrugManagement = () => {
         </div>
       </header>
 
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center justify-between">
+          <div className="flex items-center">
+            <i className="fas fa-exclamation-circle mr-2"></i>
+            <span>{error}</span>
+          </div>
+          <button onClick={() => setError(null)} className="text-red-700 hover:text-red-900">
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading && drugs.length === 0 && (
+        <div className="flex justify-center items-center py-12">
+          <div className="text-center">
+            <i className="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
+            <p className="text-gray-600">Memuat data obat...</p>
+          </div>
+        </div>
+      )}
+
       {/* Search and Filter */}
-      <div className="bg-white rounded-lg shadow mb-6">
+      {!loading || drugs.length > 0 ? (
+        <div className="bg-white rounded-lg shadow mb-6">
         <div className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
@@ -389,8 +456,10 @@ const DrugManagement = () => {
           </div>
         </div>
       </div>
+      ) : null}
 
       {/* Drug Table */}
+      {!loading || drugs.length > 0 ? (
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -439,7 +508,7 @@ const DrugManagement = () => {
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">{drug.name}</div>
                           <div className="text-sm text-gray-500">
-                            {drug.description?.substring(0, 50)}...
+                            {drug.howItWorks?.substring(0, 50) || drug.description?.substring(0, 50)}...
                           </div>
                         </div>
                       </div>
@@ -492,6 +561,7 @@ const DrugManagement = () => {
           </table>
         </div>
       </div>
+      ) : null}
 
       {/* Add/Edit Modal */}
       {showModal && (
@@ -538,11 +608,11 @@ const DrugManagement = () => {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       >
                         <option value="">Pilih Kategori</option>
-                        <option value="Analgesik">Analgesik</option>
-                        <option value="Antibiotik">Antibiotik</option>
-                        <option value="Vitamin">Vitamin</option>
-                        <option value="Antasida">Antasida</option>
-                        <option value="Antihistamin">Antihistamin</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.name}>
+                            {cat.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { login as apiLogin, register as apiRegister } from '../utils/api';
 
 const AuthContext = createContext();
 
@@ -14,40 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Initialize demo accounts on first load
-  useEffect(() => {
-    const users = JSON.parse(localStorage.getItem('pharmahub_users') || '[]');
-    
-    // Create demo accounts if they don't exist
-    if (users.length === 0) {
-      const demoAccounts = [
-        {
-          id: 1,
-          name: 'Demo Customer',
-          email: 'customer@pharmahub.com',
-          password: 'customer123',
-          phone: '081234567890',
-          address: 'Jl. Demo Customer No. 123, Jakarta',
-          role: 'customer',
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 2,
-          name: 'Demo Admin',
-          email: 'admin@pharmahub.com',
-          password: 'admin123',
-          phone: '081234567891',
-          address: 'Jl. Demo Admin No. 456, Jakarta',
-          role: 'admin',
-          createdAt: new Date().toISOString(),
-        }
-      ];
-      localStorage.setItem('pharmahub_users', JSON.stringify(demoAccounts));
-      console.log('Demo accounts created successfully!');
-    }
-  }, []);
-
-  // Load user from localStorage on mount
+  // Load user from localStorage on mount (for persistent session)
   useEffect(() => {
     const savedUser = localStorage.getItem('pharmahub_user');
     if (savedUser) {
@@ -55,6 +23,7 @@ export const AuthProvider = ({ children }) => {
         const userData = JSON.parse(savedUser);
         setUser(userData);
         setIsAuthenticated(true);
+        console.log('✅ Loaded user session from localStorage:', userData.email);
       } catch (error) {
         console.error('Error loading user from localStorage:', error);
       }
@@ -62,87 +31,107 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Login function
-  const login = (email, password) => {
-    // Get users from localStorage
-    const users = JSON.parse(localStorage.getItem('pharmahub_users') || '[]');
-    const foundUser = users.find(u => u.email === email && u.password === password);
-
-    if (foundUser) {
-      const userData = {
-        id: foundUser.id,
-        name: foundUser.name,
-        email: foundUser.email,
-        phone: foundUser.phone,
-        address: foundUser.address,
-      };
+  const login = async (email, password) => {
+    try {
+      console.log('🔐 Attempting login via API...');
+      console.log('API URL:', import.meta.env.VITE_API_URL);
       
-      setUser(userData);
-      setIsAuthenticated(true);
-      localStorage.setItem('pharmahub_user', JSON.stringify(userData));
-      return { success: true };
+      // Call API
+      const response = await apiLogin({ email, password });
+      
+      console.log('✅ Login API response:', response);
+      
+      if (response.success) {
+        const userData = response.data;
+        setUser(userData);
+        setIsAuthenticated(true);
+        localStorage.setItem('pharmahub_user', JSON.stringify(userData));
+        return { success: true };
+      }
+      
+      return { success: false, message: response.message || 'Login gagal' };
+    } catch (error) {
+      console.error('❌ Login API error:', error);
+      console.error('Error details:', error.message);
+      
+      // Show error to user instead of fallback
+      return { 
+        success: false, 
+        message: `Backend API error: ${error.message}. Pastikan backend server running di ${import.meta.env.VITE_API_URL}` 
+      };
     }
-
-    return { success: false, message: 'Email atau password salah' };
   };
 
   // Register function
-  const register = (userData) => {
-    // Get existing users
-    const users = JSON.parse(localStorage.getItem('pharmahub_users') || '[]');
-    
-    // Check if email already exists
-    if (users.find(u => u.email === userData.email)) {
-      return { success: false, message: 'Email sudah terdaftar' };
+  const register = async (userData) => {
+    try {
+      console.log('📝 Attempting registration via API...');
+      console.log('API URL:', import.meta.env.VITE_API_URL);
+      console.log('User data:', { ...userData, password: '***' });
+      
+      // Call API
+      const response = await apiRegister(userData);
+      
+      console.log('✅ Registration API response:', response);
+      
+      if (response.success) {
+        const newUser = response.data;
+        
+        // Auto login after registration
+        const userDataToSave = {
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          phone: newUser.phone,
+          role: newUser.role || 'customer',
+        };
+
+        setUser(userDataToSave);
+        setIsAuthenticated(true);
+        localStorage.setItem('pharmahub_user', JSON.stringify(userDataToSave));
+
+        return { success: true };
+      }
+      
+      return { success: false, message: response.message || 'Registrasi gagal' };
+    } catch (error) {
+      console.error('❌ Registration API error:', error);
+      console.error('Error details:', error.message);
+      
+      // Show error to user instead of fallback
+      return { 
+        success: false, 
+        message: `Backend API error: ${error.message}. Pastikan backend server running di ${import.meta.env.VITE_API_URL}` 
+      };
     }
-
-    // Create new user
-    const newUser = {
-      id: Date.now(),
-      ...userData,
-      createdAt: new Date().toISOString(),
-    };
-
-    // Save to users array
-    users.push(newUser);
-    localStorage.setItem('pharmahub_users', JSON.stringify(users));
-
-    // Auto login after registration
-    const userDataToSave = {
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      phone: newUser.phone,
-      address: newUser.address,
-    };
-
-    setUser(userDataToSave);
-    setIsAuthenticated(true);
-    localStorage.setItem('pharmahub_user', JSON.stringify(userDataToSave));
-
-    return { success: true };
   };
 
   // Logout function
   const logout = () => {
+    // Clear user session
     setUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem('pharmahub_user');
+    
+    // Note: Cart is kept in localStorage even after logout
+    // This allows users to continue shopping without losing their cart
   };
 
   // Update user profile
-  const updateProfile = (updatedData) => {
-    const updatedUser = { ...user, ...updatedData };
-    setUser(updatedUser);
-    localStorage.setItem('pharmahub_user', JSON.stringify(updatedUser));
+  const updateProfile = async (updatedData) => {
+    try {
+      // TODO: Call API to update profile in database
+      console.log('⚠️ Update profile API not implemented yet, using localStorage');
+      
+      const updatedUser = { ...user, ...updatedData };
+      setUser(updatedUser);
+      localStorage.setItem('pharmahub_user', JSON.stringify(updatedUser));
 
-    // Also update in users array
-    const users = JSON.parse(localStorage.getItem('pharmahub_users') || '[]');
-    const updatedUsers = users.map(u => 
-      u.id === user.id ? { ...u, ...updatedData } : u
-    );
-    localStorage.setItem('pharmahub_users', JSON.stringify(updatedUsers));
-
-    return { success: true };
+      return { success: true };
+    } catch (error) {
+      console.error('Update profile error:', error);
+      return { success: false, message: error.message };
+    }
   };
 
   const value = {

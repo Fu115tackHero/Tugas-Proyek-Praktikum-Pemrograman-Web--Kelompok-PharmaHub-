@@ -3,11 +3,38 @@ const cors = require("cors");
 const midtransClient = require("midtrans-client");
 require("dotenv").config();
 
+// Import database connection
+const { query, testConnection } = require("./config/database");
+
+// Import routes
+const productRoutes = require("./routes/productRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
+const authRoutes = require("./routes/authRoutes");
+const cartRoutes = require("./routes/cartRoutes");
+
+// Import middleware
+const { sanitizeInput } = require("./middleware/validation");
+const { notFound, errorHandler } = require("./middleware/errorHandler");
+
 const app = express();
 
-// Middleware
-app.use(cors());
+// Global Middleware
+app.use(cors({
+  origin: function(origin, callback) {
+    const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'];
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Type', 'Content-Length']
+}));
 app.use(express.json());
+app.use(sanitizeInput); // Sanitize all inputs
 
 // Mode demo untuk testing tanpa kredensial Midtrans yang valid
 const DEMO_MODE = process.env.DEMO_MODE !== "false"; // Default true untuk development
@@ -31,6 +58,20 @@ app.get("/api", (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// ============================================
+// API ROUTES
+// ============================================
+
+// Mount routes
+app.use("/api/products", productRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/cart", cartRoutes);
+
+// ============================================
+// MIDTRANS ENDPOINTS
+// ============================================
 
 // Endpoint untuk membuat transaksi Midtrans
 app.post("/api/create-transaction", async (req, res) => {
@@ -111,14 +152,23 @@ app.post("/api/create-transaction", async (req, res) => {
   }
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error("Server Error:", err);
-  res.status(500).json({
-    success: false,
-    message: "Internal server error",
-    error: process.env.NODE_ENV === "development" ? err.message : undefined,
-  });
+// ============================================
+// ERROR HANDLING
+// ============================================
+
+// 404 handler
+app.use(notFound);
+
+// Global error handler
+app.use(errorHandler);
+
+// Test database connection on startup
+testConnection().then((success) => {
+  if (!success) {
+    console.warn(
+      "⚠️  Warning: Database connection failed. API will run with limited functionality."
+    );
+  }
 });
 
 // Export untuk Vercel Serverless Functions

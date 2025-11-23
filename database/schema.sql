@@ -112,19 +112,8 @@ CREATE TABLE products (
     name VARCHAR(255) NOT NULL,
     brand VARCHAR(100),
     category_id INTEGER REFERENCES product_categories(category_id),
-    generic_name VARCHAR(255), -- Nama generik obat
     price DECIMAL(12, 2) NOT NULL,
-    description TEXT,
-    uses TEXT, -- Kegunaan obat
-    how_it_works TEXT, -- Cara kerja obat
-    
-    -- Informasi Penting (Array)
-    important_info TEXT[], -- Array informasi penting
-    ingredients TEXT[], -- Array komposisi/bahan
-    precaution TEXT[], -- Array peringatan/kehati-hatian
-    side_effects TEXT[], -- Array efek samping
-    interactions TEXT[], -- Array interaksi obat
-    indication TEXT[], -- Array indikasi penggunaan
+    description TEXT, -- Deskripsi singkat untuk listing
     
     -- Stock & Prescription
     stock INTEGER DEFAULT 0,
@@ -151,10 +140,35 @@ CREATE TABLE products (
 
 CREATE INDEX idx_products_category ON products(category_id);
 CREATE INDEX idx_products_name ON products(name);
-CREATE INDEX idx_products_generic ON products(generic_name);
 CREATE INDEX idx_products_prescription ON products(prescription_required);
 CREATE INDEX idx_products_active ON products(is_active);
 CREATE INDEX idx_products_featured ON products(featured);
+
+-- ============================================
+-- TABEL PRODUCT DETAILS (Detail Informasi Produk)
+-- ============================================
+CREATE TABLE product_details (
+    detail_id SERIAL PRIMARY KEY,
+    product_id INTEGER NOT NULL UNIQUE REFERENCES products(product_id) ON DELETE CASCADE,
+    
+    -- Medical Information
+    generic_name VARCHAR(255), -- Nama generik obat
+    uses TEXT, -- Kegunaan obat
+    how_it_works TEXT, -- Cara kerja obat
+    
+    -- Informasi Penting (Array)
+    important_info TEXT[], -- Array informasi penting
+    ingredients TEXT[], -- Array komposisi/bahan
+    precaution TEXT[], -- Array peringatan/kehati-hatian
+    side_effects TEXT[], -- Array efek samping
+    interactions TEXT[], -- Array interaksi obat
+    indication TEXT[], -- Array indikasi penggunaan
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_product_details_product ON product_details(product_id);
 
 -- ============================================
 -- TABEL PRODUCT IMAGES (Gambar Produk Tambahan)

@@ -129,12 +129,12 @@ const Cart = () => {
                       >
                         <div className="flex items-center space-x-4">
                           <img
-                            src={item.image}
+                            src={item.image || "https://via.placeholder.com/64x64?text=No+Image"}
                             alt={item.name}
                             className="w-16 h-16 object-cover rounded-lg"
                             onError={(e) => {
-                              e.target.src =
-                                "https://via.placeholder.com/64x64?text=No+Image";
+                              console.error(`Failed to load image for item ${item.id}:`, e.target.src);
+                              e.target.src = "https://via.placeholder.com/64x64?text=No+Image";
                             }}
                           />
                           <div>
@@ -230,12 +230,12 @@ const Cart = () => {
                     >
                       <div className="flex items-center space-x-4">
                         <img
-                          src={item.image}
+                          src={item.image || "https://via.placeholder.com/64x64?text=No+Image"}
                           alt={item.name}
                           className="w-16 h-16 object-cover rounded-lg grayscale opacity-60"
                           onError={(e) => {
-                            e.target.src =
-                              "https://via.placeholder.com/64x64?text=No+Image";
+                            console.error(`Failed to load image for saved item ${item.id}:`, e.target.src);
+                            e.target.src = "https://via.placeholder.com/64x64?text=No+Image";
                           }}
                         />
                         <div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { getProductById } from "../data/products";
+import { getProductById } from "../utils/api";
 import { useCart } from "../context/CartContext";
 
 const ProductDetail = () => {
@@ -11,22 +11,53 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("ingredients");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const foundProduct = getProductById(id);
-    if (!foundProduct) {
-      navigate("/products");
-    } else {
-      setProduct(foundProduct);
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        const data = await getProductById(id);
+        console.log("Product data:", data);
+        console.log("Product ID:", data?.id);
+        console.log("Image URL:", data?.image);
+        setProduct(data);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching product:", err);
+        setError("Produk tidak ditemukan");
+        setTimeout(() => navigate("/products"), 2000);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchProduct();
     }
   }, [id, navigate]);
 
-  if (!product) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <i className="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
           <p>Memuat produk...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <i className="fas fa-exclamation-circle text-4xl text-red-600 mb-4"></i>
+          <p className="text-red-600 mb-4">{error || "Produk tidak ditemukan"}</p>
+          <Link to="/products" className="text-blue-600 hover:text-blue-800 underline">
+            Kembali ke Produk
+          </Link>
         </div>
       </div>
     );
@@ -123,12 +154,12 @@ const ProductDetail = () => {
             <div className="flex justify-center items-center">
               <div className="bg-gray-100 rounded-lg p-8 w-full max-w-md">
                 <img
-                  src={product.image}
+                  src={product.image || `${import.meta.env.VITE_API_URL}/api/products/${product.id}/image`}
                   alt={product.name}
                   className="w-full h-auto max-w-md object-contain rounded-lg transition-transform duration-300 hover:scale-105"
                   onError={(e) => {
-                    e.target.src =
-                      "https://via.placeholder.com/400x400?text=No+Image";
+                    console.error("Image load error for:", e.target.src);
+                    e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect fill='%23f0f0f0' width='400' height='400'/%3E%3Ctext x='50%25' y='50%25' font-size='24' fill='%23999' text-anchor='middle' dy='.3em'%3ENo Image%3C/text%3E%3C/svg%3E";
                   }}
                 />
               </div>
@@ -170,12 +201,14 @@ const ProductDetail = () => {
               </div>
 
               {/* How it works */}
-              <div>
-                <h3 className="font-semibold text-gray-800 mb-2">
-                  Cara Kerja:
-                </h3>
-                <p className="text-gray-600">{product.description}</p>
-              </div>
+              {product.howItWorks && (
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-2">
+                    Cara Kerja:
+                  </h3>
+                  <p className="text-gray-600">{product.howItWorks}</p>
+                </div>
+              )}
 
               {/* Generics */}
               <div>

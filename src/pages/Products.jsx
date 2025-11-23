@@ -1,25 +1,74 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { products, categories, getProductsByCategory } from '../data/products';
+import { getProducts, getCategories } from '../utils/api';
 
 const Products = () => {
-  const [filteredProducts, setFilteredProducts] = useState(products);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
+  const [categories, setCategories] = useState(['Semua Produk']);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     category: 'Semua Produk',
     priceRange: 'all',
     sort: 'name-asc'
   });
 
+  // Fetch products and categories on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [productsData, categoriesData] = await Promise.all([
+          getProducts(),
+          getCategories()
+        ]);
+        
+        setAllProducts(productsData);
+        // Add "Semua Produk" to beginning of categories list
+        const categoryList = ['Semua Produk', ...categoriesData.map(c => c.category_name || c.name)];
+        setCategories(categoryList);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        setError('Gagal memuat produk. Silakan coba lagi.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+
+    // 🔄 Auto-refresh products every 30 seconds
+    const intervalId = setInterval(async () => {
+      console.log('🔄 Auto-refreshing products...');
+      try {
+        const productsData = await getProducts();
+        setAllProducts(productsData);
+        console.log('✅ Products refreshed:', productsData.length, 'items');
+      } catch (err) {
+        console.error('❌ Error auto-refreshing products:', err);
+      }
+    }, 30000); // 30 seconds
+
+    // Cleanup interval on unmount
+    return () => {
+      console.log('🧹 Cleaning up products auto-refresh interval');
+      clearInterval(intervalId);
+    };
+  }, []);
+
+  // Apply filters whenever filters or products change
   useEffect(() => {
     applyFilters();
-  }, [filters]);
+  }, [filters, allProducts]);
 
   const applyFilters = () => {
-    let result = [...products];
+    let result = [...allProducts];
 
     // Category filter
     if (filters.category !== 'Semua Produk') {
-      result = getProductsByCategory(filters.category);
+      result = result.filter(p => p.category === filters.category);
     }
 
     // Price range filter
@@ -83,8 +132,28 @@ const Products = () => {
           </p>
         </div>
 
-        {/* Filter Section */}
-        <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-8">
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <div className="flex items-center">
+              <i className="fas fa-exclamation-circle mr-2"></i>
+              <span>{error}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading && allProducts.length === 0 ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="text-center">
+              <i className="fas fa-spinner fa-spin text-5xl text-blue-600 mb-4"></i>
+              <p className="text-gray-600 text-lg">Memuat produk...</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Filter Section */}
+            <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-8">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Filter Produk</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Category Filter */}
@@ -94,8 +163,9 @@ const Products = () => {
                 value={filters.category}
                 onChange={(e) => handleFilterChange('category', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
               >
-                {categories.map(category => (
+                {(categories || ['Semua Produk']).map(category => (
                   <option key={category} value={category}>{category}</option>
                 ))}
               </select>
@@ -149,18 +219,19 @@ const Products = () => {
               `}
               >
                 <img
-                  src={product.image}
+                  src={product.image || `${import.meta.env.VITE_API_URL}/api/products/${product.id}/image`}
                   alt={product.name}
                   className="w-32 h-32 object-cover mx-auto mb-4 rounded-lg"
                   onError={(e) => {
-                    e.target.src = 'https://via.placeholder.com/150?text=No+Image';
+                    console.error(`Failed to load image for product ${product.id}`);
+                    e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Crect fill='%23f0f0f0' width='150' height='150'/%3E%3Ctext x='50%25' y='50%25' font-size='14' fill='%23999' text-anchor='middle' dy='.3em'%3ENo Image%3C/text%3E%3C/svg%3E";
                   }}
                 />
                 <h3 className="font-semibold text-gray-800">{product.name}</h3>
                 <p className="text-gray-600 text-sm mt-1">
-                  {product.description.length > 80 
-                    ? product.description.substring(0, 80) + '...' 
-                    : product.description}
+                  {product.howItWorks && product.howItWorks.length > 80 
+                    ? product.howItWorks.substring(0, 80) + '...' 
+                    : (product.howItWorks || product.uses || 'Tidak ada deskripsi')}
                 </p>
                 {product.prescriptionRequired && (
                   <div className="mt-2 mb-2">
@@ -191,6 +262,8 @@ const Products = () => {
               Coba ubah filter atau kata kunci pencarian Anda
             </p>
           </div>
+        )}
+          </>
         )}
       </div>
     </div>

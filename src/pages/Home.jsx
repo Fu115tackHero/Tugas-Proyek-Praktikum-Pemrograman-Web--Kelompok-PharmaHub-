@@ -1,10 +1,47 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { products } from '../data/products';
+import { getProducts } from '../utils/api';
 
 const Home = () => {
-  // Get featured products (first 8 products)
-  const featuredProducts = products.slice(0, 8);
+  // Get featured products from API
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch products from database
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const productsData = await getProducts({ active: true });
+        setFeaturedProducts(productsData.slice(0, 8));
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        setFeaturedProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+
+    // 🔄 Auto-refresh featured products every 30 seconds
+    const intervalId = setInterval(async () => {
+      console.log('🔄 Auto-refreshing featured products...');
+      try {
+        const productsData = await getProducts({ active: true });
+        setFeaturedProducts(productsData.slice(0, 8));
+        console.log('✅ Featured products refreshed:', productsData.length, 'items');
+      } catch (error) {
+        console.error('❌ Error auto-refreshing featured products:', error);
+      }
+    }, 30000); // 30 seconds
+
+    // Cleanup interval on unmount
+    return () => {
+      console.log('🧹 Cleaning up featured products auto-refresh interval');
+      clearInterval(intervalId);
+    };
+  }, []);
 
   // Image slider state
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -215,25 +252,31 @@ const Home = () => {
         <h2 className="text-3xl font-semibold text-gray-800 mb-6 text-center">
           Daftar Obat yang Tersedia
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {featuredProducts.map((product) => (
-            <div
-              key={product.id}
-              className={`
-                group relative bg-white rounded-2xl p-5 flex flex-col border border-transparent
-                transition-all duration-300 ease-out
-                hover:shadow-2xl hover:-translate-y-2 hover:border-blue-200
-                ${product.prescriptionRequired ? 'border-l-4 border-l-red-500' : ''}
-              `}
-            >
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-36 h-36 object-cover mx-auto mb-4 rounded-lg"
-                onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/150?text=No+Image';
-                }}
-              />
+        {loading ? (
+          <div className="text-center py-12">
+            <i className="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
+            <p className="text-gray-600">Memuat produk...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {featuredProducts.map((product) => (
+              <div
+                key={product.id}
+                className={`
+                  group relative bg-white rounded-2xl p-5 flex flex-col border border-transparent
+                  transition-all duration-300 ease-out
+                  hover:shadow-2xl hover:-translate-y-2 hover:border-blue-200
+                  ${product.prescriptionRequired ? 'border-l-4 border-l-red-500' : ''}
+                `}
+              >
+                <img
+                  src={product.image || `${import.meta.env.VITE_API_URL}/api/products/${product.id}/image`}
+                  alt={product.name}
+                  className="w-36 h-36 object-cover mx-auto mb-4 rounded-lg"
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/150?text=No+Image';
+                  }}
+                />
               <h3 className="font-semibold text-gray-800 text-base">{product.name}</h3>
               <p className="text-gray-600 text-sm mt-1 flex-grow">
                 {product.description.length > 60 
@@ -253,7 +296,8 @@ const Home = () => {
               </div>
             </div>
           ))}
-        </div>
+          </div>
+        )}
 
         {/* Tombol Lihat Produk Lain */}
         <div className="text-center mt-8">
