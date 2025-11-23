@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 
@@ -19,6 +19,9 @@ const Profile = () => {
   const [photoPreview, setPhotoPreview] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+  const profileMapRef = useRef(null);
+  const profileMarkerRef = useRef(null);
+
   // Load user data and statistics
   useEffect(() => {
     if (user) {
@@ -27,6 +30,7 @@ const Profile = () => {
         phone: user.phone || '',
         address: user.address || '',
         photo: user.photo || '',
+        location: user.location || null,
       });
       setPhotoPreview(user.photo || '');
 
@@ -42,6 +46,60 @@ const Profile = () => {
       setStatistics(stats);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!isEditing) {
+      profileMapRef.current = null;
+      profileMarkerRef.current = null;
+      return;
+    }
+
+    if (!window.google || !window.google.maps) {
+      return;
+    }
+
+    const mapElement = document.getElementById('profile-map');
+    if (!mapElement || profileMapRef.current) {
+      return;
+    }
+
+    const defaultCenter = formData.location || { lat: -6.2, lng: 106.8 };
+
+    const map = new window.google.maps.Map(mapElement, {
+      center: defaultCenter,
+      zoom: 14,
+    });
+
+    if (formData.location) {
+      profileMarkerRef.current = new window.google.maps.Marker({
+        position: formData.location,
+        map,
+      });
+    }
+
+    map.addListener('click', (event) => {
+      const position = {
+        lat: event.latLng.lat(),
+        lng: event.latLng.lng(),
+      };
+
+      if (profileMarkerRef.current) {
+        profileMarkerRef.current.setMap(null);
+      }
+
+      profileMarkerRef.current = new window.google.maps.Marker({
+        position,
+        map,
+      });
+
+      setFormData((prev) => ({
+        ...prev,
+        location: position,
+      }));
+    });
+
+    profileMapRef.current = map;
+  }, [isEditing, formData.location]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -82,6 +140,7 @@ const Profile = () => {
       phone: user.phone || '',
       address: user.address || '',
       photo: user.photo || '',
+      location: user.location || null,
     });
     setPhotoPreview(user.photo || '');
     setIsEditing(false);
@@ -265,6 +324,18 @@ const Profile = () => {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Jl. Contoh No. 123, Jakarta"
                   ></textarea>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Klik pada peta untuk menyimpan titik lokasi alamat Anda (opsional).
+                  </p>
+                  <div
+                    id="profile-map"
+                    className="mt-2 w-full h-64 rounded-lg border border-gray-200 overflow-hidden"
+                  ></div>
+                  {formData.location && (
+                    <p className="mt-2 text-xs text-gray-500">
+                      Lokasi tersimpan: {formData.location.lat.toFixed(5)}, {formData.location.lng.toFixed(5)}
+                    </p>
+                  )}
                 </div>
               </div>
 

@@ -1,16 +1,173 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
 const History = () => {
   const [activeTab, setActiveTab] = useState('all');
-  const [orders] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [trackingEnabled, setTrackingEnabled] = useState(false);
+  const [trackingError, setTrackingError] = useState('');
+  const mapRef = useRef(null);
+  const userMarkerRef = useRef(null);
+  const pharmacyMarkerRef = useRef(null);
+  const watchIdRef = useRef(null);
+
+  useEffect(() => {
+    try {
+      const savedOrders = JSON.parse(localStorage.getItem('order_history') || '[]');
+      setOrders(savedOrders);
+    } catch (error) {
+      console.error('Error loading order history:', error);
+      setOrders([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!trackingEnabled) {
+      if (watchIdRef.current && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      setTrackingError('Browser Anda tidak mendukung fitur lokasi (GPS).');
+      return;
+    }
+
+    if (!window.google || !window.google.maps) {
+      setTrackingError('Google Maps belum siap. Coba muat ulang halaman.');
+      return;
+    }
+
+    const mapElement = document.getElementById('live-tracking-map');
+    if (!mapElement) {
+      setTrackingError('Area peta tidak ditemukan.');
+      return;
+    }
+
+    const pharmacyAddress = 'Gedung C Fasilkom-TI, Universitas Sumatera Utara, Jl. Alumni No.3, Padang Bulan, Kec. Medan Baru, Kota Medan, Sumatera Utara 20155';
+
+    let map = mapRef.current;
+    if (!map) {
+      map = new window.google.maps.Map(mapElement, {
+        center: { lat: 0, lng: 0 },
+        zoom: 14,
+      });
+
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ address: pharmacyAddress }, (results, status) => {
+        if (status === 'OK' && results[0]) {
+          const location = results[0].geometry.location;
+          pharmacyMarkerRef.current = new window.google.maps.Marker({
+            position: location,
+            map,
+            title: 'Lokasi Apotek',
+          });
+          map.setCenter(location);
+        } else {
+          console.warn('Gagal geocode alamat apotek:', status);
+        }
+      });
+
+      mapRef.current = map;
+    }
+
+    const successHandler = (position) => {
+      const userPos = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      };
+
+      if (!userMarkerRef.current) {
+        userMarkerRef.current = new window.google.maps.Marker({
+          position: userPos,
+          map,
+          title: 'Posisi Anda',
+          icon: {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            scale: 6,
+            fillColor: '#2563eb',
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 2,
+          },
+        });
+      } else {
+        userMarkerRef.current.setPosition(userPos);
+      }
+
+      const bounds = new window.google.maps.LatLngBounds();
+      if (pharmacyMarkerRef.current) {
+        bounds.extend(pharmacyMarkerRef.current.getPosition());
+      }
+      bounds.extend(userPos);
+      map.fitBounds(bounds);
+      setTrackingError('');
+    };
+
+    const errorHandler = (err) => {
+      console.error('Geolocation error:', err);
+      setTrackingError('Tidak dapat mengambil lokasi Anda. Pastikan izin lokasi sudah diberikan.');
+    };
+
+    watchIdRef.current = navigator.geolocation.watchPosition(successHandler, errorHandler, {
+      enableHighAccuracy: true,
+      maximumAge: 5000,
+      timeout: 10000,
+    });
+
+    return () => {
+      if (watchIdRef.current && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+    };
+  }, [trackingEnabled]);
 
   const counts = {
     all: orders.length,
-    completed: orders.filter(o => o.status === 'completed').length,
-    processing: orders.filter(o => o.status === 'processing').length,
-    cancelled: orders.filter(o => o.status === 'cancelled').length,
+    completed: orders.filter(o =>
+      o.status && o.status.toLowerCase().includes('lunas')
+    ).length,
+    processing: orders.filter(o =>
+      o.status && (
+        o.status.toLowerCase().includes('menunggu') ||
+        o.status.toLowerCase().includes('pending') ||
+        o.status.toLowerCase().includes('processing')
+      )
+    ).length,
+    cancelled: orders.filter(o =>
+      o.status && o.status.toLowerCase().includes('batal')
+    ).length,
   };
+
+  const PHARMACY_ADDRESS = 'Gedung C Fasilkom-TI, Universitas Sumatera Utara, Jl. Alumni No.3, Padang Bulan, Kec. Medan Baru, Kota Medan, Sumatera Utara 20155';
+  const mapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const embedUrl = mapsApiKey
+    ? `https://www.google.com/maps/embed/v1/place?key=${mapsApiKey}&q=${encodeURIComponent(PHARMACY_ADDRESS)}`
+    : null;
+  const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(PHARMACY_ADDRESS)}`;
+
+  const filteredOrders = orders.filter((order) => {
+    if (activeTab === 'all') return true;
+    if (activeTab === 'completed') {
+      return order.status && order.status.toLowerCase().includes('lunas');
+    }
+    if (activeTab === 'processing') {
+      return (
+        order.status && (
+          order.status.toLowerCase().includes('menunggu') ||
+          order.status.toLowerCase().includes('pending') ||
+          order.status.toLowerCase().includes('processing')
+        )
+      );
+    }
+    if (activeTab === 'cancelled') {
+      return order.status && order.status.toLowerCase().includes('batal');
+    }
+    return true;
+  });
 
   return (
     <main className="container mx-auto px-4 py-8 min-h-screen bg-gray-50">
@@ -37,6 +194,57 @@ const History = () => {
           </div>
         </div>
       </div>
+
+      {orders.length > 0 && (
+        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-2">Panduan ke Apotek</h2>
+          <p className="text-sm text-gray-600 mb-3">
+            Lokasi apotek: Gedung C Fasilkom-TI, Universitas Sumatera Utara.
+          </p>
+          {embedUrl && (
+            <div className="w-full h-64 md:h-80 rounded-lg overflow-hidden mb-3">
+              <iframe
+                title="Lokasi Apotek"
+                src={embedUrl}
+                width="100%"
+                height="100%"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                style={{ border: 0 }}
+                allowFullScreen
+              ></iframe>
+            </div>
+          )}
+          <div className="flex flex-wrap items-center gap-3 mb-3">
+            <a
+              href={directionsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition"
+            >
+              <i className="fas fa-location-arrow mr-2"></i>
+              Buka Navigasi di Google Maps
+            </a>
+            <button
+              type="button"
+              onClick={() => setTrackingEnabled(prev => !prev)}
+              className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition"
+            >
+              <i className="fas fa-route mr-2"></i>
+              {trackingEnabled ? 'Matikan Live Tracking di Halaman Ini' : 'Mulai Live Tracking di Halaman Ini'}
+            </button>
+          </div>
+          {trackingError && (
+            <p className="text-xs text-red-500 mb-2">{trackingError}</p>
+          )}
+          {trackingEnabled && (
+            <div
+              id="live-tracking-map"
+              className="w-full h-64 md:h-80 rounded-lg border border-gray-200 overflow-hidden"
+            ></div>
+          )}
+        </div>
+      )}
 
       {/* Filter Tabs */}
       <div className="mb-6">
@@ -108,8 +316,7 @@ const History = () => {
 
       {/* History Content */}
       <div className="bg-white rounded-lg shadow-md">
-        {/* Empty State */}
-        {orders.length === 0 && (
+        {orders.length === 0 ? (
           <div className="text-center py-16 px-6">
             <div className="mb-6">
               <i className="fas fa-receipt text-6xl text-gray-300"></i>
@@ -149,6 +356,40 @@ const History = () => {
                 </Link>
               </p>
             </div>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {filteredOrders.length === 0 ? (
+              <div className="py-10 text-center text-gray-500">
+                Tidak ada transaksi untuk filter ini.
+              </div>
+            ) : (
+              filteredOrders.map((order) => (
+                <div key={order.id} className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">ID Pesanan: <span className="font-mono text-gray-700">{order.id}</span></p>
+                    <p className="text-base font-semibold text-gray-800 mb-1">{order.customerName}</p>
+                    <p className="text-sm text-gray-500">
+                      {new Date(order.date).toLocaleString('id-ID', {
+                        day: '2-digit', month: 'short', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                  <div className="mt-3 sm:mt-0 flex flex-col sm:items-end space-y-1">
+                    <span className="text-sm font-medium text-gray-700">
+                      Total: Rp {order.total?.toLocaleString('id-ID')}
+                    </span>
+                    <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold
+                      ${order.status?.toLowerCase().includes('lunas') ? 'bg-green-100 text-green-700' : ''}
+                      ${order.status?.toLowerCase().includes('menunggu') || order.status?.toLowerCase().includes('pending') ? 'bg-yellow-100 text-yellow-700' : ''}
+                    `}>
+                      {order.status}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         )}
       </div>

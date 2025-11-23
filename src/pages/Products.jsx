@@ -11,6 +11,8 @@ const Products = () => {
   const [filters, setFilters] = useState({
     category: 'Semua Produk',
     priceRange: 'all',
+    minPrice: '',
+    maxPrice: '',
     sort: 'name-asc'
   });
 
@@ -73,7 +75,23 @@ const Products = () => {
 
     // Price range filter
     if (filters.priceRange !== 'all') {
-      if (filters.priceRange === '0-15000') {
+      if (filters.priceRange === 'custom') {
+        let min = parseInt(filters.minPrice, 10);
+        let max = parseInt(filters.maxPrice, 10);
+
+        if (!isNaN(min) && !isNaN(max) && min > max) {
+          const temp = min;
+          min = max;
+          max = temp;
+        }
+
+        result = result.filter(p => {
+          const price = p.price;
+          if (!isNaN(min) && price < min) return false;
+          if (!isNaN(max) && price > max) return false;
+          return true;
+        });
+      } else if (filters.priceRange === '0-15000') {
         result = result.filter(p => p.price < 15000);
       } else if (filters.priceRange === '15000-30000') {
         result = result.filter(p => p.price >= 15000 && p.price <= 30000);
@@ -184,7 +202,34 @@ const Products = () => {
                 <option value="15000-30000">Rp 15.000 - Rp 30.000</option>
                 <option value="30000-50000">Rp 30.000 - Rp 50.000</option>
                 <option value="50000+">Di atas Rp 50.000</option>
+                <option value="custom">Rentang Harga Khusus</option>
               </select>
+              {filters.priceRange === 'custom' && (
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Min (Rp)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={filters.minPrice}
+                      onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Maks (Rp)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={filters.maxPrice}
+                      onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="100000"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Sort Filter */}
