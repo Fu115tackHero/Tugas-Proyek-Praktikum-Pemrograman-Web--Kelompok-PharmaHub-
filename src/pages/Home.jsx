@@ -279,9 +279,9 @@ const Home = () => {
                 />
               <h3 className="font-semibold text-gray-800 text-base">{product.name}</h3>
               <p className="text-gray-600 text-sm mt-1 flex-grow">
-                {product.description.length > 60 
+                {product.description && product.description.length > 60 
                   ? product.description.substring(0, 60) + '...' 
-                  : product.description}
+                  : (product.description || 'Tidak ada deskripsi')}
               </p>
               <div className="mt-auto">
                 <p className="text-blue-600 font-bold mt-4 text-lg">
