@@ -314,6 +314,13 @@ const DrugManagement = () => {
         stock: parseInt(formData.stock),
       };
 
+      // Remove base64 image if we're sending actual image file
+      // This prevents corrupted image when both file and base64 are sent
+      if (imageFile) {
+        drugData.image = undefined;
+        drugData.imageFilename = undefined;
+      }
+
       console.log('📦 Sending product data:', {
         name: drugData.name,
         genericName: drugData.genericName,
