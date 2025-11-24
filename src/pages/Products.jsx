@@ -1,15 +1,32 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom'; // Tambahkan useSearchParams
 import { products, categories, getProductsByCategory } from '../data/products';
 
 const Products = () => {
+  const [searchParams] = useSearchParams(); // Hook untuk membaca URL
   const [filteredProducts, setFilteredProducts] = useState(products);
+  
+  // State filter default
   const [filters, setFilters] = useState({
     category: 'Semua Produk',
     priceRange: 'all',
     sort: 'name-asc'
   });
 
+  // Effect khusus: Cek URL saat halaman dimuat
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get('category');
+    
+    // Jika ada kategori di URL dan kategori tersebut valid (ada di daftar data kita)
+    if (categoryFromUrl && categories.includes(categoryFromUrl)) {
+      setFilters(prev => ({
+        ...prev,
+        category: categoryFromUrl
+      }));
+    }
+  }, [searchParams]);
+
+  // Effect untuk menerapkan filter saat state filters berubah
   useEffect(() => {
     applyFilters();
   }, [filters]);
@@ -69,17 +86,20 @@ const Products = () => {
             </li>
             <li className="flex items-center">
               <i className="fas fa-chevron-right text-gray-400 text-sm mx-2"></i>
-              <span className="text-blue-600 font-medium">Semua Produk</span>
+              <span className="text-blue-600 font-medium">
+                {filters.category} {/* Breadcrumb dinamis sesuai filter */}
+              </span>
             </li>
           </ol>
         </nav>
 
         {/* Header Section */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">Semua Produk Obat</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-4">
+            {filters.category === 'Semua Produk' ? 'Semua Produk Obat' : filters.category}
+          </h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Temukan berbagai macam obat dan produk kesehatan berkualitas dengan harga terjangkau. 
-            Semua produk terjamin keaslian dan sudah mendapat izin dari BPOM.
+            Temukan berbagai macam obat dan produk kesehatan berkualitas.
           </p>
         </div>
 
@@ -138,10 +158,10 @@ const Products = () => {
         {filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
-             <Link
-              key={product.id}
-              to={`/product/${product.id}`}
-              className={`
+              <Link
+                key={product.id}
+                to={`/product/${product.id}`}
+                className={`
                 group relative bg-white rounded-2xl p-5 flex flex-col border border-transparent
                 transition-all duration-300 ease-out
                 hover:shadow-2xl hover:-translate-y-2 hover:border-blue-200
@@ -158,8 +178,8 @@ const Products = () => {
                 />
                 <h3 className="font-semibold text-gray-800">{product.name}</h3>
                 <p className="text-gray-600 text-sm mt-1">
-                  {product.description.length > 80 
-                    ? product.description.substring(0, 80) + '...' 
+                  {product.description.length > 80
+                    ? product.description.substring(0, 80) + '...'
                     : product.description}
                 </p>
                 {product.prescriptionRequired && (
@@ -188,8 +208,14 @@ const Products = () => {
               Produk tidak ditemukan
             </h3>
             <p className="text-gray-600">
-              Coba ubah filter atau kata kunci pencarian Anda
+              Tidak ada produk dalam kategori <strong>{filters.category}</strong>.
             </p>
+            <button 
+              onClick={() => handleFilterChange('category', 'Semua Produk')}
+              className="mt-4 text-blue-600 font-semibold hover:underline"
+            >
+              Lihat Semua Produk
+            </button>
           </div>
         )}
       </div>

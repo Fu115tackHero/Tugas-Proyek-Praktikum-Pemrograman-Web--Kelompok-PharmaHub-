@@ -8,7 +8,7 @@ const Home = () => {
 
   // Image slider state
   const [currentSlide, setCurrentSlide] = useState(0);
-  
+
   const slides = [
     {
       title: 'One Stop Solution',
@@ -54,22 +54,30 @@ const Home = () => {
     setCurrentSlide(index);
   };
 
+  // DATA KATEGORI POPULER (Harus sama persis dengan yang ada di data/products.js)
+  const popularCategories = [
+    { name: "Nyeri & Demam", icon: "fa-thermometer-half", value: "Obat Nyeri & Demam" },
+    { name: "Pencernaan", icon: "fa-prescription-bottle-alt", value: "Obat Pencernaan" }, // fa-stomach mungkin butuh fa-user-md kalau tidak ada di fontawesome free
+    { name: "Vitamin", icon: "fa-apple-alt", value: "Vitamin & Suplemen" },
+    { name: "Jantung", icon: "fa-heartbeat", value: "Obat Jantung & Hipertensi" },
+    { name: "Alergi", icon: "fa-hand-dots", value: "Obat Alergi" }, // fa-hand-dots atau fa-shield-virus
+    { name: "Pernapasan", icon: "fa-lungs", value: "Obat Pernapasan" }
+  ];
+
   return (
     <div className="bg-gradient-to-b from-blue-50 to-blue-100 text-gray-800">
       {/* Hero Section with Slider */}
       <section className={`bg-gradient-to-b ${slides[currentSlide].bgColor} transition-colors duration-500 min-h-screen flex items-center relative`}>
-        {/* Navigation Arrows (anchored to section edges) */}
+        {/* Navigation Arrows */}
         <button
           onClick={prevSlide}
           className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-3 rounded-full shadow-lg transition z-40 hidden md:block"
-          aria-label="Previous slide"
         >
           <i className="fas fa-chevron-left"></i>
         </button>
         <button
           onClick={nextSlide}
           className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-3 rounded-full shadow-lg transition z-40 hidden md:block"
-          aria-label="Next slide"
         >
           <i className="fas fa-chevron-right"></i>
         </button>
@@ -109,18 +117,16 @@ const Home = () => {
             </div>
           </div>
 
-          {/* Dots Indicator - Moved below hero section */}
+          {/* Dots Indicator */}
           <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2 z-30">
             {slides.map((_, index) => (
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
-                className={`w-3 h-3 rounded-full transition-all ${
-                  currentSlide === index
+                className={`w-3 h-3 rounded-full transition-all ${currentSlide === index
                     ? 'bg-blue-600 w-8'
                     : 'bg-gray-400 hover:bg-gray-500'
-                }`}
-                aria-label={`Go to slide ${index + 1}`}
+                  }`}
               />
             ))}
           </div>
@@ -163,49 +169,26 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Kategori Populer */}
+      {/* Kategori Populer (YANG SUDAH DIPERBARUI) */}
       <section className="bg-blue-50 py-12">
         <div className="container mx-auto px-4 sm:px-6">
           <h2 className="text-3xl font-semibold text-gray-800 mb-8 text-center">
             Kategori Populer
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
-            <div className="bg-white p-5 sm:p-6 rounded-xl text-center shadow hover:shadow-lg cursor-pointer transition-all duration-300 hover:-translate-y-1">
-              <div className="bg-blue-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i className="fas fa-capsules text-blue-600 text-2xl"></i>
-              </div>
-              <p className="font-medium text-gray-700 text-sm sm:text-base">Obat Bebas</p>
-            </div>
-            <div className="bg-white p-5 sm:p-6 rounded-xl text-center shadow hover:shadow-lg cursor-pointer transition-all duration-300 hover:-translate-y-1">
-              <div className="bg-blue-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i className="fas fa-leaf text-blue-600 text-2xl"></i>
-              </div>
-              <p className="font-medium text-gray-700 text-sm sm:text-base">Herbal</p>
-            </div>
-            <div className="bg-white p-5 sm:p-6 rounded-xl text-center shadow hover:shadow-lg cursor-pointer transition-all duration-300 hover:-translate-y-1">
-              <div className="bg-blue-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i className="fas fa-pills text-blue-600 text-2xl"></i>
-              </div>
-              <p className="font-medium text-gray-700 text-sm sm:text-base">Suplemen</p>
-            </div>
-            <div className="bg-white p-5 sm:p-6 rounded-xl text-center shadow hover:shadow-lg cursor-pointer transition-all duration-300 hover:-translate-y-1">
-              <div className="bg-blue-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i className="fas fa-heart text-blue-600 text-2xl"></i>
-              </div>
-              <p className="font-medium text-gray-700 text-sm sm:text-base">Kesehatan Jantung</p>
-            </div>
-            <div className="bg-white p-5 sm:p-6 rounded-xl text-center shadow hover:shadow-lg cursor-pointer transition-all duration-300 hover:-translate-y-1">
-              <div className="bg-blue-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i className="fas fa-brain text-blue-600 text-2xl"></i>
-              </div>
-              <p className="font-medium text-gray-700 text-sm sm:text-base">Kesehatan Otak</p>
-            </div>
-            <div className="bg-white p-5 sm:p-6 rounded-xl text-center shadow hover:shadow-lg cursor-pointer transition-all duration-300 hover:-translate-y-1">
-              <div className="bg-blue-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i className="fas fa-baby text-blue-600 text-2xl"></i>
-              </div>
-              <p className="font-medium text-gray-700 text-sm sm:text-base">Bayi & Anak</p>
-            </div>
+            {popularCategories.map((category, index) => (
+              <Link 
+                key={index}
+                to={`/products?category=${encodeURIComponent(category.value)}`}
+                className="bg-white p-5 sm:p-6 rounded-xl text-center shadow hover:shadow-lg cursor-pointer transition-all duration-300 hover:-translate-y-1 group"
+              >
+                <div className="bg-blue-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-200 transition-colors">
+                  {/* Gunakan class default jika icon spesifik tidak ditemukan, misal fa-pills */}
+                  <i className={`fas ${category.icon || 'fa-pills'} text-blue-600 text-2xl`}></i>
+                </div>
+                <p className="font-medium text-gray-700 text-sm sm:text-base">{category.name}</p>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -236,8 +219,8 @@ const Home = () => {
               />
               <h3 className="font-semibold text-gray-800 text-base">{product.name}</h3>
               <p className="text-gray-600 text-sm mt-1 flex-grow">
-                {product.description.length > 60 
-                  ? product.description.substring(0, 60) + '...' 
+                {product.description.length > 60
+                  ? product.description.substring(0, 60) + '...'
                   : product.description}
               </p>
               <div className="mt-auto">
