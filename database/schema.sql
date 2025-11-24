@@ -31,7 +31,7 @@ DROP TABLE IF EXISTS password_reset_tokens CASCADE;
 -- ============================================
 CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
-    user_name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
@@ -42,10 +42,11 @@ CREATE TABLE users (
     -- Contoh isi: '/uploads/profiles/user-123.jpg' atau 'https://cloudinary.com/...'
     profile_photo_url VARCHAR(255), 
     
+    is_active BOOLEAN DEFAULT TRUE,
     email_verified BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT check_role CHECK (role IN ('customer', 'admin'))
+    CONSTRAINT check_role CHECK (role IN ('customer', 'admin', 'pharmacist'))
 );
 
 -- Index tetap sama
@@ -105,8 +106,8 @@ CREATE TABLE product_categories (
     category_id SERIAL PRIMARY KEY,
     category_name VARCHAR(100) NOT NULL UNIQUE,
     description TEXT,
-    icon_image BYTEA, -- Icon kategori
-    icon_mime_type VARCHAR(50),
+    icon_image_url VARCHAR(255), -- Icon kategori
+    -- icon_mime_type VARCHAR(50),
     parent_category_id INTEGER REFERENCES product_categories(category_id),
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -181,22 +182,22 @@ CREATE TABLE product_details (
 
 CREATE INDEX idx_product_details_product ON product_details(product_id);
 
--- ============================================
--- TABEL PRODUCT IMAGES (Gambar Produk Tambahan)
--- ============================================
-CREATE TABLE product_images (
-    image_id SERIAL PRIMARY KEY,
-    product_id INTEGER NOT NULL REFERENCES products(product_id) ON DELETE CASCADE,
-    image_data BYTEA NOT NULL, -- Data gambar dalam binary
-    image_mime_type VARCHAR(50) NOT NULL,
-    image_filename VARCHAR(255),
-    image_order INTEGER DEFAULT 0, -- Urutan tampilan gambar
-    is_primary BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- -- ============================================
+-- -- TABEL PRODUCT IMAGES (Gambar Produk Tambahan)
+-- -- ============================================
+-- CREATE TABLE product_images (
+--     image_id SERIAL PRIMARY KEY,
+--     product_id INTEGER NOT NULL REFERENCES products(product_id) ON DELETE CASCADE,
+--     image_data BYTEA NOT NULL, -- Data gambar dalam binary
+--     image_mime_type VARCHAR(50) NOT NULL,
+--     image_filename VARCHAR(255),
+--     image_order INTEGER DEFAULT 0, -- Urutan tampilan gambar
+--     is_primary BOOLEAN DEFAULT FALSE,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- );
 
-CREATE INDEX idx_product_images_product ON product_images(product_id);
-CREATE INDEX idx_product_images_primary ON product_images(product_id, is_primary);
+-- CREATE INDEX idx_product_images_product ON product_images(product_id);
+-- CREATE INDEX idx_product_images_primary ON product_images(product_id, is_primary);
 
 -- -- ============================================
 -- -- TABEL PRODUCT REVIEWS (Review Produk)
@@ -252,7 +253,7 @@ CREATE TABLE coupon_usage (
     usage_id SERIAL PRIMARY KEY,
     coupon_id INTEGER NOT NULL REFERENCES coupons(coupon_id) ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    order_id INTEGER, -- Will be linked after orders table is created
+    order_id INTEGER REFERENCES orders(order_id) ON DELETE SET NULL,
     discount_amount DECIMAL(12, 2) NOT NULL,
     used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -307,16 +308,16 @@ CREATE TABLE orders (
     customer_email VARCHAR(255),
     customer_phone VARCHAR(20) NOT NULL,
     
-    -- Alamat Pengiriman (jika ada)
-    shipping_address TEXT,
-    shipping_city VARCHAR(100),
-    shipping_province VARCHAR(100),
-    shipping_postal_code VARCHAR(10),
+    -- -- Alamat Pengiriman (jika ada)
+    -- shipping_address TEXT,
+    -- shipping_city VARCHAR(100),
+    -- shipping_province VARCHAR(100),
+    -- shipping_postal_code VARCHAR(10),
     
     -- Biaya & Pembayaran
     subtotal DECIMAL(12, 2) NOT NULL,
     tax_amount DECIMAL(12, 2) DEFAULT 0,
-    shipping_cost DECIMAL(12, 2) DEFAULT 0,
+    -- shipping_cost DECIMAL(12, 2) DEFAULT 0,
     discount_amount DECIMAL(12, 2) DEFAULT 0,
     total_amount DECIMAL(12, 2) NOT NULL,
     
@@ -326,8 +327,8 @@ CREATE TABLE orders (
     -- Metode Pembayaran & Status
     payment_method VARCHAR(50) NOT NULL, -- 'midtrans_online', 'bayar_ditempat', 'transfer_bank'
     payment_status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'paid', 'failed', 'refunded'
-    payment_proof BYTEA, -- Bukti pembayaran (untuk transfer manual)
-    payment_proof_mime_type VARCHAR(50),
+    -- payment_proof BYTEA, -- Bukti pembayaran (untuk transfer manual)
+    -- payment_proof_mime_type VARCHAR(50),
     
     -- Status Pesanan
     order_status VARCHAR(50) NOT NULL DEFAULT 'pending', 
@@ -342,11 +343,13 @@ CREATE TABLE orders (
     -- Timestamp
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    payment_timestamp TIMESTAMP, -- Waktu pembayaran selesai
+    pickup_timestamp TIMESTAMP, -- Waktu pengambilan obat/order selesai (sama dengan completed_at)
     completed_at TIMESTAMP,
     cancelled_at TIMESTAMP,
     
     CONSTRAINT check_totals CHECK (total_amount >= 0),
-    CONSTRAINT check_payment_method CHECK (payment_method IN ('midtrans_online', 'bayar_ditempat', 'transfer_bank', 'ewallet')),
+    CONSTRAINT check_payment_method CHECK (payment_method IN ('pembayaran_online', 'bayar_ditempat')),
     CONSTRAINT check_payment_status CHECK (payment_status IN ('pending', 'paid', 'failed', 'refunded', 'unpaid')),
     CONSTRAINT check_order_status CHECK (order_status IN ('pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled', 'delivered'))
 );
@@ -377,11 +380,6 @@ CREATE TABLE order_items (
 CREATE INDEX idx_order_items_order ON order_items(order_id);
 CREATE INDEX idx_order_items_product ON order_items(product_id);
 
--- Link coupon_usage to orders table
-ALTER TABLE coupon_usage 
-ADD CONSTRAINT fk_coupon_usage_order 
-FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE SET NULL;
-
 -- ============================================
 -- TABEL ORDER STATUS HISTORY (Riwayat Status Pesanan)
 -- ============================================
@@ -404,13 +402,18 @@ CREATE INDEX idx_status_history_changed_at ON order_status_history(changed_at DE
 CREATE TABLE notifications (
     notification_id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    type VARCHAR(50) NOT NULL, -- 'order', 'promotion', 'system', 'stock_alert'
+    type VARCHAR(50) NOT NULL, -- 'order', 'promotion', 'system', 'stock_alert', 'coupon'
     title VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
     
     -- Metadata
     related_order_id INTEGER REFERENCES orders(order_id) ON DELETE SET NULL,
     related_product_id INTEGER REFERENCES products(product_id) ON DELETE SET NULL,
+    related_coupon_id INTEGER REFERENCES coupons(coupon_id) ON DELETE SET NULL, -- Untuk notifikasi kupon
+    
+    -- Data untuk notifikasi order
+    order_status VARCHAR(50), -- Status order (pending, confirmed, preparing, ready, completed, cancelled)
+    customer_name VARCHAR(255), -- Nama customer untuk notifikasi
     
     -- Icon & Image
     icon_type VARCHAR(50), -- 'success', 'info', 'warning', 'error'
@@ -427,7 +430,7 @@ CREATE TABLE notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMP,
     
-    CONSTRAINT check_notification_type CHECK (type IN ('order', 'promotion', 'system', 'stock_alert', 'review', 'payment'))
+    CONSTRAINT check_notification_type CHECK (type IN ('order', 'promotion', 'system', 'stock_alert', 'review', 'payment', 'coupon'))
 );
 
 CREATE INDEX idx_notifications_user ON notifications(user_id);
@@ -642,8 +645,8 @@ BEGIN
                 RETURN NEW;
         END CASE;
         
-        INSERT INTO notifications (user_id, type, title, message, related_order_id, icon_type)
-        VALUES (NEW.user_id, 'order', notif_title, notif_message, NEW.order_id, 
+        INSERT INTO notifications (user_id, type, title, message, related_order_id, order_status, customer_name, icon_type)
+        VALUES (NEW.user_id, 'order', notif_title, notif_message, NEW.order_id, NEW.order_status, NEW.customer_name,
                 CASE WHEN NEW.order_status = 'cancelled' THEN 'error' 
                      WHEN NEW.order_status = 'completed' THEN 'success' 
                      ELSE 'info' END);
@@ -723,11 +726,9 @@ COMMENT ON TABLE notifications IS 'Tabel untuk menyimpan notifikasi pengguna';
 COMMENT ON TABLE coupons IS 'Tabel untuk menyimpan data kupon diskon';
 COMMENT ON TABLE admin_activity_logs IS 'Tabel untuk mencatat aktivitas admin';
 
-COMMENT ON COLUMN users.profile_photo IS 'Foto profil pengguna dalam format BYTEA (binary)';
+COMMENT ON COLUMN users.profile_photo_url IS 'URL/Path foto profil pengguna';
 COMMENT ON COLUMN products.main_image IS 'Gambar utama produk dalam format BYTEA (binary)';
 COMMENT ON COLUMN orders.prescription_image IS 'Foto resep dokter dalam format BYTEA (binary)';
-COMMENT ON COLUMN orders.payment_proof IS 'Bukti pembayaran dalam format BYTEA (binary)';
-COMMENT ON COLUMN product_images.image_data IS 'Data gambar produk tambahan dalam format BYTEA (binary)';
 
 -- ============================================
 -- GRANT PERMISSIONS (Opsional - untuk production)
