@@ -26,51 +26,62 @@ DROP TABLE IF EXISTS password_reset_tokens CASCADE;
 -- ============================================
 -- TABEL USERS (Pengguna & Admin)
 -- ============================================
+-- ============================================
+-- TABEL USERS (Diperbarui)
+-- ============================================
 CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    user_name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
-    role VARCHAR(20) NOT NULL DEFAULT 'customer', -- 'customer', 'admin', 'pharmacist'
-    profile_photo BYTEA, -- Menyimpan foto profil dalam format binary
-    photo_mime_type VARCHAR(50), -- Tipe MIME foto (image/jpeg, image/png, dll)
-    photo_filename VARCHAR(255), -- Nama file asli foto
-    is_active BOOLEAN DEFAULT TRUE,
+    role VARCHAR(20) NOT NULL DEFAULT 'customer', 
+    
+    -- PERUBAHAN DI SINI:
+    -- Ubah BYTEA menjadi VARCHAR untuk menyimpan URL/Path gambar
+    -- Contoh isi: '/uploads/profiles/user-123.jpg' atau 'https://cloudinary.com/...'
+    profile_photo_url VARCHAR(255), 
+    
     email_verified BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_login TIMESTAMP,
-    CONSTRAINT check_role CHECK (role IN ('customer', 'admin', 'pharmacist'))
+    CONSTRAINT check_role CHECK (role IN ('customer', 'admin'))
 );
 
--- Index untuk pencarian cepat
+-- Index tetap sama
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_role ON users(role);
-CREATE INDEX idx_users_phone ON users(phone);
 
 -- ============================================
--- TABEL USER ADDRESSES (Alamat Pengiriman)
+-- TABEL USER ADDRESSES (Diperbarui untuk Google Maps)
 -- ============================================
 CREATE TABLE user_addresses (
     address_id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    address_label VARCHAR(50), -- 'Rumah', 'Kantor', dll
-    recipient_name VARCHAR(255) NOT NULL,
-    phone VARCHAR(20) NOT NULL,
-    full_address TEXT NOT NULL,
-    city VARCHAR(100) NOT NULL,
-    province VARCHAR(100) NOT NULL,
-    postal_code VARCHAR(10),
-    is_default BOOLEAN DEFAULT FALSE,
-    latitude DECIMAL(10, 8), -- Untuk map integration
+    
+    -- Ini untuk menyimpan 'formatted_address' dari Google Maps response
+    full_address TEXT NOT NULL, 
+    
+    -- Google Maps mengembalikan 'place_id'. Simpan ini!
+    google_place_id VARCHAR(255), 
+    
+    -- Catatan: Kamu harus mem-parsing 'address_components' dari API 
+    -- untuk mengisi city, province, & postal_code secara otomatis di Backend.
+    -- city VARCHAR(100),      
+    -- province VARCHAR(100),  
+    -- postal_code VARCHAR(10),
+    
+    -- Koordinat (Sudah Benar)
+    latitude DECIMAL(10, 8), 
     longitude DECIMAL(11, 8),
+    
+    -- Metadata
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
+-- Index untuk query alamat user lebih cepat
 CREATE INDEX idx_addresses_user ON user_addresses(user_id);
-CREATE INDEX idx_addresses_default ON user_addresses(user_id, is_default);
+
 
 -- ============================================
 -- TABEL PASSWORD RESET TOKENS
@@ -83,9 +94,9 @@ CREATE TABLE password_reset_tokens (
     used BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
 CREATE INDEX idx_reset_tokens_token ON password_reset_tokens(token);
 CREATE INDEX idx_reset_tokens_user ON password_reset_tokens(user_id);
+
 
 -- ============================================
 -- TABEL PRODUCT CATEGORIES (Kategori Produk)
@@ -187,26 +198,26 @@ CREATE TABLE product_images (
 CREATE INDEX idx_product_images_product ON product_images(product_id);
 CREATE INDEX idx_product_images_primary ON product_images(product_id, is_primary);
 
--- ============================================
--- TABEL PRODUCT REVIEWS (Review Produk)
--- ============================================
-CREATE TABLE product_reviews (
-    review_id SERIAL PRIMARY KEY,
-    product_id INTEGER NOT NULL REFERENCES products(product_id) ON DELETE CASCADE,
-    user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
-    comment TEXT,
-    review_images BYTEA[], -- Array gambar review
-    review_images_mime_types TEXT[], -- Array tipe MIME gambar
-    is_verified_purchase BOOLEAN DEFAULT FALSE,
-    helpful_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- -- ============================================
+-- -- TABEL PRODUCT REVIEWS (Review Produk)
+-- -- ============================================
+-- CREATE TABLE product_reviews (
+--     review_id SERIAL PRIMARY KEY,
+--     product_id INTEGER NOT NULL REFERENCES products(product_id) ON DELETE CASCADE,
+--     user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+--     rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+--     comment TEXT,
+--     review_images BYTEA[], -- Array gambar review
+--     review_images_mime_types TEXT[], -- Array tipe MIME gambar
+--     is_verified_purchase BOOLEAN DEFAULT FALSE,
+--     helpful_count INTEGER DEFAULT 0,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- );
 
-CREATE INDEX idx_reviews_product ON product_reviews(product_id);
-CREATE INDEX idx_reviews_user ON product_reviews(user_id);
-CREATE INDEX idx_reviews_rating ON product_reviews(rating);
+-- CREATE INDEX idx_reviews_product ON product_reviews(product_id);
+-- CREATE INDEX idx_reviews_user ON product_reviews(user_id);
+-- CREATE INDEX idx_reviews_rating ON product_reviews(rating);
 
 -- ============================================
 -- TABEL COUPONS (Kupon Diskon)
