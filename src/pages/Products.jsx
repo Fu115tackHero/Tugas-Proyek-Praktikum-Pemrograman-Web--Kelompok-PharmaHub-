@@ -1,34 +1,48 @@
 import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom'; // Tambahkan useSearchParams
+import { Link, useSearchParams } from 'react-router-dom';
 import { products, categories, getProductsByCategory } from '../data/products';
 
 const Products = () => {
-  const [searchParams] = useSearchParams(); // Hook untuk membaca URL
-  const [filteredProducts, setFilteredProducts] = useState(products);
+  // Hook untuk membaca parameter URL (misal: ?category=Obat+Demam)
+  const [searchParams] = useSearchParams();
   
-  // State filter default
+  const [filteredProducts, setFilteredProducts] = useState(products);
   const [filters, setFilters] = useState({
     category: 'Semua Produk',
     priceRange: 'all',
-    minPrice: '',
-    maxPrice: '',
     sort: 'name-asc'
   });
 
-  // Effect khusus: Cek URL saat halaman dimuat
+  /**
+   * EFFECT 1: Menangani Perubahan URL & Scroll Position
+   * Dijalankan saat halaman dimuat atau URL berubah
+   */
   useEffect(() => {
+    // 1. FIX: Scroll ke paling atas agar halaman tidak nyangkut di bawah
+    window.scrollTo(0, 0);
+
+    // 2. Ambil kategori dari URL
     const categoryFromUrl = searchParams.get('category');
     
-    // Jika ada kategori di URL dan kategori tersebut valid (ada di daftar data kita)
+    // 3. Cek apakah kategori dari URL valid (ada di daftar data categories)
     if (categoryFromUrl && categories.includes(categoryFromUrl)) {
       setFilters(prev => ({
         ...prev,
         category: categoryFromUrl
       }));
+    } else {
+      // Jika tidak ada kategori di URL (user klik menu navbar biasa), reset ke default
+      setFilters(prev => ({
+        ...prev,
+        category: 'Semua Produk'
+      }));
     }
   }, [searchParams]);
 
-  // Effect untuk menerapkan filter saat state filters berubah
+  /**
+   * EFFECT 2: Menjalankan Logika Filter
+   * Dijalankan setiap kali state 'filters' berubah
+   */
   useEffect(() => {
     applyFilters();
   }, [filters]);
@@ -36,30 +50,14 @@ const Products = () => {
   const applyFilters = () => {
     let result = [...products];
 
-    // Category filter
+    // 1. Filter Kategori
     if (filters.category !== 'Semua Produk') {
       result = getProductsByCategory(filters.category);
     }
 
-    // Price range filter
+    // 2. Filter Rentang Harga
     if (filters.priceRange !== 'all') {
-      if (filters.priceRange === 'custom') {
-        let min = parseInt(filters.minPrice, 10);
-        let max = parseInt(filters.maxPrice, 10);
-
-        if (!isNaN(min) && !isNaN(max) && min > max) {
-          const temp = min;
-          min = max;
-          max = temp;
-        }
-
-        result = result.filter(p => {
-          const price = p.price;
-          if (!isNaN(min) && price < min) return false;
-          if (!isNaN(max) && price > max) return false;
-          return true;
-        });
-      } else if (filters.priceRange === '0-15000') {
+      if (filters.priceRange === '0-15000') {
         result = result.filter(p => p.price < 15000);
       } else if (filters.priceRange === '15000-30000') {
         result = result.filter(p => p.price >= 15000 && p.price <= 30000);
@@ -70,7 +68,7 @@ const Products = () => {
       }
     }
 
-    // Sort
+    // 3. Sortir (Urutkan)
     if (filters.sort === 'name-asc') {
       result.sort((a, b) => a.name.localeCompare(b.name));
     } else if (filters.sort === 'name-desc') {
@@ -94,7 +92,7 @@ const Products = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 py-8">
       <div className="container mx-auto px-4 sm:px-6">
-        {/* Breadcrumb */}
+        {/* Breadcrumb Navigation */}
         <nav className="mb-6">
           <ol className="flex items-center space-x-2">
             <li className="flex">
@@ -105,7 +103,7 @@ const Products = () => {
             <li className="flex items-center">
               <i className="fas fa-chevron-right text-gray-400 text-sm mx-2"></i>
               <span className="text-blue-600 font-medium">
-                {filters.category} {/* Breadcrumb dinamis sesuai filter */}
+                {filters.category}
               </span>
             </li>
           </ol>
@@ -117,7 +115,8 @@ const Products = () => {
             {filters.category === 'Semua Produk' ? 'Semua Produk Obat' : filters.category}
           </h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Temukan berbagai macam obat dan produk kesehatan berkualitas.
+            Temukan berbagai macam obat dan produk kesehatan berkualitas dengan harga terjangkau. 
+            Semua produk terjamin keaslian dan sudah mendapat izin dari BPOM.
           </p>
         </div>
 
@@ -152,34 +151,7 @@ const Products = () => {
                 <option value="15000-30000">Rp 15.000 - Rp 30.000</option>
                 <option value="30000-50000">Rp 30.000 - Rp 50.000</option>
                 <option value="50000+">Di atas Rp 50.000</option>
-                <option value="custom">Rentang Harga Khusus</option>
               </select>
-              {filters.priceRange === 'custom' && (
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Min (Rp)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={filters.minPrice}
-                      onChange={(e) => handleFilterChange('minPrice', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Maks (Rp)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={filters.maxPrice}
-                      onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="100000"
-                    />
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Sort Filter */}
@@ -207,11 +179,11 @@ const Products = () => {
                 key={product.id}
                 to={`/product/${product.id}`}
                 className={`
-                group relative bg-white rounded-2xl p-5 flex flex-col border border-transparent
-                transition-all duration-300 ease-out
-                hover:shadow-2xl hover:-translate-y-2 hover:border-blue-200
-                ${product.prescriptionRequired ? 'border-l-4 border-l-red-500' : ''}
-              `}
+                  group relative bg-white rounded-2xl p-5 flex flex-col border border-transparent
+                  transition-all duration-300 ease-out
+                  hover:shadow-2xl hover:-translate-y-2 hover:border-blue-200
+                  ${product.prescriptionRequired ? 'border-l-4 border-l-red-500' : ''}
+                `}
               >
                 <img
                   src={product.image}
@@ -223,8 +195,8 @@ const Products = () => {
                 />
                 <h3 className="font-semibold text-gray-800">{product.name}</h3>
                 <p className="text-gray-600 text-sm mt-1">
-                  {product.description.length > 80
-                    ? product.description.substring(0, 80) + '...'
+                  {product.description.length > 80 
+                    ? product.description.substring(0, 80) + '...' 
                     : product.description}
                 </p>
                 {product.prescriptionRequired && (
@@ -247,13 +219,14 @@ const Products = () => {
             ))}
           </div>
         ) : (
+          /* Tampilan jika produk kosong */
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <i className="fas fa-search text-gray-400 text-6xl mb-4"></i>
             <h3 className="text-2xl font-semibold text-gray-800 mb-2">
               Produk tidak ditemukan
             </h3>
             <p className="text-gray-600">
-              Tidak ada produk dalam kategori <strong>{filters.category}</strong>.
+              Tidak ada produk dalam kategori <strong>{filters.category}</strong> atau filter yang Anda pilih.
             </p>
             <button 
               onClick={() => handleFilterChange('category', 'Semua Produk')}
