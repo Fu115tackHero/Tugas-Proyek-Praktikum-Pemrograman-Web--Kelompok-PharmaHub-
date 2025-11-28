@@ -11,6 +11,7 @@ const productRoutes = require("./routes/productRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const authRoutes = require("./routes/authRoutes");
 const cartRoutes = require("./routes/cartRoutes");
+const orderRoutes = require("./routes/orderRoutes");
 
 // Import middleware
 const { sanitizeInput } = require("./middleware/validation");
@@ -68,6 +69,8 @@ app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/cart", cartRoutes);
+console.log("Registering /api/orders route");
+app.use("/api/orders", orderRoutes);
 
 // ============================================
 // MIDTRANS ENDPOINTS

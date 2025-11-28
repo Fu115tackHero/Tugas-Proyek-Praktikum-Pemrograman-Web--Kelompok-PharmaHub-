@@ -507,9 +507,14 @@ const DrugManagement = () => {
                         <div className="flex-shrink-0 h-10 w-10">
                           <img
                             className="h-10 w-10 rounded-full object-cover"
-                            src={drug.image || 'https://via.placeholder.com/40'}
+                            src={(drug.image && drug.image.startsWith('/'))
+                              ? `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${drug.image}`
+                              : (drug.image || `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/products/${drug.id}/image`)}
                             alt={drug.name}
-                            onError={(e) => e.target.src = 'https://via.placeholder.com/40'}
+                            onError={(e) => {
+                              console.error(`Failed to load image for drug ${drug.id}`);
+                              e.target.src = 'https://via.placeholder.com/40';
+                            }}
                           />
                         </div>
                         <div className="ml-4">

@@ -178,7 +178,6 @@ const mapUserFromDB = (dbUser) => {
     emailVerified: dbUser.email_verified,
     createdAt: dbUser.created_at,
     updatedAt: dbUser.updated_at,
-    lastLogin: dbUser.last_login,
   };
 };
 

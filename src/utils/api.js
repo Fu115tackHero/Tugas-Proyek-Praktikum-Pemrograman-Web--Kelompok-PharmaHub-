@@ -3,7 +3,8 @@
  * Centralized API calls untuk PharmaHub
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+// Default to API port 3001 when VITE_API_URL is not set
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 /**
  * Generic fetch wrapper dengan error handling
@@ -328,6 +329,56 @@ export const syncCart = async (userId, cartItems) => {
 };
 
 // ============================================
+// ORDER API
+// ============================================
+
+/**
+ * Get all orders (Admin)
+ * @returns {Promise<Array>} Array of orders
+ */
+export const getOrders = async () => {
+  const response = await fetchAPI("/api/orders");
+  return response.data;
+};
+
+/**
+ * Create a new order
+ * @param {Object} orderData - Order data
+ * @returns {Promise<Object>} Created order
+ */
+export const createOrder = async (orderData) => {
+  const response = await fetchAPI("/api/orders", {
+    method: "POST",
+    body: JSON.stringify(orderData),
+  });
+  return response;
+};
+
+/**
+ * Get orders by user ID
+ * @param {Number} userId - User ID
+ * @returns {Promise<Array>} Array of user's orders
+ */
+export const getOrdersByUser = async (userId) => {
+  const response = await fetchAPI(`/api/orders/user/${userId}`);
+  return response.data;
+};
+
+/**
+ * Update order status
+ * @param {String} orderId - Order ID (Number)
+ * @param {String} status - New status
+ * @returns {Promise<Object>} Response
+ */
+export const updateOrderStatus = async (orderId, status) => {
+  const response = await fetchAPI(`/api/orders/${orderId}/status`, {
+    method: "PUT",
+    body: JSON.stringify({ status }),
+  });
+  return response;
+};
+
+// ============================================
 // HELPER FUNCTIONS
 // ============================================
 
@@ -387,6 +438,10 @@ export default {
   removeFromCartDB,
   clearCartDB,
   syncCart,
+  getOrders,
+  createOrder,
+  getOrdersByUser,
+  updateOrderStatus,
   fileToBase64,
   validateImage,
 };

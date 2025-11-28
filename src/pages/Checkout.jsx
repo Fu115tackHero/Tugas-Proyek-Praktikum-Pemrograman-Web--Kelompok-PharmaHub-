@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { createOrder } from "../utils/api";
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -107,71 +108,80 @@ const Checkout = () => {
       alertMessage =
         "Pesanan Anda telah dikonfirmasi! Silakan ambil dan bayar di kasir apotek.";
 
-      // Simulasi sukses langsung
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      try {
+        // Simpan ke database via API
+        const orderData = {
+          userId: user?.id || null,
+          customerName: formData.name,
+          customerEmail: formData.email || null,
+          customerPhone: formData.phone,
+          items: cart.map((item) => ({
+            productId: item.id,
+            productName: item.name,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+          subtotal: subtotal,
+          taxAmount: tax,
+          discountAmount: discount,
+          totalAmount: total,
+          paymentMethod: "bayar_ditempat",
+          paymentStatus: "pending",
+          notes: formData.notes || "",
+          couponCode: appliedCoupon || null,
+        };
 
-      // --- SIMPAN RIWAYAT PESANAN UNTUK BAYAR DI TEMPAT ---
-      const orderHistory = JSON.parse(
-        localStorage.getItem("order_history") || "[]"
-      );
-      const newOrder = {
-        id: orderId,
-        customerName: formData.name,
-        customerPhone: formData.phone,
-        date: new Date().toISOString(),
-        items: cart.map((item) => ({
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-        })),
-        total: total,
-        status: orderStatus,
-        notes: formData.notes || "",
-        paymentMethod: formData.paymentMethod,
-        userId: user?.id || "guest",
-        discount: discount,
-        couponCode: appliedCoupon || null,
-      };
-      localStorage.setItem(
-        "order_history",
-        JSON.stringify([...orderHistory, newOrder])
-      );
+        const result = await createOrder(orderData);
+        console.log("Order created:", result);
 
-      // Simpan untuk admin OrderManagement
-      const adminOrders = JSON.parse(
-        localStorage.getItem("adminOrders") || "[]"
-      );
-      const adminOrder = {
-        id: orderId,
-        customerName: formData.name,
-        customerPhone: formData.phone,
-        date: new Date().toISOString(),
-        status: "pending",
-        paymentMethod: "cod",
-        paymentStatus: "unpaid",
-        total: total,
-        items: cart.map((item) => ({
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-        })),
-        notes: formData.notes || "",
-      };
-      localStorage.setItem(
-        "adminOrders",
-        JSON.stringify([...adminOrders, adminOrder])
-      );
+        // Simpan juga ke localStorage untuk riwayat lokal (backup)
+        const orderHistory = JSON.parse(
+          localStorage.getItem("order_history") || "[]"
+        );
+        const newOrder = {
+          id: result.data.orderNumber,
+          customerName: formData.name,
+          customerPhone: formData.phone,
+          date: new Date().toISOString(),
+          items: cart.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+          total: total,
+          status: orderStatus,
+          notes: formData.notes || "",
+          paymentMethod: formData.paymentMethod,
+          userId: user?.id || "guest",
+          discount: discount,
+          couponCode: appliedCoupon || null,
+        };
+        localStorage.setItem(
+          "order_history",
+          JSON.stringify([...orderHistory, newOrder])
+        );
 
-      addOrderNotification(orderId, orderStatus);
+        addOrderNotification(result.data.orderNumber, orderStatus);
 
-      setLoading(false);
-      setModal({
-        open: true,
-        title: "Pesanan Dikonfirmasi",
-        message: alertMessage,
-        variant: "success",
-        redirectToHistory: true,
-      });
+        setLoading(false);
+        setModal({
+          open: true,
+          title: "Pesanan Dikonfirmasi",
+          message: alertMessage,
+          variant: "success",
+          redirectToHistory: true,
+        });
+      } catch (error) {
+        console.error("Error creating order:", error);
+        setLoading(false);
+        setModal({
+          open: true,
+          title: "Gagal Membuat Pesanan",
+          message: error.message || "Terjadi kesalahan saat membuat pesanan.",
+          variant: "error",
+          redirectToHistory: false,
+        });
+      }
       return; // Exit early untuk bayar di tempat
     } else {
       // --- LOGIKA UNTUK MIDTRANS (ONLINE) ---
@@ -284,119 +294,135 @@ const Checkout = () => {
           const status = await simulatePayment();
 
           if (status === "success") {
-            // Simulasi sukses
+            // Simulasi sukses - simpan ke database
             console.log("✅ Simulated payment success");
 
-            const orderHistory = JSON.parse(
-              localStorage.getItem("order_history") || "[]"
-            );
-            const newOrder = {
-              id: orderId,
-              customerName: formData.name,
-              customerPhone: formData.phone,
-              date: new Date().toISOString(),
-              items: cart.map((item) => ({
-                name: item.name,
-                quantity: item.quantity,
-                price: item.price,
-              })),
-              total: total,
-              status: "Lunas (Menunggu Pengambilan)",
-              notes: formData.notes || "",
-              paymentMethod: formData.paymentMethod,
-              userId: user?.id || "guest",
-              discount: discount,
-              couponCode: appliedCoupon || null,
-              paymentDetails: { demo: true, status: "success" },
-            };
-            localStorage.setItem(
-              "order_history",
-              JSON.stringify([...orderHistory, newOrder])
-            );
+            try {
+              const orderData = {
+                userId: user?.id || null,
+                customerName: formData.name,
+                customerEmail: formData.email || null,
+                customerPhone: formData.phone,
+                items: cart.map((item) => ({
+                  productId: item.id,
+                  productName: item.name,
+                  quantity: item.quantity,
+                  price: item.price,
+                })),
+                subtotal: subtotal,
+                taxAmount: tax,
+                discountAmount: discount,
+                totalAmount: total,
+                paymentMethod: "pembayaran_online",
+                paymentStatus: "paid",
+                notes: formData.notes || "",
+                couponCode: appliedCoupon || null,
+              };
 
-            const adminOrders = JSON.parse(
-              localStorage.getItem("adminOrders") || "[]"
-            );
-            const adminOrder = {
-              id: orderId,
-              customerName: formData.name,
-              customerPhone: formData.phone,
-              date: new Date().toISOString(),
-              status: "paid",
-              total: total,
-              items: cart.map((item) => ({
-                name: item.name,
-                quantity: item.quantity,
-                price: item.price,
-              })),
-              notes: formData.notes || "",
-            };
-            localStorage.setItem(
-              "adminOrders",
-              JSON.stringify([...adminOrders, adminOrder])
-            );
+              const result = await createOrder(orderData);
+              console.log("Order created:", result);
 
-            addOrderNotification(orderId, "Lunas (Menunggu Pengambilan)");
+              // Simpan ke localStorage untuk backup
+              const orderHistory = JSON.parse(
+                localStorage.getItem("order_history") || "[]"
+              );
+              const newOrder = {
+                id: result.data.orderNumber,
+                customerName: formData.name,
+                customerPhone: formData.phone,
+                date: new Date().toISOString(),
+                items: cart.map((item) => ({
+                  name: item.name,
+                  quantity: item.quantity,
+                  price: item.price,
+                })),
+                total: total,
+                status: "Lunas (Menunggu Pengambilan)",
+                notes: formData.notes || "",
+                paymentMethod: formData.paymentMethod,
+                userId: user?.id || "guest",
+                discount: discount,
+                couponCode: appliedCoupon || null,
+                paymentDetails: { demo: true, status: "success" },
+              };
+              localStorage.setItem(
+                "order_history",
+                JSON.stringify([...orderHistory, newOrder])
+              );
 
-            clearCart();
-            alert("✅ Pembayaran berhasil! (Demo Mode)");
-            navigate("/history");
+              addOrderNotification(result.data.orderNumber, "Lunas (Menunggu Pengambilan)");
+
+              clearCart();
+              alert("✅ Pembayaran berhasil! (Demo Mode)");
+              navigate("/history");
+            } catch (error) {
+              console.error("Error creating order:", error);
+              alert("Gagal menyimpan pesanan: " + error.message);
+            }
           } else {
-            // Simulasi pending
+            // Simulasi pending - simpan ke database
             console.log("⏳ Simulated payment pending");
 
-            const orderHistory = JSON.parse(
-              localStorage.getItem("order_history") || "[]"
-            );
-            const newOrder = {
-              id: orderId,
-              customerName: formData.name,
-              customerPhone: formData.phone,
-              date: new Date().toISOString(),
-              items: cart.map((item) => ({
-                name: item.name,
-                quantity: item.quantity,
-                price: item.price,
-              })),
-              total: total,
-              status: "Menunggu Pembayaran",
-              notes: formData.notes || "",
-              paymentMethod: formData.paymentMethod,
-              userId: user?.id || "guest",
-              discount: discount,
-              couponCode: appliedCoupon || null,
-              paymentDetails: { demo: true, status: "pending" },
-            };
-            localStorage.setItem(
-              "order_history",
-              JSON.stringify([...orderHistory, newOrder])
-            );
+            try {
+              const orderData = {
+                userId: user?.id || null,
+                customerName: formData.name,
+                customerEmail: formData.email || null,
+                customerPhone: formData.phone,
+                items: cart.map((item) => ({
+                  productId: item.id,
+                  productName: item.name,
+                  quantity: item.quantity,
+                  price: item.price,
+                })),
+                subtotal: subtotal,
+                taxAmount: tax,
+                discountAmount: discount,
+                totalAmount: total,
+                paymentMethod: "pembayaran_online",
+                paymentStatus: "pending",
+                notes: formData.notes || "",
+                couponCode: appliedCoupon || null,
+              };
 
-            const adminOrders = JSON.parse(
-              localStorage.getItem("adminOrders") || "[]"
-            );
-            const adminOrder = {
-              id: orderId,
-              customerName: formData.name,
-              customerPhone: formData.phone,
-              date: new Date().toISOString(),
-              status: "pending",
-              total: total,
-              items: cart.map((item) => ({
-                name: item.name,
-                quantity: item.quantity,
-                price: item.price,
-              })),
-              notes: formData.notes || "",
-            };
-            localStorage.setItem(
-              "adminOrders",
-              JSON.stringify([...adminOrders, adminOrder])
-            );
+              const result = await createOrder(orderData);
+              console.log("Order created:", result);
 
-            clearCart();
-            alert("⏳ Pembayaran pending! (Demo Mode)");
-            navigate("/history");
+              // Simpan ke localStorage untuk backup
+              const orderHistory = JSON.parse(
+                localStorage.getItem("order_history") || "[]"
+              );
+              const newOrder = {
+                id: result.data.orderNumber,
+                customerName: formData.name,
+                customerPhone: formData.phone,
+                date: new Date().toISOString(),
+                items: cart.map((item) => ({
+                  name: item.name,
+                  quantity: item.quantity,
+                  price: item.price,
+                })),
+                total: total,
+                status: "Menunggu Pembayaran",
+                notes: formData.notes || "",
+                paymentMethod: formData.paymentMethod,
+                userId: user?.id || "guest",
+                discount: discount,
+                couponCode: appliedCoupon || null,
+                paymentDetails: { demo: true, status: "pending" },
+              };
+              localStorage.setItem(
+                "order_history",
+                JSON.stringify([...orderHistory, newOrder])
+              );
+
+              clearCart();
+              alert("⏳ Pembayaran pending! (Demo Mode)");
+              navigate("/history");
+            } catch (error) {
+              console.error("Error creating order:", error);
+              alert("Gagal menyimpan pesanan: " + error.message);
+            }
           }
 
           setLoading(false);

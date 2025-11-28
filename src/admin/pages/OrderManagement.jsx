@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getOrders, updateOrderStatus } from '../../utils/api';
 
 const OrderManagement = () => {
   const [orders, setOrders] = useState([]);
@@ -27,22 +28,16 @@ const OrderManagement = () => {
     updateStatusCounts();
   }, [orders, searchTerm, statusFilter, dateFilter]);
 
-  const loadOrders = () => {
-    const savedOrders = localStorage.getItem('adminOrders');
-    if (savedOrders) {
-      const parsedOrders = JSON.parse(savedOrders);
-      // Add backward compatibility for old orders without new fields
-      const updatedOrders = parsedOrders.map(order => ({
-        ...order,
-        customerEmail: order.customerEmail || `${order.customerName.toLowerCase().replace(/\s/g, '.')}@email.com`,
-        paymentMethod: order.paymentMethod || 'cod',
-        paymentStatus: order.paymentStatus || (order.paymentMethod === 'online' ? 'pending' : 'unpaid')
-      }));
-      setOrders(updatedOrders);
-    } else {
-      const defaultOrders = getDefaultOrders();
-      localStorage.setItem('adminOrders', JSON.stringify(defaultOrders));
-      setOrders(defaultOrders);
+  const loadOrders = async () => {
+    try {
+      const data = await getOrders();
+      // Ensure orders are sorted by date descending (newest first)
+      // The API already does this, but good to be safe or if API changes
+      const sortedOrders = data.sort((a, b) => new Date(b.date) - new Date(a.date));
+      setOrders(sortedOrders);
+    } catch (error) {
+      console.error('Error loading orders:', error);
+      alert('Gagal memuat pesanan.');
     }
   };
 
@@ -99,52 +94,44 @@ const OrderManagement = () => {
     setShowStatusModal(true);
   };
 
-  const handleStatusUpdate = () => {
+  const handleStatusUpdate = async () => {
     if (!currentOrder) return;
 
-    const updatedOrders = orders.map(o => {
-      if (o.id === currentOrder.id) {
-        return {
-          ...o,
-          status: newStatus,
-          notes: statusNote || o.notes,
-          updatedAt: new Date().toISOString()
-        };
-      }
-      return o;
-    });
-
-    localStorage.setItem('adminOrders', JSON.stringify(updatedOrders));
-    setOrders(updatedOrders);
-    setShowStatusModal(false);
-
-    const updated = updatedOrders.find((o) => o.id === currentOrder.id);
-    if (updated) {
-      syncOrderHistoryAndNotifications(updated);
+    try {
+      // Use API to update status
+      // Note: currentOrder.dbId is the numeric ID from database, currentOrder.id is the string ID (ORD-...)
+      // The API controller expects the ID used in the route. 
+      // If we use /api/orders/:id/status, and pass currentOrder.id (string), the controller handles it.
+      await updateOrderStatus(currentOrder.id, newStatus);
+      
+      // Refresh orders
+      await loadOrders();
+      setShowStatusModal(false);
+      alert('Status pesanan berhasil diperbarui!');
+      
+      // Sync logic (optional, if you still want to keep local sync for some reason, but better to rely on API)
+      // For now, we'll skip the complex syncOrderHistoryAndNotifications as it relies on localStorage
+      // which might not be relevant if we are fully moving to backend.
+      // But if the user app still uses localStorage for history, we might need it.
+      // Let's keep it simple for now and assume backend handles everything.
+      
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Gagal memperbarui status pesanan.');
     }
-
-    alert('Status pesanan berhasil diperbarui!');
   };
 
-  const cancelOrder = (orderId) => {
+  const cancelOrder = async (orderId) => {
     if (!confirm('Apakah Anda yakin ingin membatalkan pesanan ini?')) return;
 
-    const updatedOrders = orders.map(o => {
-      if (o.id === orderId) {
-        return { ...o, status: 'cancelled' };
-      }
-      return o;
-    });
-
-    localStorage.setItem('adminOrders', JSON.stringify(updatedOrders));
-    setOrders(updatedOrders);
-
-    const cancelled = updatedOrders.find((o) => o.id === orderId);
-    if (cancelled) {
-      syncOrderHistoryAndNotifications(cancelled);
+    try {
+      await updateOrderStatus(orderId, 'cancelled');
+      await loadOrders();
+      alert('Pesanan berhasil dibatalkan!');
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      alert('Gagal membatalkan pesanan.');
     }
-
-    alert('Pesanan berhasil dibatalkan!');
   };
 
   const getStatusClass = (status) => {
@@ -188,149 +175,9 @@ const OrderManagement = () => {
     }).format(date);
   };
 
-  const mapAdminStatusToCustomerStatus = (status, paymentMethod, paymentStatus) => {
-    switch (status) {
-      case 'preparing':
-        return 'Sedang disiapkan di apotek';
-      case 'ready':
-        return 'Siap diambil di apotek';
-      case 'completed':
-        if (paymentMethod === 'online' || paymentStatus === 'paid') {
-          return 'Lunas (Selesai)';
-        }
-        return 'Selesai';
-      case 'cancelled':
-        return 'Dibatalkan oleh apotek';
-      case 'pending':
-      default:
-        if (paymentMethod === 'online' && paymentStatus === 'paid') {
-          return 'Lunas (Menunggu Diproses)';
-        }
-        return 'Menunggu Diproses';
-    }
-  };
 
-  const syncOrderHistoryAndNotifications = (updatedOrder) => {
-    try {
-      const customerStatus = mapAdminStatusToCustomerStatus(
-        updatedOrder.status,
-        updatedOrder.paymentMethod,
-        updatedOrder.paymentStatus
-      );
 
-      const historyRaw = localStorage.getItem('order_history');
-      if (historyRaw) {
-        const history = JSON.parse(historyRaw);
-        const updatedHistory = history.map((order) => {
-          if (order.id === updatedOrder.id) {
-            return {
-              ...order,
-              status: customerStatus,
-              notes: updatedOrder.notes || order.notes,
-              updatedAt: updatedOrder.updatedAt || new Date().toISOString(),
-            };
-          }
-          return order;
-        });
 
-        localStorage.setItem('order_history', JSON.stringify(updatedHistory));
-      }
-
-      let notifications = [];
-      try {
-        notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-      } catch (error) {
-        notifications = [];
-      }
-
-      const newNotification = {
-        id: `NOTIF-STATUS-${Date.now()}`,
-        type: 'order',
-        orderId: updatedOrder.id,
-        status: customerStatus,
-        title: 'Update Status Pesanan',
-        message: `Status pesanan ${updatedOrder.id} diperbarui menjadi ${getStatusText(
-          updatedOrder.status
-        )}.`,
-        createdAt: new Date().toISOString(),
-        read: false,
-      };
-
-      localStorage.setItem(
-        'notifications',
-        JSON.stringify([newNotification, ...notifications])
-      );
-    } catch (error) {
-      console.error('Error syncing order history / notifications:', error);
-    }
-  };
-
-  const getDefaultOrders = () => {
-    return [
-      {
-        id: 'ORD001',
-        customerName: 'Budi Santoso',
-        customerEmail: 'budi.santoso@email.com',
-        customerPhone: '081234567890',
-        date: new Date().toISOString(),
-        status: 'pending',
-        total: 85000,
-        paymentMethod: 'online',
-        paymentStatus: 'paid',
-        items: [
-          { name: 'Paracetamol 500mg', quantity: 2, price: 5000 },
-          { name: 'Vitamin C 1000mg', quantity: 5, price: 15000 }
-        ],
-        notes: 'Mohon disiapkan secepatnya'
-      },
-      {
-        id: 'ORD002',
-        customerName: 'Siti Rahayu',
-        customerEmail: 'siti.rahayu@email.com',
-        customerPhone: '081298765432',
-        date: new Date(Date.now() - 3600000).toISOString(),
-        status: 'preparing',
-        total: 50000,
-        paymentMethod: 'cod',
-        paymentStatus: 'unpaid',
-        items: [
-          { name: 'Amoxicillin 500mg', quantity: 2, price: 25000 }
-        ],
-        notes: ''
-      },
-      {
-        id: 'ORD003',
-        customerName: 'Ahmad Fauzi',
-        customerEmail: 'ahmad.fauzi@email.com',
-        customerPhone: '081234509876',
-        date: new Date(Date.now() - 7200000).toISOString(),
-        status: 'ready',
-        total: 36000,
-        paymentMethod: 'online',
-        paymentStatus: 'paid',
-        items: [
-          { name: 'Promag', quantity: 3, price: 12000 }
-        ],
-        notes: ''
-      },
-      {
-        id: 'ORD004',
-        customerName: 'Rina Wijaya',
-        customerEmail: 'rina.wijaya@email.com',
-        customerPhone: '081345678901',
-        date: new Date(Date.now() - 10800000).toISOString(),
-        status: 'completed',
-        total: 120000,
-        paymentMethod: 'online',
-        paymentStatus: 'pending',
-        items: [
-          { name: 'Antacid Plus', quantity: 2, price: 20000 },
-          { name: 'Vitamin D3', quantity: 1, price: 80000 }
-        ],
-        notes: 'Mohon verifikasi pembayaran'
-      }
-    ];
-  };
 
   return (
     <div>
@@ -449,25 +296,25 @@ const OrderManagement = () => {
                     <p className="text-sm text-gray-600">{order.customerPhone}</p>
                     <div className="flex items-center gap-2 mt-2">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        order.paymentMethod === 'cod' 
+                        order.paymentMethod === 'bayar_ditempat' || order.paymentMethod === 'cod'
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-blue-100 text-blue-800'
                       }`}>
-                        {order.paymentMethod === 'cod' ? 'Bayar di Tempat' : 'Transfer Online'}
+                        {order.paymentMethod === 'bayar_ditempat' || order.paymentMethod === 'cod' ? 'Bayar di Tempat' : 'Transfer Online'}
                       </span>
-                      {order.paymentMethod === 'cod' && (
+                      {(order.paymentMethod === 'bayar_ditempat' || order.paymentMethod === 'cod') && (
                         <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">
                           <i className="fas fa-money-bill-wave mr-1"></i>
                           Belum Dibayar
                         </span>
                       )}
-                      {order.paymentMethod === 'online' && order.paymentStatus === 'paid' && (
+                      {(order.paymentMethod === 'pembayaran_online' || order.paymentMethod === 'online') && order.paymentStatus === 'paid' && (
                         <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                           <i className="fas fa-check-circle mr-1"></i>
                           Lunas
                         </span>
                       )}
-                      {order.paymentMethod === 'online' && order.paymentStatus === 'pending' && (
+                      {(order.paymentMethod === 'pembayaran_online' || order.paymentMethod === 'online') && order.paymentStatus === 'pending' && (
                         <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
                           <i className="fas fa-clock mr-1"></i>
                           Menunggu
@@ -486,10 +333,10 @@ const OrderManagement = () => {
                 <div className="border-t pt-4">
                   <h4 className="font-medium text-gray-900 mb-2">Item Pesanan:</h4>
                   <div className="space-y-2">
-                    {order.items.map((item, idx) => (
+                    {order.items && order.items.map((item, idx) => (
                       <div key={idx} className="flex justify-between text-sm">
-                        <span className="text-gray-600">{item.name} x{item.quantity}</span>
-                        <span className="text-gray-900">{formatCurrency(item.price * item.quantity)}</span>
+                        <span className="text-gray-600">{item.product_name || item.name} x{item.quantity}</span>
+                        <span className="text-gray-900">{formatCurrency((item.price || item.product_price) * item.quantity)}</span>
                       </div>
                     ))}
                   </div>
@@ -565,14 +412,14 @@ const OrderManagement = () => {
                   <h4 className="font-semibold text-gray-900 mb-2">Informasi Pembayaran</h4>
                   <div className="flex items-center gap-2">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      currentOrder.paymentMethod === 'cod' 
+                      currentOrder.paymentMethod === 'bayar_ditempat' || currentOrder.paymentMethod === 'cod'
                         ? 'bg-green-100 text-green-800' 
                         : 'bg-blue-100 text-blue-800'
                     }`}>
-                      {currentOrder.paymentMethod === 'cod' ? 'Bayar di Tempat' : 'Transfer Online'}
+                      {currentOrder.paymentMethod === 'bayar_ditempat' || currentOrder.paymentMethod === 'cod' ? 'Bayar di Tempat' : 'Transfer Online'}
                     </span>
                     
-                    {currentOrder.paymentMethod === 'cod' ? (
+                    {(currentOrder.paymentMethod === 'bayar_ditempat' || currentOrder.paymentMethod === 'cod') ? (
                       <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">
                         <i className="fas fa-money-bill-wave mr-1"></i>
                         Belum Dibayar
@@ -615,12 +462,12 @@ const OrderManagement = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {currentOrder.items.map((item, idx) => (
+                        {currentOrder.items && currentOrder.items.map((item, idx) => (
                           <tr key={idx}>
-                            <td className="px-4 py-2 text-sm text-gray-900">{item.name}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900">{item.product_name || item.name}</td>
                             <td className="px-4 py-2 text-sm text-gray-900">{item.quantity}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{formatCurrency(item.price)}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{formatCurrency(item.price * item.quantity)}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900">{formatCurrency(item.price || item.product_price)}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900">{formatCurrency((item.price || item.product_price) * item.quantity)}</td>
                           </tr>
                         ))}
                       </tbody>

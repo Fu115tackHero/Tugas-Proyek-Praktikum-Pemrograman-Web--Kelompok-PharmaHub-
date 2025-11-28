@@ -13,6 +13,7 @@ const ProductDetail = () => {
   const [activeTab, setActiveTab] = useState("ingredients");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -163,7 +164,9 @@ const ProductDetail = () => {
             <div className="flex justify-center items-center">
               <div className="bg-gray-100 rounded-lg p-8 w-full max-w-md">
                 <img
-                  src={product.image || `${import.meta.env.VITE_API_URL}/api/products/${product.id}/image`}
+                  src={(product.image && product.image.startsWith('/'))
+                    ? `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${product.image}`
+                    : (product.image || `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/products/${product.id}/image`)}
                   alt={product.name}
                   className="w-full h-auto max-w-md object-contain rounded-lg transition-transform duration-300 hover:scale-105"
                   onError={(e) => {

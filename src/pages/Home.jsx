@@ -270,7 +270,9 @@ const Home = () => {
                 `}
               >
                 <img
-                  src={product.image || `${import.meta.env.VITE_API_URL}/api/products/${product.id}/image`}
+                  src={(product.image && product.image.startsWith('/'))
+                    ? `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${product.image}`
+                    : (product.image || `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/products/${product.id}/image`)}
                   alt={product.name}
                   className="w-36 h-36 object-cover mx-auto mb-4 rounded-lg"
                   onError={(e) => {

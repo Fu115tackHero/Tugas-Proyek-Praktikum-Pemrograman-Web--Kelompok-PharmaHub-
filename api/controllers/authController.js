@@ -99,10 +99,7 @@ const login = asyncHandler(async (req, res) => {
     throw new AppError("Email atau password salah", 401);
   }
 
-  // Update last login
-  await query("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = $1", [
-    user.user_id,
-  ]);
+  // Update last login removed as column does not exist
 
   res.json({
     success: true,
@@ -133,7 +130,7 @@ const getMe = asyncHandler(async (req, res) => {
 
   const result = await query(
     `
-    SELECT user_id, name, email, phone, address, role, created_at, last_login
+    SELECT user_id, name, email, phone, address, role, created_at
     FROM users
     WHERE user_id = $1 AND is_active = true
   `,
@@ -156,7 +153,6 @@ const getMe = asyncHandler(async (req, res) => {
       address: user.address,
       role: user.role,
       createdAt: user.created_at,
-      lastLogin: user.last_login,
     },
   });
 });
