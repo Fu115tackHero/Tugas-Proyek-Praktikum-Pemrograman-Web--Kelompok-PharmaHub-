@@ -2,11 +2,6 @@
   "buildCommand": "npm run build",
   "devCommand": "npm run dev:all",
   "version": 2,
-  "env": {
-    "MIDTRANS_SERVER_KEY": "@midtrans_server_key",
-    "MIDTRANS_CLIENT_KEY": "@midtrans_client_key",
-    "MIDTRANS_IS_PRODUCTION": "false"
-  },
   "rewrites": [
     {
       "source": "/api/(.*)",
