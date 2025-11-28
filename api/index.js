@@ -1,3 +1,17 @@
+/**
+ * PharmaHub Backend API
+ * Vercel Serverless Function
+ * Integration: Midtrans Payment Gateway (Sandbox/Production)
+ *
+ * SENSITIVE KEYS REMOVED.
+ * Gunakan environment variables:
+ *   MIDTRANS_SERVER_KEY
+ *   MIDTRANS_CLIENT_KEY
+ *   MIDTRANS_IS_PRODUCTION ("true" / "false")
+ *
+ * Jangan commit nilai asli key ke repository publik.
+ */
+
 const express = require("express");
 const cors = require("cors");
 const midtransClient = require("midtrans-client");
@@ -19,43 +33,70 @@ const { notFound, errorHandler } = require("./middleware/errorHandler");
 
 const app = express();
 
-// Global Middleware
-app.use(cors({
-  origin: function(origin, callback) {
-    const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'];
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['Content-Type', 'Content-Length']
-}));
-app.use(express.json());
+// ============================================
+// MIDDLEWARE
+// ============================================
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      const allowedOrigins = [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:3000",
+        "https://pharmahub.vercel.app",
+        process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
+      ].filter(Boolean);
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["Content-Type", "Content-Length"],
+  })
+);
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(sanitizeInput); // Sanitize all inputs
 
-// Mode demo untuk testing tanpa kredensial Midtrans yang valid
-const DEMO_MODE = process.env.DEMO_MODE !== "false"; // Default true untuk development
+// ============================================
+// ENVIRONMENT VARIABLES
+// ============================================
+const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY;
+const MIDTRANS_CLIENT_KEY = process.env.MIDTRANS_CLIENT_KEY;
+if (!MIDTRANS_SERVER_KEY || !MIDTRANS_CLIENT_KEY) {
+  console.error(
+    "❌ Missing payment keys. Set MIDTRANS_SERVER_KEY and MIDTRANS_CLIENT_KEY in environment."
+  );
+}
+const IS_PRODUCTION = process.env.MIDTRANS_IS_PRODUCTION === "true";
 
-// Inisialisasi Midtrans Snap (hanya jika bukan demo mode)
-let snap = null;
-if (!DEMO_MODE) {
-  snap = new midtransClient.Snap({
-    isProduction: process.env.MIDTRANS_IS_PRODUCTION === "true" || false,
-    serverKey: process.env.MIDTRANS_SERVER_KEY,
-    clientKey: process.env.MIDTRANS_CLIENT_KEY,
-  });
+// ============================================
+// MIDTRANS CONFIGURATION
+// ============================================
+const snap = new midtransClient.Snap({
+  isProduction: IS_PRODUCTION,
+  serverKey: MIDTRANS_SERVER_KEY,
+  clientKey: MIDTRANS_CLIENT_KEY,
+});
+
+console.log("🚀 PharmaHub API Started");
+console.log(`📍 Mode: ${IS_PRODUCTION ? "PRODUCTION" : "SANDBOX"}`);
+if (MIDTRANS_SERVER_KEY) {
+  console.log(`🔑 Server Key: ${MIDTRANS_SERVER_KEY.substring(0, 10)}********`);
 }
 
-// Health check endpoint
+// ============================================
+// HEALTH CHECK ENDPOINT
+// ============================================
 app.get("/api", (req, res) => {
-  res.json({
+  res.status(200).json({
     status: "ok",
-    message: "PharmaHub API is running",
-    mode: DEMO_MODE ? "demo" : "production",
+    message: "PharmaHub API Server is running",
+    mode: IS_PRODUCTION ? "production" : "sandbox",
     timestamp: new Date().toISOString(),
   });
 });
@@ -73,84 +114,170 @@ console.log("Registering /api/orders route");
 app.use("/api/orders", orderRoutes);
 
 // ============================================
-// MIDTRANS ENDPOINTS
+// CREATE TRANSACTION ENDPOINT
 // ============================================
-
-// Endpoint untuk membuat transaksi Midtrans
+/**
+ * POST /api/create-transaction
+ * Create new Midtrans transaction
+ */
 app.post("/api/create-transaction", async (req, res) => {
   try {
-    const { transaction_details, customer_details, item_details } = req.body;
+    const { order_id, gross_amount, items, customer } = req.body;
 
-    // Validasi input
-    if (!transaction_details || !customer_details || !item_details) {
+    // ============================================
+    // VALIDATION
+    // ============================================
+    if (!order_id) {
       return res.status(400).json({
         success: false,
-        message:
-          "Missing required fields: transaction_details, customer_details, or item_details",
+        message: "Missing required field: order_id",
       });
     }
 
-    if (!transaction_details.order_id || !transaction_details.gross_amount) {
+    if (!gross_amount || gross_amount <= 0) {
       return res.status(400).json({
         success: false,
-        message: "transaction_details must include order_id and gross_amount",
+        message: "Missing or invalid field: gross_amount (must be > 0)",
       });
     }
 
-    // DEMO MODE: Generate fake token untuk testing
-    if (DEMO_MODE) {
-      console.log("⚠️  DEMO MODE: Generating fake Midtrans token");
-      console.log("Order ID:", transaction_details.order_id);
-      console.log("Amount:", transaction_details.gross_amount);
-
-      // Simulate token generation
-      const fakeToken = `demo-${Buffer.from(transaction_details.order_id)
-        .toString("base64")
-        .substring(0, 20)}-${Date.now()}`;
-
-      return res.json({
-        success: true,
-        token: fakeToken,
-        redirect_url: `https://app.sandbox.midtrans.com/snap/v2/vtweb/${fakeToken}`,
-        demo_mode: true,
-        message:
-          "Demo mode: Using simulated payment. Set DEMO_MODE=false and provide valid Midtrans credentials for real payments.",
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing or invalid field: items (must be non-empty array)",
       });
     }
 
-    // PRODUCTION MODE: Call real Midtrans API
+    if (
+      !customer ||
+      !customer.first_name ||
+      !customer.email ||
+      !customer.phone
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing customer details: first_name, email, phone required",
+      });
+    }
+
+    console.log("📝 Creating Midtrans transaction:", {
+      order_id,
+      gross_amount,
+      customer: customer.first_name,
+      items: items.length,
+    });
+
+    // ============================================
+    // BUILD MIDTRANS PARAMETER
+    // ============================================
     const parameter = {
       transaction_details: {
-        order_id: transaction_details.order_id,
-        gross_amount: transaction_details.gross_amount,
+        order_id: String(order_id),
+        gross_amount: parseInt(gross_amount),
       },
       customer_details: {
-        first_name: customer_details.first_name || "Customer",
-        email: customer_details.email || "customer@pharmahub.com",
-        phone: customer_details.phone || "08123456789",
+        first_name: customer.first_name || "Customer",
+        last_name: customer.last_name || "",
+        email: customer.email,
+        phone: customer.phone,
+        billing_address: customer.address
+          ? {
+              full_address: customer.address,
+            }
+          : undefined,
       },
-      item_details: item_details,
-      callbacks: {
-        finish: `${req.headers.origin || "http://localhost:5173"}/history`,
-      },
+      item_details: items.map((item) => ({
+        id: String(item.id || `ITEM-${Date.now()}-${Math.random()}`),
+        price: parseInt(item.price) || 0,
+        quantity: parseInt(item.quantity) || 1,
+        name: String(item.name || "Product").substring(0, 100),
+      })),
     };
 
-    // Membuat transaksi ke Midtrans
+    // Filter undefined values
+    if (!parameter.customer_details.billing_address) {
+      delete parameter.customer_details.billing_address;
+    }
+
+    // ============================================
+    // CREATE TRANSACTION WITH MIDTRANS
+    // ============================================
     const transaction = await snap.createTransaction(parameter);
 
-    // Mengembalikan token ke frontend
-    res.json({
+    console.log("✅ Transaction created successfully");
+    console.log("🎟️  Token:", transaction.token.substring(0, 20) + "...");
+
+    res.status(200).json({
       success: true,
       token: transaction.token,
       redirect_url: transaction.redirect_url,
+      order_id: order_id,
     });
   } catch (error) {
-    console.error("Midtrans Error:", error);
+    console.error("❌ Error creating transaction:", error.message);
+
+    // Handle Midtrans specific errors
+    if (error.ApiResponse) {
+      console.error("Midtrans API Error:", error.ApiResponse);
+      return res.status(error.ApiResponse.status_code || 500).json({
+        success: false,
+        message: error.ApiResponse.error_description || error.message,
+      });
+    }
 
     res.status(500).json({
       success: false,
       message: error.message || "Failed to create transaction",
-      error: process.env.NODE_ENV === "development" ? error : undefined,
+    });
+  }
+});
+
+// ============================================
+// NOTIFICATION WEBHOOK ENDPOINT
+// ============================================
+/**
+ * POST /api/midtrans-notification
+ * Webhook dari Midtrans untuk payment status updates
+ */
+app.post("/api/midtrans-notification", async (req, res) => {
+  try {
+    const notification = req.body;
+
+    console.log("🔔 Midtrans notification received:", {
+      order_id: notification.order_id,
+      transaction_status: notification.transaction_status,
+      payment_type: notification.payment_type,
+    });
+
+    const { order_id, transaction_status, payment_type } = notification;
+
+    // Handle different statuses
+    switch (transaction_status) {
+      case "capture":
+      case "settlement":
+        console.log("✅ Payment successful for order:", order_id);
+        break;
+      case "pending":
+        console.log("⏳ Payment pending for order:", order_id);
+        break;
+      case "deny":
+      case "cancel":
+        console.log("❌ Payment failed for order:", order_id);
+        break;
+      case "expire":
+        console.log("⏰ Payment expired for order:", order_id);
+        break;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Notification processed",
+    });
+  } catch (error) {
+    console.error("❌ Error processing notification:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to process notification",
     });
   }
 });
@@ -174,5 +301,7 @@ testConnection().then((success) => {
   }
 });
 
-// Export untuk Vercel Serverless Functions
+// ============================================
+// EXPORT FOR VERCEL SERVERLESS
+// ============================================
 module.exports = app;
