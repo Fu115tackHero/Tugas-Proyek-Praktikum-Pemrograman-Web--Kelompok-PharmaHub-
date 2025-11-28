@@ -9,13 +9,21 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <!-- Midtrans Snap Script -->
+
+    <!-- Payment Snap Script (client key injected via env) -->
+    <!-- Define VITE_PAYMENT_CLIENT_KEY in .env.local -->
     <script
       type="text/javascript"
       src="https://app.sandbox.midtrans.com/snap/snap.js"
-      data-client-key="your_midtrans_client_key_here"
+      data-client-key="%VITE_PAYMENT_CLIENT_KEY%"
     ></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=your_google_maps_api_key_here"></script>
+
+    <!-- Google Maps API (key injected via env: VITE_GOOGLE_MAPS_API_KEY) -->
+    <script
+      async
+      defer
+      src="https://maps.googleapis.com/maps/api/js?key=%VITE_GOOGLE_MAPS_API_KEY%&libraries=places&loading=async"
+    ></script>
   </head>
   <body>
     <div id="root"></div>

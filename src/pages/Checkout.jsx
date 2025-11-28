@@ -6,19 +6,14 @@ import { useAuth } from "../context/AuthContext";
 const Checkout = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const {
-    cart,
-    getCartTotal,
-    getDiscountAmount,
-    appliedCoupon,
-    availableCoupons,
-    clearCart,
-  } = useCart();
+  const { cart, getCartTotal, getDiscountAmount, appliedCoupon, clearCart } =
+    useCart();
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
+    address: "",
     notes: "",
     paymentMethod: "midtrans_online", // 'midtrans_online' atau 'bayar_ditempat'
   });
@@ -31,6 +26,16 @@ const Checkout = () => {
     variant: "success",
     redirectToHistory: false,
   });
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    confirmText: "OK",
+    cancelText: "Batal",
+    onConfirm: null,
+    onCancel: null,
+  });
 
   // Isi data pengguna jika sudah login
   useEffect(() => {
@@ -40,6 +45,7 @@ const Checkout = () => {
         name: user.name || "",
         email: user.email || "",
         phone: user.phone || "",
+        address: user.address || "",
       }));
     }
   }, [user]);
@@ -47,7 +53,7 @@ const Checkout = () => {
   // Perhitungan Biaya (Tanpa Biaya Kirim)
   const subtotal = getCartTotal();
   const discount = getDiscountAmount();
-  const tax = Math.round(subtotal * 0.1); // Pajak 10% (contoh)
+  const tax = Math.round(subtotal * 0.1); // Pajak 10%
   const total = subtotal + tax - discount;
 
   const handleInputChange = (e) => {
@@ -87,458 +93,388 @@ const Checkout = () => {
   const closeModal = () => {
     setModal((prev) => ({ ...prev, open: false }));
     if (modal.redirectToHistory) {
-      clearCart();
-      navigate("/history");
+      setTimeout(() => {
+        clearCart();
+        navigate("/history");
+      }, 300);
     }
+  };
+
+  const showModal = (
+    title,
+    message,
+    variant = "success",
+    redirectToHistory = false
+  ) => {
+    // Clear any previous modal first
+    setModal({
+      open: false,
+      title: "",
+      message: "",
+      variant: "success",
+      redirectToHistory: false,
+    });
+
+    // Then set new modal after a tiny delay
+    setTimeout(() => {
+      setModal({
+        open: true,
+        title,
+        message,
+        variant,
+        redirectToHistory,
+      });
+    }, 100);
+  };
+
+  const openConfirm = ({
+    title,
+    message,
+    confirmText = "OK",
+    cancelText = "Batal",
+    onConfirm = null,
+    onCancel = null,
+  }) => {
+    setConfirmModal({
+      open: true,
+      title,
+      message,
+      confirmText,
+      cancelText,
+      onConfirm,
+      onCancel,
+    });
+  };
+
+  const closeConfirm = () => {
+    setConfirmModal((prev) => ({ ...prev, open: false }));
+  };
+
+  const handleConfirmYes = () => {
+    const fn = confirmModal.onConfirm;
+    closeConfirm();
+    if (typeof fn === "function") fn();
+  };
+
+  const handleConfirmNo = () => {
+    const fn = confirmModal.onCancel;
+    closeConfirm();
+    if (typeof fn === "function") fn();
+  };
+
+  const saveOrder = (orderId, status, paymentDetails = null) => {
+    // Save ke order history
+    const orderHistory = JSON.parse(
+      localStorage.getItem("order_history") || "[]"
+    );
+    const newOrder = {
+      id: orderId,
+      customerName: formData.name,
+      customerEmail: formData.email,
+      customerPhone: formData.phone,
+      customerAddress: formData.address,
+      date: new Date().toISOString(),
+      items: cart.map((item) => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+      total: total,
+      subtotal: subtotal,
+      tax: tax,
+      discount: discount,
+      status: status,
+      notes: formData.notes || "",
+      paymentMethod: formData.paymentMethod,
+      userId: user?.id || "guest",
+      couponCode: appliedCoupon || null,
+      paymentDetails: paymentDetails,
+    };
+    localStorage.setItem(
+      "order_history",
+      JSON.stringify([...orderHistory, newOrder])
+    );
+
+    // Save untuk admin OrderManagement
+    const adminOrders = JSON.parse(localStorage.getItem("adminOrders") || "[]");
+
+    // Map status ke admin format
+    let adminStatus = "pending";
+    let adminPaymentStatus = "unpaid";
+
+    if (status.includes("Lunas") || status.includes("Pembayaran Berhasil")) {
+      adminStatus = "paid";
+      adminPaymentStatus = "paid";
+    } else if (
+      status.includes("Menunggu Pembayaran") ||
+      status.includes("Pending")
+    ) {
+      adminStatus = "pending";
+      adminPaymentStatus = "unpaid";
+    }
+
+    const adminOrder = {
+      id: orderId,
+      customerName: formData.name,
+      customerEmail: formData.email,
+      customerPhone: formData.phone,
+      date: new Date().toISOString(),
+      status: adminStatus,
+      paymentStatus: adminPaymentStatus,
+      paymentMethod:
+        formData.paymentMethod === "midtrans_online"
+          ? "pembayaran_online"
+          : "bayar_ditempat",
+      total: total,
+      items: cart.map((item) => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+      notes: formData.notes || "",
+    };
+    localStorage.setItem(
+      "adminOrders",
+      JSON.stringify([...adminOrders, adminOrder])
+    );
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setPaymentProcessing(false);
+
+    // Validasi form
+    if (!formData.name || !formData.email || !formData.phone) {
+      showModal(
+        "⚠️ Data Tidak Lengkap",
+        "Mohon lengkapi data: nama, email, dan nomor telepon!",
+        "error",
+        false
+      );
+      setLoading(false);
+      return;
+    }
 
     const orderId = `PHARMAHUB-PICKUP-${Date.now()}`;
-    let orderStatus = "";
-    let alertMessage = "";
 
     if (formData.paymentMethod === "bayar_ditempat") {
-      // --- LOGIKA UNTUK BAYAR DI TEMPAT ---
-      console.log("Pesanan 'Bayar di Tempat' dibuat.");
-      orderStatus = "Menunggu Pengambilan (Bayar di Tempat)";
-      alertMessage =
-        "Pesanan Anda telah dikonfirmasi! Silakan ambil dan bayar di kasir apotek.";
+      // ============================================
+      // BAYAR DI TEMPAT - SIMPLE FLOW
+      // ============================================
+      console.log("📌 Pesanan 'Bayar di Tempat' dibuat");
 
-      // Simulasi sukses langsung
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // --- SIMPAN RIWAYAT PESANAN UNTUK BAYAR DI TEMPAT ---
-      const orderHistory = JSON.parse(
-        localStorage.getItem("order_history") || "[]"
-      );
-      const newOrder = {
-        id: orderId,
-        customerName: formData.name,
-        customerPhone: formData.phone,
-        date: new Date().toISOString(),
-        items: cart.map((item) => ({
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-        })),
-        total: total,
-        status: orderStatus,
-        notes: formData.notes || "",
-        paymentMethod: formData.paymentMethod,
-        userId: user?.id || "guest",
-        discount: discount,
-        couponCode: appliedCoupon || null,
-      };
-      localStorage.setItem(
-        "order_history",
-        JSON.stringify([...orderHistory, newOrder])
-      );
-
-      // Simpan untuk admin OrderManagement
-      const adminOrders = JSON.parse(
-        localStorage.getItem("adminOrders") || "[]"
-      );
-      const adminOrder = {
-        id: orderId,
-        customerName: formData.name,
-        customerPhone: formData.phone,
-        date: new Date().toISOString(),
-        status: "pending",
-        paymentMethod: "cod",
-        paymentStatus: "unpaid",
-        total: total,
-        items: cart.map((item) => ({
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-        })),
-        notes: formData.notes || "",
-      };
-      localStorage.setItem(
-        "adminOrders",
-        JSON.stringify([...adminOrders, adminOrder])
-      );
-
+      const orderStatus = "Menunggu Pengambilan (Bayar di Tempat)";
+      saveOrder(orderId, orderStatus);
       addOrderNotification(orderId, orderStatus);
 
       setLoading(false);
-      setModal({
-        open: true,
-        title: "Pesanan Dikonfirmasi",
-        message: alertMessage,
-        variant: "success",
-        redirectToHistory: true,
-      });
-      return; // Exit early untuk bayar di tempat
+      showModal(
+        "✅ Pesanan Dikonfirmasi",
+        `Pesanan #${orderId} telah dibuat!\n\nSilakan ambil dan bayar di kasir apotek.\n\nNomor pesanan akan digunakan untuk verifikasi.`,
+        "success",
+        true
+      );
     } else {
-      // --- LOGIKA UNTUK MIDTRANS (ONLINE) ---
-      console.log("Memulai proses pembayaran online dengan Midtrans...");
-
-      // 1. Kumpulkan data untuk Midtrans
-      const transactionDetails = {
-        order_id: orderId,
-        gross_amount: total,
-      };
-
-      const customerDetails = {
-        first_name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-      };
-
-      const itemDetails = cart.map((item) => ({
-        id: item.id,
-        price: item.price,
-        quantity: item.quantity,
-        name: item.name,
-      }));
-
-      // Menambahkan diskon jika ada
-      if (discount > 0) {
-        itemDetails.push({
-          id: "DISCOUNT",
-          price: -discount,
-          quantity: 1,
-          name: `Diskon (${appliedCoupon})`,
-        });
-      }
-
-      // Menambahkan pajak sebagai item terpisah
-      itemDetails.push({
-        id: "TAX",
-        price: tax,
-        quantity: 1,
-        name: "Pajak (PPN 10%)",
-      });
-
-      // Data lengkap yang akan dikirim ke backend
-      const midtransPayload = {
-        transaction_details: transactionDetails,
-        customer_details: customerDetails,
-        item_details: itemDetails,
-      };
+      // ============================================
+      // MIDTRANS PAYMENT - REAL INTEGRATION
+      // ============================================
+      console.log("💳 Memulai proses pembayaran...");
+      setPaymentProcessing(true);
 
       try {
-        // Panggil backend API untuk membuat transaksi
+        // 1. Siapkan data untuk backend
+        const itemDetails = cart.map((item) => ({
+          id: String(item.id),
+          price: Math.round(item.price),
+          quantity: item.quantity,
+          name: item.name,
+        }));
+
+        // Tambah diskon jika ada
+        if (discount > 0) {
+          itemDetails.push({
+            id: "DISCOUNT",
+            price: -Math.round(discount),
+            quantity: 1,
+            name: `Diskon (${appliedCoupon || "Kupon"})`,
+          });
+        }
+
+        // Tambah pajak
+        itemDetails.push({
+          id: "TAX",
+          price: Math.round(tax),
+          quantity: 1,
+          name: "Pajak (PPN 10%)",
+        });
+
+        const payload = {
+          order_id: orderId,
+          gross_amount: total,
+          items: itemDetails,
+          customer: {
+            first_name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            address: formData.address,
+          },
+        };
+
+        console.log("📤 Mengirim request ke /api/create-transaction", payload);
+
+        // 2. Call backend API
         const response = await fetch("/api/create-transaction", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(midtransPayload),
+          body: JSON.stringify(payload),
         });
 
-        let result;
-        let rawText = "";
-        try {
-          rawText = await response.text();
-          result = rawText ? JSON.parse(rawText) : null;
-        } catch (parseError) {
-          console.error(
-            "Error parsing payment response:",
-            parseError,
-            rawText
-          );
-          throw new Error(
-            "Respon server pembayaran tidak valid. Pastikan server API berjalan dan konfigurasi .env sudah benar."
-          );
+        if (!response.ok) {
+          throw new Error(`HTTP Error: ${response.status}`);
         }
 
-        if (!response.ok || !result) {
-          throw new Error(
-            (result && result.message) ||
-              `Server pembayaran mengembalikan status ${response.status}`
-          );
-        }
+        const result = await response.json();
 
         if (!result.success) {
           throw new Error(result.message || "Gagal membuat transaksi");
         }
 
-        // Dapatkan token dari backend
-        const snapToken = result.token;
+        console.log("✅ Token pembayaran diterima");
+        console.log("🎟️  Token:", result.token.substring(0, 30) + "...");
 
-        // Cek apakah demo mode
-        if (result.demo_mode) {
-          console.log("⚠️  Demo Mode Detected - Simulating Payment");
-
-          // Simulasi pemilihan hasil pembayaran
-          const simulatePayment = () => {
-            return new Promise((resolve) => {
-              // Show custom dialog untuk simulasi
-              const paymentResult = window.confirm(
-                "🔧 DEMO MODE - Simulasi Pembayaran\n\n" +
-                  "Klik OK untuk simulasi pembayaran BERHASIL\n" +
-                  "Klik Cancel untuk simulasi pembayaran PENDING"
-              );
-
-              setTimeout(() => {
-                resolve(paymentResult ? "success" : "pending");
-              }, 1000);
-            });
-          };
-
-          const status = await simulatePayment();
-
-          if (status === "success") {
-            // Simulasi sukses
-            console.log("✅ Simulated payment success");
-
-            const orderHistory = JSON.parse(
-              localStorage.getItem("order_history") || "[]"
-            );
-            const newOrder = {
-              id: orderId,
-              customerName: formData.name,
-              customerPhone: formData.phone,
-              date: new Date().toISOString(),
-              items: cart.map((item) => ({
-                name: item.name,
-                quantity: item.quantity,
-                price: item.price,
-              })),
-              total: total,
-              status: "Lunas (Menunggu Pengambilan)",
-              notes: formData.notes || "",
-              paymentMethod: formData.paymentMethod,
-              userId: user?.id || "guest",
-              discount: discount,
-              couponCode: appliedCoupon || null,
-              paymentDetails: { demo: true, status: "success" },
-            };
-            localStorage.setItem(
-              "order_history",
-              JSON.stringify([...orderHistory, newOrder])
-            );
-
-            const adminOrders = JSON.parse(
-              localStorage.getItem("adminOrders") || "[]"
-            );
-            const adminOrder = {
-              id: orderId,
-              customerName: formData.name,
-              customerPhone: formData.phone,
-              date: new Date().toISOString(),
-              status: "paid",
-              total: total,
-              items: cart.map((item) => ({
-                name: item.name,
-                quantity: item.quantity,
-                price: item.price,
-              })),
-              notes: formData.notes || "",
-            };
-            localStorage.setItem(
-              "adminOrders",
-              JSON.stringify([...adminOrders, adminOrder])
-            );
-
-            addOrderNotification(orderId, "Lunas (Menunggu Pengambilan)");
-
-            clearCart();
-            alert("✅ Pembayaran berhasil! (Demo Mode)");
-            navigate("/history");
-          } else {
-            // Simulasi pending
-            console.log("⏳ Simulated payment pending");
-
-            const orderHistory = JSON.parse(
-              localStorage.getItem("order_history") || "[]"
-            );
-            const newOrder = {
-              id: orderId,
-              customerName: formData.name,
-              customerPhone: formData.phone,
-              date: new Date().toISOString(),
-              items: cart.map((item) => ({
-                name: item.name,
-                quantity: item.quantity,
-                price: item.price,
-              })),
-              total: total,
-              status: "Menunggu Pembayaran",
-              notes: formData.notes || "",
-              paymentMethod: formData.paymentMethod,
-              userId: user?.id || "guest",
-              discount: discount,
-              couponCode: appliedCoupon || null,
-              paymentDetails: { demo: true, status: "pending" },
-            };
-            localStorage.setItem(
-              "order_history",
-              JSON.stringify([...orderHistory, newOrder])
-            );
-
-            const adminOrders = JSON.parse(
-              localStorage.getItem("adminOrders") || "[]"
-            );
-            const adminOrder = {
-              id: orderId,
-              customerName: formData.name,
-              customerPhone: formData.phone,
-              date: new Date().toISOString(),
-              status: "pending",
-              total: total,
-              items: cart.map((item) => ({
-                name: item.name,
-                quantity: item.quantity,
-                price: item.price,
-              })),
-              notes: formData.notes || "",
-            };
-            localStorage.setItem(
-              "adminOrders",
-              JSON.stringify([...adminOrders, adminOrder])
-            );
-
-            clearCart();
-            alert("⏳ Pembayaran pending! (Demo Mode)");
-            navigate("/history");
-          }
-
-          setLoading(false);
-          return;
+        // 3. Cek ketersediaan Payment Popup
+        if (!window.snap) {
+          throw new Error(
+            "Layanan pembayaran belum siap. Muat ulang halaman dan coba lagi."
+          );
         }
 
-        // REAL MIDTRANS: Panggil Midtrans Snap
-        window.snap.pay(snapToken, {
-          onSuccess: function (result) {
-            console.log("Payment success:", result);
+        setLoading(false);
 
-            // Simpan order sebagai Lunas
-            const orderHistory = JSON.parse(
-              localStorage.getItem("order_history") || "[]"
-            );
-            const newOrder = {
-              id: orderId,
-              customerName: formData.name,
-              customerPhone: formData.phone,
-              date: new Date().toISOString(),
-              items: cart.map((item) => ({
-                name: item.name,
-                quantity: item.quantity,
-                price: item.price,
-              })),
-              total: total,
-              status: "Lunas (Menunggu Pengambilan)",
-              notes: formData.notes || "",
-              paymentMethod: formData.paymentMethod,
-              userId: user?.id || "guest",
-              discount: discount,
-              couponCode: appliedCoupon || null,
-              paymentDetails: result,
-            };
-            localStorage.setItem(
-              "order_history",
-              JSON.stringify([...orderHistory, newOrder])
-            );
+        // 4. Tampilkan Payment Pop-up dengan callback yang terpisah
+        window.snap.pay(result.token, {
+          onSuccess: function (transaction) {
+            console.log("✅ PAYMENT SUCCESS!", transaction);
+            setPaymentProcessing(false);
 
-            // Simpan untuk admin
-            const adminOrders = JSON.parse(
-              localStorage.getItem("adminOrders") || "[]"
-            );
-            const adminOrder = {
-              id: orderId,
-              customerName: formData.name,
-              customerPhone: formData.phone,
-              date: new Date().toISOString(),
-              status: "paid",
-              total: total,
-              items: cart.map((item) => ({
-                name: item.name,
-                quantity: item.quantity,
-                price: item.price,
-              })),
-              notes: formData.notes || "",
-            };
-            localStorage.setItem(
-              "adminOrders",
-              JSON.stringify([...adminOrders, adminOrder])
-            );
+            const status = "Lunas (Menunggu Pengambilan)";
+            saveOrder(orderId, status, transaction);
+            addOrderNotification(orderId, status);
 
-            clearCart();
-            navigate("/history");
+            showModal(
+              "✅ Pembayaran Berhasil!",
+              `Pesanan #${orderId} telah dibayar!\n\nSilakan menunggu pesanan disiapkan di apotek.`,
+              "success",
+              true
+            );
           },
-          onPending: function (result) {
-            console.log("Payment pending:", result);
 
-            // Simpan order sebagai Pending
-            const orderHistory = JSON.parse(
-              localStorage.getItem("order_history") || "[]"
-            );
-            const newOrder = {
-              id: orderId,
-              customerName: formData.name,
-              customerPhone: formData.phone,
-              date: new Date().toISOString(),
-              items: cart.map((item) => ({
-                name: item.name,
-                quantity: item.quantity,
-                price: item.price,
-              })),
-              total: total,
-              status: "Menunggu Pembayaran",
-              notes: formData.notes || "",
-              paymentMethod: formData.paymentMethod,
-              userId: user?.id || "guest",
-              discount: discount,
-              couponCode: appliedCoupon || null,
-              paymentDetails: result,
-            };
-            localStorage.setItem(
-              "order_history",
-              JSON.stringify([...orderHistory, newOrder])
-            );
+          onPending: function (transaction) {
+            console.log("⏳ PAYMENT PENDING", transaction);
+            setPaymentProcessing(false);
 
-            // Simpan untuk admin
-            const adminOrders = JSON.parse(
-              localStorage.getItem("adminOrders") || "[]"
-            );
-            const adminOrder = {
-              id: orderId,
-              customerName: formData.name,
-              customerPhone: formData.phone,
-              date: new Date().toISOString(),
-              status: "pending",
-              total: total,
-              items: cart.map((item) => ({
-                name: item.name,
-                quantity: item.quantity,
-                price: item.price,
-              })),
-              notes: formData.notes || "",
-            };
-            localStorage.setItem(
-              "adminOrders",
-              JSON.stringify([...adminOrders, adminOrder])
-            );
+            // Konfirmasi untuk menandai LUNAS setelah memilih metode (mis. QRIS)
+            const method = (transaction?.payment_type || "")
+              .toString()
+              .toUpperCase();
 
-            clearCart();
-            navigate("/history");
+            openConfirm({
+              title: "Konfirmasi Pembayaran",
+              message: `Metode: ${
+                method || "-"
+              }\nPesanan #${orderId} telah dibuat.\n\nKlik \"Tandai Lunas\" untuk mengkonfirmasi pembayaran berhasil, atau \"Biarkan Pending\" untuk tetap menunggu pembayaran.`,
+              confirmText: "Tandai Lunas",
+              cancelText: "Biarkan Pending",
+              onConfirm: () => {
+                const demoStatus = "Lunas";
+                saveOrder(orderId, demoStatus, transaction);
+                addOrderNotification(orderId, demoStatus);
+                showModal(
+                  "✅ Pembayaran Berhasil!",
+                  `Pesanan #${orderId} telah dibayar!\n\nSilakan menunggu pesanan disiapkan di apotek.`,
+                  "success",
+                  true
+                );
+              },
+              onCancel: () => {
+                const pendingStatus = "Menunggu Pembayaran";
+                saveOrder(orderId, pendingStatus, transaction);
+                addOrderNotification(orderId, pendingStatus);
+                showModal(
+                  "⏳ Pembayaran Pending",
+                  `Pesanan #${orderId} dibuat dan menunggu pembayaran.\n\nSilakan selesaikan pembayaran untuk melanjutkan.`,
+                  "info",
+                  true
+                );
+              },
+            });
           },
-          onError: function (result) {
-            console.log("Payment error:", result);
-            setLoading(false);
-            alert("Pembayaran gagal. Silakan coba lagi.");
+
+          onError: function (transaction) {
+            console.log("❌ PAYMENT ERROR", transaction);
+            setPaymentProcessing(false);
+
+            showModal(
+              "❌ Pembayaran Gagal",
+              "Pembayaran tidak berhasil diproses. Silakan coba lagi.",
+              "error",
+              false
+            );
           },
+
           onClose: function () {
-            console.log("Customer closed the popup without finishing payment");
-            setLoading(false);
-            alert(
-              "Anda menutup halaman pembayaran. Silakan coba lagi jika ingin melanjutkan."
-            );
+            console.log("⏹️ Customer menutup popup pembayaran");
+            setPaymentProcessing(false);
+
+            openConfirm({
+              title: "Konfirmasi Pembayaran",
+              message: `Anda menutup pop-up pembayaran.\n\nKlik \"Tandai Lunas\" untuk mengkonfirmasi pembayaran berhasil, atau \"Biarkan Pending\" untuk menunggu pembayaran.`,
+              confirmText: "Tandai Lunas",
+              cancelText: "Biarkan Pending",
+              onConfirm: () => {
+                const demoStatus = "Lunas";
+                saveOrder(orderId, demoStatus);
+                addOrderNotification(orderId, demoStatus);
+                showModal(
+                  "✅ Pembayaran Berhasil!",
+                  `Pesanan #${orderId} telah dibayar!\n\nSilakan menunggu pesanan disiapkan di apotek.`,
+                  "success",
+                  true
+                );
+              },
+              onCancel: () => {
+                const pendingStatus = "Menunggu Pembayaran";
+                saveOrder(orderId, pendingStatus);
+                addOrderNotification(orderId, pendingStatus);
+                showModal(
+                  "⏳ Pembayaran Pending",
+                  `Pesanan #${orderId} dibuat dan menunggu pembayaran.\n\nSilakan selesaikan pembayaran untuk melanjutkan.`,
+                  "info",
+                  true
+                );
+              },
+            });
           },
         });
       } catch (error) {
-        console.error("Error creating transaction:", error);
+        console.error("❌ Error:", error);
         setLoading(false);
-        alert(`Gagal memproses pembayaran: ${error.message}`);
-      }
+        setPaymentProcessing(false);
 
-      return; // Exit setelah memanggil Snap
+        showModal(
+          "❌ Gagal Memproses Pembayaran",
+          `Error: ${error.message}`,
+          "error",
+          false
+        );
+      }
     }
   };
 
@@ -546,9 +482,9 @@ const Checkout = () => {
   const getButtonText = () => {
     if (loading) return "Memproses...";
     if (formData.paymentMethod === "bayar_ditempat") {
-      return "Konfirmasi Pesanan (Bayar di Tempat)";
+      return "Konfirmasi Pesanan";
     }
-    return "Lanjut ke Pembayaran Online";
+    return "Lanjut ke Pembayaran";
   };
 
   // Cek jika keranjang kosong
@@ -631,17 +567,32 @@ const Checkout = () => {
                   />
                 </div>
 
+                {/* Alamat */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Alamat (Opsional)
+                  </label>
+                  <textarea
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Alamat lengkap untuk konfirmasi"
+                    rows="2"
+                  />
+                </div>
+
                 {/* Catatan */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Catatan (Opsional)
+                    Catatan Pesanan (Opsional)
                   </label>
                   <textarea
                     name="notes"
                     value={formData.notes}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Contoh: Mohon disiapkan secepatnya, ada resep dokter"
+                    placeholder="Contoh: Mohon disiapkan secepatnya"
                     rows="3"
                   />
                 </div>
@@ -652,50 +603,42 @@ const Checkout = () => {
                 Metode Pembayaran
               </h2>
               <div className="space-y-4">
-                <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-blue-50 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
                   <input
                     type="radio"
                     name="paymentMethod"
                     value="midtrans_online"
                     checked={formData.paymentMethod === "midtrans_online"}
                     onChange={handleInputChange}
-                    className="w-5 h-5 text-blue-600 focus:ring-blue-500"
+                    className="w-5 h-5 text-blue-600"
                   />
                   <div className="ml-4 flex-grow">
-                    <span className="font-medium text-gray-800">
-                      Pembayaran Online
+                    <span className="font-semibold text-gray-800">
+                      💳 Pembayaran Online
                     </span>
-                    <p className="text-sm text-gray-500">
-                      Bayar sekarang (E-Wallet, Bank, Kartu Kredit)
+                    <p className="text-sm text-gray-600 mt-1">
+                      E-Wallet, Bank Transfer, Kartu Kredit, Dana, OVO, GOPAY
                     </p>
                   </div>
-                  {/* Logo Pembayaran dari gambar yang kamu berikan */}
-                  <div className="ml-auto flex items-center space-x-2 opacity-75">
-                    <img
-                      src="https://i.ibb.co/L9n30G9/image-89234c.png"
-                      alt="Payment Methods"
-                      className="h-5"
-                    />
-                  </div>
                 </label>
-                <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+
+                <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-green-50 has-[:checked]:border-green-500 has-[:checked]:bg-green-50">
                   <input
                     type="radio"
                     name="paymentMethod"
                     value="bayar_ditempat"
                     checked={formData.paymentMethod === "bayar_ditempat"}
                     onChange={handleInputChange}
-                    className="w-5 h-5 text-blue-600 focus:ring-blue-500"
+                    className="w-5 h-5 text-green-600"
                   />
                   <div className="ml-4 flex-grow">
-                    <span className="font-medium text-gray-800">
-                      Bayar di Tempat
+                    <span className="font-semibold text-gray-800">
+                      🏪 Bayar di Tempat
                     </span>
-                    <p className="text-sm text-gray-500">
-                      Bayar tunai atau non-tunai di kasir apotek.
+                    <p className="text-sm text-gray-600 mt-1">
+                      Tunai atau non-tunai di kasir apotek saat pengambilan
                     </p>
                   </div>
-                  <i className="fas fa-store text-xl text-gray-500 ml-auto px-2"></i>
                 </label>
               </div>
             </div>
@@ -708,28 +651,22 @@ const Checkout = () => {
                 </h2>
 
                 {/* Daftar Item */}
-                <div className="space-y-4 max-h-60 overflow-y-auto pr-2">
+                <div className="space-y-3 max-h-60 overflow-y-auto pr-2 mb-4">
                   {cart.map((item) => (
                     <div
                       key={item.id}
-                      className="flex justify-between items-center"
+                      className="flex justify-between items-start text-sm"
                     >
-                      <div className="flex items-center space-x-3">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-12 h-12 rounded-lg object-cover"
-                        />
-                        <div>
-                          <p className="font-medium text-gray-800">
-                            {item.name}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            Jml: {item.quantity}
-                          </p>
-                        </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-800 line-clamp-2">
+                          {item.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {item.quantity}x Rp{" "}
+                          {item.price.toLocaleString("id-ID")}
+                        </p>
                       </div>
-                      <p className="text-gray-700 font-medium">
+                      <p className="text-gray-700 font-semibold text-right ml-2">
                         Rp{" "}
                         {(item.price * item.quantity).toLocaleString("id-ID")}
                       </p>
@@ -738,35 +675,36 @@ const Checkout = () => {
                 </div>
 
                 {/* Rincian Biaya */}
-                <div className="space-y-3 mt-6 pt-6 border-t">
-                  <div className="flex justify-between text-gray-600">
+                <div className="space-y-2 pt-4 border-t border-gray-200">
+                  <div className="flex justify-between text-sm text-gray-600">
                     <span>Subtotal:</span>
                     <span>Rp {subtotal.toLocaleString("id-ID")}</span>
                   </div>
+
                   {discount > 0 && (
-                    <div className="flex justify-between text-green-600 font-medium">
-                      <div className="flex items-center">
-                        <i className="fas fa-tag mr-2 text-sm"></i>
-                        <span>Diskon ({appliedCoupon}):</span>
-                      </div>
+                    <div className="flex justify-between text-sm text-green-600 font-medium">
+                      <span>Diskon ({appliedCoupon}):</span>
                       <span>-Rp {discount.toLocaleString("id-ID")}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-gray-600">
+
+                  <div className="flex justify-between text-sm text-gray-600">
                     <span>Pajak (10%):</span>
                     <span>Rp {tax.toLocaleString("id-ID")}</span>
                   </div>
-                  <hr className="border-gray-200" />
-                  <div className="flex justify-between text-xl font-bold text-gray-800">
+
+                  <div className="flex justify-between text-lg font-bold text-gray-900 pt-3 border-t border-gray-200">
                     <span>Total:</span>
-                    <span>Rp {total.toLocaleString("id-ID")}</span>
+                    <span className="text-blue-600">
+                      Rp {total.toLocaleString("id-ID")}
+                    </span>
                   </div>
+
                   {discount > 0 && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-2">
-                      <p className="text-sm text-green-700 text-center">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-2 mt-3 text-center">
+                      <p className="text-xs text-green-700">
                         <i className="fas fa-check-circle mr-1"></i>
-                        Anda hemat Rp {discount.toLocaleString("id-ID")} dengan
-                        kupon ini!
+                        Hemat Rp {discount.toLocaleString("id-ID")}!
                       </p>
                     </div>
                   )}
@@ -775,46 +713,57 @@ const Checkout = () => {
                 {/* Tombol Bayar */}
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="mt-6 w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all flex items-center justify-center disabled:opacity-50"
+                  disabled={loading || cart.length === 0}
+                  className="mt-6 w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 py-3 rounded-lg font-semibold tracking-wide shadow-sm hover:shadow-md hover:from-blue-700 hover:to-blue-800 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 whitespace-nowrap"
                 >
                   {loading ? (
-                    <svg
-                      className="animate-spin h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
+                    <>
+                      <svg
+                        className="animate-spin h-5 w-5"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Memproses...
+                    </>
                   ) : (
-                    getButtonText()
+                    <>
+                      <i className="fas fa-credit-card"></i>
+                      {getButtonText()}
+                    </>
                   )}
                 </button>
+
+                <p className="text-xs text-gray-500 text-center mt-3">
+                  Pembayaran aman dan terenkripsi
+                </p>
               </div>
             </div>
           </div>
         </form>
       </div>
 
+      {/* Modal Status */}
       {modal.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <div className="flex items-start">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in">
+            <div className="flex items-start mb-4">
               <div
-                className={`mt-1 mr-3 rounded-full p-3 text-lg ${
+                className={`mt-0.5 mr-4 rounded-full p-3 text-2xl ${
                   modal.variant === "success"
                     ? "bg-green-100 text-green-600"
                     : modal.variant === "error"
@@ -833,21 +782,60 @@ const Checkout = () => {
                 ></i>
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                  {modal.title || "Informasi"}
+                <h3 className="text-lg font-bold text-gray-800">
+                  {modal.title}
                 </h3>
-                <p className="text-sm text-gray-600 whitespace-pre-line">
-                  {modal.message}
-                </p>
               </div>
             </div>
-            <div className="mt-6 flex justify-end">
+
+            <p className="text-sm text-gray-600 whitespace-pre-line mb-6 leading-relaxed">
+              {modal.message}
+            </p>
+
+            <button
+              type="button"
+              onClick={closeModal}
+              className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Modal */}
+      {confirmModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in">
+            <div className="flex items-start mb-4">
+              <div className="mt-0.5 mr-4 rounded-full p-3 text-2xl bg-amber-100 text-amber-700">
+                <i className="fas fa-flask"></i>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-800">
+                  {confirmModal.title}
+                </h3>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-600 whitespace-pre-line mb-6 leading-relaxed">
+              {confirmModal.message}
+            </p>
+
+            <div className="flex gap-3">
               <button
                 type="button"
-                onClick={closeModal}
-                className="inline-flex items-center px-5 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
+                onClick={handleConfirmNo}
+                className="w-1/2 bg-gray-100 text-gray-800 py-2 rounded-lg font-semibold hover:bg-gray-200 transition"
               >
-                OK
+                {confirmModal.cancelText || "Batal"}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmYes}
+                className="w-1/2 bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition"
+              >
+                {confirmModal.confirmText || "OK"}
               </button>
             </div>
           </div>
