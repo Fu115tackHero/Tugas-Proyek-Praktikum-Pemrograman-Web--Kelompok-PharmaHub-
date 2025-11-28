@@ -1,25 +1,35 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useCart } from '../context/CartContext';
-import { searchProducts } from '../data/products';
+import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
+import { searchProducts } from "../data/products";
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { getCartItemsCount } = useCart();
   const navigate = useNavigate();
-  
+
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
-  
-  // --- SIMULASI JUMLAH NOTIFIKASI ---
-  // Ubah angka ini menjadi > 0 (misal: 3) untuk melihat titik merah muncul.
-  // Nantinya, variabel ini bisa Anda hubungkan ke Context/API notifikasi Anda.
-  const unreadNotifications = 0; 
+
+  // Ambil jumlah notifikasi belum dibaca dari localStorage
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("notifications");
+      if (raw) {
+        const arr = JSON.parse(raw);
+        const count = arr.filter((n) => !n.read).length;
+        setUnreadNotifications(count);
+      }
+    } catch (e) {
+      // silent fail
+    }
+  }, []);
 
   const profileRef = useRef(null);
   const searchRef = useRef(null);
@@ -35,8 +45,8 @@ const Navbar = () => {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Handle search
@@ -54,14 +64,14 @@ const Navbar = () => {
 
   const handleProductClick = (productId) => {
     navigate(`/product/${productId}`);
-    setSearchQuery('');
+    setSearchQuery("");
     setShowSearchResults(false);
     setShowMobileSearch(false);
   };
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate("/");
     setShowProfileDropdown(false);
   };
 
@@ -77,11 +87,13 @@ const Navbar = () => {
             alt="PharmaHub"
             className="h-10 w-auto"
             onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.nextSibling.style.display = 'inline';
+              e.target.style.display = "none";
+              e.target.nextSibling.style.display = "inline";
             }}
           />
-          <span className="text-2xl font-bold text-blue-600 hidden">PharmaHub</span>
+          <span className="text-2xl font-bold text-blue-600 hidden">
+            PharmaHub
+          </span>
         </Link>
 
         {/* Desktop Search */}
@@ -108,8 +120,8 @@ const Navbar = () => {
                     className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                   >
                     <div className="flex items-center space-x-3">
-                      <img 
-                        src={product.image} 
+                      <img
+                        src={product.image}
                         alt={product.name}
                         className="w-12 h-12 object-cover rounded"
                       />
@@ -117,7 +129,7 @@ const Navbar = () => {
                         <h4 className="font-medium text-sm">{product.name}</h4>
                         <p className="text-xs text-gray-500">{product.brand}</p>
                         <p className="text-sm text-blue-600 font-semibold">
-                          Rp {product.price.toLocaleString('id-ID')}
+                          Rp {product.price.toLocaleString("id-ID")}
                         </p>
                       </div>
                     </div>
@@ -155,11 +167,15 @@ const Navbar = () => {
           </button>
 
           {/* Notifikasi Mobile (Lonceng) */}
-          <Link to="/notifications" className="md:hidden text-gray-700 relative">
+          <Link
+            to="/notifications"
+            className="md:hidden text-gray-700 relative"
+          >
             <i className="fas fa-bell text-xl"></i>
-            {/* PERUBAHAN: Titik merah hanya muncul jika unreadNotifications > 0 */}
             {unreadNotifications > 0 && (
-              <span className="absolute top-0 right-0 block h-2 w-2 rounded-full ring-1 ring-white bg-red-500"></span>
+              <span className="absolute -top-2 -right-2 min-w-[16px] h-3.5 px-0.5 bg-red-500 text-white text-[9px] leading-[14px] rounded-full flex items-center justify-center shadow-sm">
+                {unreadNotifications > 99 ? "99+" : unreadNotifications}
+              </span>
             )}
           </Link>
 
@@ -181,18 +197,28 @@ const Navbar = () => {
                 className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-300 hover:border-blue-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 <img
-                src={user?.photo ? user.photo : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=3b82f6&color=fff&size=40&rounded=true`}
-                alt="Profile"
-                 className="w-full h-full object-cover"
-              />
+                  src={
+                    user?.photo
+                      ? user.photo
+                      : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          user?.name || "User"
+                        )}&background=3b82f6&color=fff&size=40&rounded=true`
+                  }
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
               </button>
 
               {/* Profile Dropdown */}
               {showProfileDropdown && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
                   <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                    <p className="text-sm text-gray-500 truncate">{user?.email}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {user?.name}
+                    </p>
+                    <p className="text-sm text-gray-500 truncate">
+                      {user?.email}
+                    </p>
                   </div>
                   <Link
                     to="/profile"
@@ -201,7 +227,7 @@ const Navbar = () => {
                   >
                     <i className="fas fa-user mr-2"></i>Pengaturan Profil
                   </Link>
-                  {user?.email === 'admin@pharmahub.com' && (
+                  {user?.email === "admin@pharmahub.com" && (
                     <Link
                       to="/admin"
                       className="block px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 font-medium"
@@ -267,8 +293,8 @@ const Navbar = () => {
                     className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                   >
                     <div className="flex items-center space-x-3">
-                      <img 
-                        src={product.image} 
+                      <img
+                        src={product.image}
                         alt={product.name}
                         className="w-12 h-12 object-cover rounded"
                       />
@@ -276,7 +302,7 @@ const Navbar = () => {
                         <h4 className="font-medium text-sm">{product.name}</h4>
                         <p className="text-xs text-gray-500">{product.brand}</p>
                         <p className="text-sm text-blue-600 font-semibold">
-                          Rp {product.price.toLocaleString('id-ID')}
+                          Rp {product.price.toLocaleString("id-ID")}
                         </p>
                       </div>
                     </div>

@@ -1,42 +1,60 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 
 const Notifications = () => {
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState("all");
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem('notifications') || '[]');
+      const saved = JSON.parse(localStorage.getItem("notifications") || "[]");
       setNotifications(saved);
     } catch (error) {
-      console.error('Error loading notifications:', error);
+      console.error("Error loading notifications:", error);
       setNotifications([]);
     }
   }, []);
 
+  // Normalisasi tipe untuk konsistensi tab
+  const normalizeType = (t) => {
+    if (!t) return "other";
+    if (t === "order" || t === "pesanan") return "orders";
+    if (t === "promotion" || t === "promo") return "promotions";
+    if (t === "system" || t === "info") return "system";
+    return "other";
+  };
+
+  const normalizedNotifications = notifications.map((n) => ({
+    ...n,
+    _tabType: normalizeType(n.type),
+  }));
+
   const counts = {
-    all: notifications.length,
-    orders: notifications.filter(n => n.type === 'order').length,
-    promotions: notifications.filter(n => n.type === 'promotion').length,
-    system: notifications.filter(n => n.type === 'system').length,
+    all: normalizedNotifications.length,
+    orders: normalizedNotifications.filter((n) => n._tabType === "orders")
+      .length,
+    promotions: normalizedNotifications.filter(
+      (n) => n._tabType === "promotions"
+    ).length,
+    system: normalizedNotifications.filter((n) => n._tabType === "system")
+      .length,
   };
 
   const handleMarkAllRead = () => {
     if (notifications.length === 0) return;
     const updated = notifications.map((n) => ({ ...n, read: true }));
     setNotifications(updated);
-    localStorage.setItem('notifications', JSON.stringify(updated));
+    localStorage.setItem("notifications", JSON.stringify(updated));
   };
 
   const handleClearAll = () => {
     setNotifications([]);
-    localStorage.removeItem('notifications');
+    localStorage.removeItem("notifications");
   };
 
-  const filteredNotifications = notifications.filter((n) => {
-    if (activeTab === 'all') return true;
-    return n.type === activeTab;
+  const filteredNotifications = normalizedNotifications.filter((n) => {
+    if (activeTab === "all") return true;
+    return n._tabType === activeTab;
   });
 
   return (
@@ -45,8 +63,12 @@ const Notifications = () => {
       <div className="mb-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Notifikasi</h1>
-            <p className="text-gray-600">Lihat semua notifikasi terbaru dari PharmaHub</p>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+              Notifikasi
+            </h1>
+            <p className="text-gray-600">
+              Lihat semua notifikasi terbaru dari PharmaHub
+            </p>
           </div>
           <div className="flex items-center space-x-3">
             <button
@@ -72,62 +94,78 @@ const Notifications = () => {
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8 overflow-x-auto">
             <button
-              onClick={() => setActiveTab('all')}
+              onClick={() => setActiveTab("all")}
               className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'all'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                activeTab === "all"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
               Semua
-              <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                activeTab === 'all' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
-              }`}>
+              <span
+                className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                  activeTab === "all"
+                    ? "bg-blue-100 text-blue-600"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
                 {counts.all}
               </span>
             </button>
             <button
-              onClick={() => setActiveTab('orders')}
+              onClick={() => setActiveTab("orders")}
               className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'orders'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                activeTab === "orders"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
               Pesanan
-              <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                activeTab === 'orders' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
-              }`}>
+              <span
+                className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                  activeTab === "orders"
+                    ? "bg-blue-100 text-blue-600"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
                 {counts.orders}
               </span>
             </button>
             <button
-              onClick={() => setActiveTab('promotions')}
+              onClick={() => setActiveTab("promotions")}
               className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'promotions'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                activeTab === "promotions"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
               Promosi
-              <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                activeTab === 'promotions' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
-              }`}>
+              <span
+                className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                  activeTab === "promotions"
+                    ? "bg-blue-100 text-blue-600"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
                 {counts.promotions}
               </span>
             </button>
             <button
-              onClick={() => setActiveTab('system')}
+              onClick={() => setActiveTab("system")}
               className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'system'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                activeTab === "system"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
               Sistem
-              <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                activeTab === 'system' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
-              }`}>
+              <span
+                className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                  activeTab === "system"
+                    ? "bg-blue-100 text-blue-600"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
                 {counts.system}
               </span>
             </button>
@@ -142,22 +180,31 @@ const Notifications = () => {
             <div className="mb-6">
               <i className="fas fa-bell-slash text-6xl text-gray-300"></i>
             </div>
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">Belum Ada Notifikasi</h3>
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">
+              Belum Ada Notifikasi
+            </h3>
             <p className="text-gray-500 mb-6">
-              Notifikasi Anda akan muncul di sini. Kami akan memberitahu Anda tentang:
+              Notifikasi Anda akan muncul di sini. Kami akan memberitahu Anda
+              tentang:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
               <div className="flex flex-col items-center p-4 bg-blue-50 rounded-lg">
                 <i className="fas fa-shopping-bag text-blue-500 text-2xl mb-2"></i>
-                <span className="text-sm text-blue-700 font-medium">Status Pesanan</span>
+                <span className="text-sm text-blue-700 font-medium">
+                  Status Pesanan
+                </span>
               </div>
               <div className="flex flex-col items-center p-4 bg-green-50 rounded-lg">
                 <i className="fas fa-tags text-green-500 text-2xl mb-2"></i>
-                <span className="text-sm text-green-700 font-medium">Promo & Diskon</span>
+                <span className="text-sm text-green-700 font-medium">
+                  Promo & Diskon
+                </span>
               </div>
               <div className="flex flex-col items-center p-4 bg-purple-50 rounded-lg">
                 <i className="fas fa-info-circle text-purple-500 text-2xl mb-2"></i>
-                <span className="text-sm text-purple-700 font-medium">Info Penting</span>
+                <span className="text-sm text-purple-700 font-medium">
+                  Info Penting
+                </span>
               </div>
             </div>
             <div className="space-y-3">
@@ -168,8 +215,11 @@ const Notifications = () => {
                 <i className="fas fa-shopping-cart mr-2"></i>Mulai Belanja
               </Link>
               <p className="text-sm text-gray-500">
-                Atau kembali ke{' '}
-                <Link to="/" className="text-blue-600 hover:text-blue-800 underline">
+                Atau kembali ke{" "}
+                <Link
+                  to="/"
+                  className="text-blue-600 hover:text-blue-800 underline"
+                >
                   beranda
                 </Link>
               </p>
@@ -183,16 +233,27 @@ const Notifications = () => {
               </div>
             ) : (
               filteredNotifications.map((notif) => (
-                <div key={notif.id} className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div
+                  key={notif.id}
+                  className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between"
+                >
                   <div>
                     <p className="text-sm font-semibold text-gray-800 mb-1">
-                      {notif.title || (notif.type === 'order' ? 'Notifikasi Pesanan' : 'Notifikasi')}
+                      {notif.title ||
+                        (notif._tabType === "orders"
+                          ? "Status Pesanan"
+                          : "Notifikasi")}
                     </p>
-                    <p className="text-sm text-gray-600 mb-1">{notif.message}</p>
+                    <p className="text-sm text-gray-600 mb-1">
+                      {notif.message}
+                    </p>
                     <p className="text-xs text-gray-400">
-                      {new Date(notif.createdAt).toLocaleString('id-ID', {
-                        day: '2-digit', month: 'short', year: 'numeric',
-                        hour: '2-digit', minute: '2-digit'
+                      {new Date(notif.createdAt).toLocaleString("id-ID", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
                       })}
                     </p>
                   </div>

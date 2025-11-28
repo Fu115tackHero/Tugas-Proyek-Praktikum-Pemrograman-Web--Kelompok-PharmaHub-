@@ -344,8 +344,11 @@ const Cart = () => {
                         {couponMessage}
                       </p>
                     )}
-                    {/* Available coupons hint */}
-                    <div className="mt-3 text-xs text-gray-500">
+                    {/* Available coupons hint (hidden for professionalism, functionality remains) */}
+                    <div
+                      className="mt-3 text-xs text-gray-500 hidden"
+                      aria-hidden="true"
+                    >
                       <p className="font-medium mb-1">Kupon tersedia:</p>
                       <ul className="space-y-1">
                         <li>• SEHAT10 - Diskon 10%</li>

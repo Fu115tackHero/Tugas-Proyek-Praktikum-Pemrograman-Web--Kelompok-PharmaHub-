@@ -14,6 +14,41 @@ dist-ssr
 .env
 .env.local
 .env.production
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.staging
+.env.preview
+database/.env
+
+# Package manager caches & stores
+.npm
+.pnpm-store
+.yarn
+yarn.lock.tmp
+
+# Build / coverage / temp artifacts
+coverage
+build
+.build
+.tmp
+temp
+*.tmp
+*.cache
+.parcel-cache
+.turbo
+.next
+storybook-static
+
+# Deployment platform local dirs
+.vercel
+
+# OS / misc cruft
+Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
 
 # Editor directories and files
 .vscode/*

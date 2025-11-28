@@ -1,23 +1,26 @@
-import { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from "react";
+import { useAuth } from "../context/AuthContext";
+import { Link } from "react-router-dom";
+import { waitForGoogleMaps } from "../utils/googleMapsLoader";
 
 const Profile = () => {
   const { user, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    address: '',
-    photo: '',
+    name: "",
+    phone: "",
+    address: "",
+    photo: "",
   });
   const [statistics, setStatistics] = useState({
     totalOrders: 0,
     totalSpent: 0,
     completedOrders: 0,
   });
-  const [photoPreview, setPhotoPreview] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const [photoPreview, setPhotoPreview] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [mapError, setMapError] = useState(false);
+  const [mapLoading, setMapLoading] = useState(false);
 
   const profileMapRef = useRef(null);
   const profileMarkerRef = useRef(null);
@@ -26,22 +29,31 @@ const Profile = () => {
   useEffect(() => {
     if (user) {
       setFormData({
-        name: user.name || '',
-        phone: user.phone || '',
-        address: user.address || '',
-        photo: user.photo || '',
+        name: user.name || "",
+        phone: user.phone || "",
+        address: user.address || "",
+        photo: user.photo || "",
         location: user.location || null,
       });
-      setPhotoPreview(user.photo || '');
+      setPhotoPreview(user.photo || "");
 
       // Calculate statistics from order history
-      const orderHistory = JSON.parse(localStorage.getItem('order_history') || '[]');
-      const userOrders = orderHistory.filter(order => order.userId === user.id);
-      
+      const orderHistory = JSON.parse(
+        localStorage.getItem("order_history") || "[]"
+      );
+      const userOrders = orderHistory.filter(
+        (order) => order.userId === user.id
+      );
+
       const stats = {
         totalOrders: userOrders.length,
-        completedOrders: userOrders.filter(order => order.status === 'delivered').length,
-        totalSpent: userOrders.reduce((sum, order) => sum + (order.total || 0), 0),
+        completedOrders: userOrders.filter(
+          (order) => order.status === "delivered"
+        ).length,
+        totalSpent: userOrders.reduce(
+          (sum, order) => sum + (order.total || 0),
+          0
+        ),
       };
       setStatistics(stats);
     }
@@ -49,63 +61,103 @@ const Profile = () => {
 
   useEffect(() => {
     if (!isEditing) {
-      profileMapRef.current = null;
-      profileMarkerRef.current = null;
-      return;
-    }
-
-    if (!window.google || !window.google.maps) {
-      return;
-    }
-
-    const mapElement = document.getElementById('profile-map');
-    if (!mapElement || profileMapRef.current) {
-      return;
-    }
-
-    const defaultCenter = formData.location || { lat: -6.2, lng: 106.8 };
-
-    const map = new window.google.maps.Map(mapElement, {
-      center: defaultCenter,
-      zoom: 14,
-    });
-
-    if (formData.location) {
-      profileMarkerRef.current = new window.google.maps.Marker({
-        position: formData.location,
-        map,
-      });
-    }
-
-    map.addListener('click', (event) => {
-      const position = {
-        lat: event.latLng.lat(),
-        lng: event.latLng.lng(),
-      };
-
       if (profileMarkerRef.current) {
         profileMarkerRef.current.setMap(null);
       }
+      profileMapRef.current = null;
+      setMapLoading(false);
+      return;
+    }
 
-      profileMarkerRef.current = new window.google.maps.Marker({
-        position,
-        map,
-      });
+    const initMap = async () => {
+      try {
+        setMapLoading(true);
+        await waitForGoogleMaps();
 
-      setFormData((prev) => ({
-        ...prev,
-        location: position,
-      }));
-    });
+        // Add delay to ensure DOM is fully ready
+        await new Promise((resolve) => setTimeout(resolve, 200));
 
-    profileMapRef.current = map;
+        const mapElement = document.getElementById("profile-map");
+        if (!mapElement || !mapElement.offsetParent) {
+          console.warn("Map element not ready yet");
+          setMapError(true);
+          setMapLoading(false);
+          return;
+        }
+
+        if (profileMapRef.current) {
+          setMapLoading(false);
+          return;
+        }
+
+        const defaultCenter = formData.location || {
+          lat: -6.2088,
+          lng: 106.8456,
+        };
+
+        const map = new window.google.maps.Map(mapElement, {
+          center: defaultCenter,
+          zoom: 14,
+          mapTypeControl: true,
+          streetViewControl: false,
+          fullscreenControl: false,
+        });
+
+        // Set initial marker if location exists
+        if (formData.location) {
+          profileMarkerRef.current = new window.google.maps.Marker({
+            position: formData.location,
+            map,
+            animation: window.google.maps.Animation.DROP,
+          });
+        }
+
+        map.addListener("click", (event) => {
+          const position = {
+            lat: event.latLng.lat(),
+            lng: event.latLng.lng(),
+          };
+
+          if (profileMarkerRef.current) {
+            profileMarkerRef.current.setMap(null);
+          }
+
+          profileMarkerRef.current = new window.google.maps.Marker({
+            position,
+            map,
+            animation: window.google.maps.Animation.DROP,
+          });
+
+          setFormData((prev) => ({
+            ...prev,
+            location: position,
+          }));
+        });
+
+        profileMapRef.current = map;
+        setMapLoading(false);
+        setMapError(false);
+      } catch (error) {
+        if (error.message?.includes("InvalidKey")) {
+          console.error(
+            "Google Maps API key error - falling back to manual input"
+          );
+        } else {
+          console.error("Failed to initialize map:", error);
+        }
+        setMapError(true);
+        setMapLoading(false);
+      }
+    };
+
+    initMap();
   }, [isEditing, formData.location]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -115,9 +167,9 @@ const Profile = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setPhotoPreview(reader.result);
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
-          photo: reader.result
+          photo: reader.result,
         }));
       };
       reader.readAsDataURL(file);
@@ -129,34 +181,36 @@ const Profile = () => {
     const result = updateProfile(formData);
     if (result.success) {
       setIsEditing(false);
-      setSuccessMessage('Profil berhasil diperbarui!');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      setSuccessMessage("Profil berhasil diperbarui!");
+      setTimeout(() => setSuccessMessage(""), 3000);
     }
   };
 
   const handleCancel = () => {
     setFormData({
-      name: user.name || '',
-      phone: user.phone || '',
-      address: user.address || '',
-      photo: user.photo || '',
+      name: user.name || "",
+      phone: user.phone || "",
+      address: user.address || "",
+      photo: user.photo || "",
       location: user.location || null,
     });
-    setPhotoPreview(user.photo || '');
+    setPhotoPreview(user.photo || "");
     setIsEditing(false);
   };
 
   const getProfileImage = () => {
     if (photoPreview) return photoPreview;
     if (user?.photo) return user.photo;
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=3b82f6&color=fff&size=200&rounded=true`;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      user?.name || "User"
+    )}&background=3b82f6&color=fff&size=200&rounded=true`;
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 py-8">
       <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
         <h1 className="text-3xl font-bold text-gray-800 mb-6">Profil Saya</h1>
-        
+
         {/* Success Message */}
         {successMessage && (
           <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-center">
@@ -171,7 +225,9 @@ const Profile = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm">Total Pesanan</p>
-                <p className="text-3xl font-bold text-gray-800">{statistics.totalOrders}</p>
+                <p className="text-3xl font-bold text-gray-800">
+                  {statistics.totalOrders}
+                </p>
               </div>
               <div className="bg-blue-100 p-4 rounded-full">
                 <i className="fas fa-shopping-bag text-2xl text-blue-600"></i>
@@ -183,7 +239,9 @@ const Profile = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm">Pesanan Selesai</p>
-                <p className="text-3xl font-bold text-gray-800">{statistics.completedOrders}</p>
+                <p className="text-3xl font-bold text-gray-800">
+                  {statistics.completedOrders}
+                </p>
               </div>
               <div className="bg-green-100 p-4 rounded-full">
                 <i className="fas fa-check-circle text-2xl text-green-600"></i>
@@ -196,7 +254,7 @@ const Profile = () => {
               <div>
                 <p className="text-gray-600 text-sm">Total Belanja</p>
                 <p className="text-3xl font-bold text-gray-800">
-                  Rp {statistics.totalSpent.toLocaleString('id-ID')}
+                  Rp {statistics.totalSpent.toLocaleString("id-ID")}
                 </p>
               </div>
               <div className="bg-purple-100 p-4 rounded-full">
@@ -218,18 +276,20 @@ const Profile = () => {
                   className="w-32 h-32 rounded-full object-cover border-4 border-blue-100"
                 />
                 <div className="flex-1 text-center md:text-left">
-                  <h2 className="text-3xl font-bold text-gray-800 mb-2">{user?.name}</h2>
+                  <h2 className="text-3xl font-bold text-gray-800 mb-2">
+                    {user?.name}
+                  </h2>
                   <p className="text-gray-600 mb-1">
                     <i className="fas fa-envelope mr-2"></i>
                     {user?.email}
                   </p>
                   <p className="text-gray-600 mb-1">
                     <i className="fas fa-phone mr-2"></i>
-                    {user?.phone || 'Belum diisi'}
+                    {user?.phone || "Belum diisi"}
                   </p>
                   <p className="text-gray-600">
                     <i className="fas fa-map-marker-alt mr-2"></i>
-                    {user?.address || 'Belum diisi'}
+                    {user?.address || "Belum diisi"}
                   </p>
                 </div>
                 <button
@@ -293,7 +353,9 @@ const Profile = () => {
                     disabled
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Email tidak dapat diubah</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Email tidak dapat diubah
+                  </p>
                 </div>
 
                 <div>
@@ -325,15 +387,88 @@ const Profile = () => {
                     placeholder="Jl. Contoh No. 123, Jakarta"
                   ></textarea>
                   <p className="text-xs text-gray-500 mt-2">
-                    Klik pada peta untuk menyimpan titik lokasi alamat Anda (opsional).
+                    {mapError
+                      ? "Peta tidak tersedia. Anda bisa input koordinat manual di bawah (opsional)."
+                      : "Klik pada peta untuk menyimpan titik lokasi alamat Anda (opsional)."}
                   </p>
-                  <div
-                    id="profile-map"
-                    className="mt-2 w-full h-64 rounded-lg border border-gray-200 overflow-hidden"
-                  ></div>
+
+                  {!mapError ? (
+                    <>
+                      {mapLoading && (
+                        <div className="mt-2 w-full h-64 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                            <p className="text-sm text-gray-500">
+                              Memuat peta...
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      <div
+                        id="profile-map"
+                        className={`mt-2 w-full h-64 rounded-lg border border-gray-200 overflow-hidden ${
+                          mapLoading ? "hidden" : ""
+                        }`}
+                      ></div>
+                    </>
+                  ) : (
+                    <div className="mt-2 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-sm text-yellow-800 mb-3">
+                        <i className="fas fa-exclamation-triangle mr-2"></i>
+                        Google Maps tidak dapat dimuat. Silakan input koordinat
+                        manual:
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Latitude
+                          </label>
+                          <input
+                            type="number"
+                            step="0.000001"
+                            value={formData.location?.lat || ""}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                location: {
+                                  ...prev.location,
+                                  lat: parseFloat(e.target.value) || 0,
+                                },
+                              }))
+                            }
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="-6.2088"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Longitude
+                          </label>
+                          <input
+                            type="number"
+                            step="0.000001"
+                            value={formData.location?.lng || ""}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                location: {
+                                  ...prev.location,
+                                  lng: parseFloat(e.target.value) || 0,
+                                },
+                              }))
+                            }
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="106.8456"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {formData.location && (
                     <p className="mt-2 text-xs text-gray-500">
-                      Lokasi tersimpan: {formData.location.lat.toFixed(5)}, {formData.location.lng.toFixed(5)}
+                      Lokasi tersimpan: {formData.location.lat.toFixed(5)},{" "}
+                      {formData.location.lng.toFixed(5)}
                     </p>
                   )}
                 </div>
