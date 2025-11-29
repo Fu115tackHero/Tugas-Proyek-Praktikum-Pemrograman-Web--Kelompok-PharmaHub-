@@ -237,19 +237,19 @@ const Products = () => {
                 `}
               >
                 <img
-                  src={product.image}
-                  alt={product.name}
+                  src={product.image || "https://via.placeholder.com/150?text=No+Image"}
+                  alt={product.name || "Product"}
                   className="w-32 h-32 object-cover mx-auto mb-4 rounded-lg"
                   onError={(e) => {
                     e.target.src =
                       "https://via.placeholder.com/150?text=No+Image";
                   }}
                 />
-                <h3 className="font-semibold text-gray-800">{product.name}</h3>
+                <h3 className="font-semibold text-gray-800">{product.name || "Produk"}</h3>
                 <p className="text-gray-600 text-sm mt-1">
-                  {product.description.length > 80
+                  {product.description && product.description.length > 80
                     ? product.description.substring(0, 80) + "..."
-                    : product.description}
+                    : product.description || ""}
                 </p>
                 {product.prescriptionRequired && (
                   <div className="mt-2 mb-2">
@@ -260,7 +260,7 @@ const Products = () => {
                 )}
                 <div className="mt-auto">
                   <p className="text-blue-600 font-bold mt-4">
-                    Rp {product.price.toLocaleString("id-ID")}
+                    Rp {(product.price || 0).toLocaleString("id-ID")}
                   </p>
                   <div className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition w-full flex items-center justify-center">
                     <i className="fas fa-eye mr-2"></i>

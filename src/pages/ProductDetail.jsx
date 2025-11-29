@@ -22,21 +22,22 @@ const ProductDetail = () => {
           navigate("/products");
           return;
         }
-        // Normalize fields from backend to UI expectations
+        // Backend already maps fields; normalize with safe fallbacks
         const normalized = {
-          id: p.product_id,
+          id: p.id || p.product_id,
           name: p.name,
           price: p.price,
           stock: p.stock,
-          description: p.description,
-          image: p.image_url,
+          description: p.description || "",
+          image: p.image || p.main_image_url || "",
           brand: p.brand || "",
-          genericName: p.generic_name || "",
+          genericName: p.genericName || p.generic_name || "",
           uses: p.uses || "",
-          prescriptionRequired: p.prescription_required || false,
+          prescriptionRequired:
+            p.prescriptionRequired || p.prescription_required || false,
           ingredients: p.ingredients || [],
-          precaution: p.warnings || [],
-          sideEffects: p.side_effects || [],
+          precaution: p.precaution || p.warnings || [],
+          sideEffects: p.sideEffects || p.side_effects || [],
           interactions: p.interactions || [],
           indication: p.indication || [],
         };
@@ -160,7 +161,7 @@ const ProductDetail = () => {
             <div className="flex justify-center items-center">
               <div className="bg-gray-100 rounded-lg p-8 w-full max-w-md">
                 <img
-                  src={product.image}
+                  src={product.image || "https://via.placeholder.com/400x400?text=No+Image"}
                   alt={product.name}
                   className="w-full h-auto max-w-md object-contain rounded-lg transition-transform duration-300 hover:scale-105"
                   onError={(e) => {
@@ -194,7 +195,7 @@ const ProductDetail = () => {
               <div className="border-t border-b border-gray-200 py-4">
                 <div className="flex items-center justify-between">
                   <span className="text-2xl font-bold text-blue-600">
-                    Rp {product.price.toLocaleString("id-ID")}
+                    Rp {(product.price || 0).toLocaleString("id-ID")}
                   </span>
                   <span className="text-sm text-gray-500">Per kemasan</span>
                 </div>

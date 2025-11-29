@@ -45,6 +45,39 @@ export async function getCategories() {
   }
 }
 
+/** Create category */
+export async function createCategory(data) {
+  try {
+    const response = await post(`/api/categories`, data);
+    return response;
+  } catch (error) {
+    console.error("Category creation error:", error);
+    throw error;
+  }
+}
+
+/** Update category */
+export async function updateCategory(id, data) {
+  try {
+    const response = await put(`/api/categories/${id}`, data);
+    return response;
+  } catch (error) {
+    console.error("Category update error:", error);
+    throw error;
+  }
+}
+
+/** Delete category */
+export async function deleteCategory(id) {
+  try {
+    const response = await del(`/api/categories/${id}`);
+    return response;
+  } catch (error) {
+    console.error("Category delete error:", error);
+    throw error;
+  }
+}
+
 /** Create product */
 export async function createProduct(data) {
   try {
@@ -82,6 +115,9 @@ export default {
   getAllProducts,
   getProductById,
   getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
   createProduct,
   updateProduct,
   deleteProduct,

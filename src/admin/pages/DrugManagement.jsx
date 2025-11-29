@@ -16,6 +16,9 @@ const DrugManagement = () => {
   const [backendCategories, setBackendCategories] = useState([]); // {category_id, category_name}
   const [newGeneric, setNewGeneric] = useState("");
   const [showAddGeneric, setShowAddGeneric] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
+  const [newCategoryDesc, setNewCategoryDesc] = useState("");
+  const [showAddCategory, setShowAddCategory] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -94,16 +97,7 @@ const DrugManagement = () => {
   useEffect(() => {
     loadDrugs();
     loadGenerics();
-    // Fetch categories for dropdown from backend
-    (async () => {
-      try {
-        const res = await ProductService.getCategories();
-        const categories = res?.data || [];
-        setBackendCategories(categories);
-      } catch (e) {
-        console.error("Failed to fetch categories", e);
-      }
-    })();
+    loadCategories();
   }, []);
 
   useEffect(() => {
@@ -155,13 +149,53 @@ const DrugManagement = () => {
     }
   };
 
+  const loadCategories = async () => {
+    try {
+      const res = await ProductService.getCategories();
+      const categoriesData = res?.data || [];
+      setBackendCategories(categoriesData);
+    } catch (error) {
+      console.error("Failed to load categories:", error);
+      alert("Gagal memuat kategori");
+    }
+  };
+
+  const handleAddCategory = async () => {
+    if (!newCategory.trim()) {
+      alert("Nama kategori tidak boleh kosong");
+      return;
+    }
+
+    try {
+      const response = await ProductService.createCategory({
+        category_name: newCategory.trim(),
+      });
+
+      if (response.success) {
+        alert("Kategori berhasil ditambahkan!");
+        // Reload categories
+        await loadCategories();
+        // Set the new category as selected
+        setFormData({ ...formData, category: response.data.category_id });
+        // Reset form
+        setNewCategory("");
+        setShowAddCategory(false);
+      }
+    } catch (error) {
+      console.error("Failed to create category:", error);
+      alert(error.message || "Gagal menambahkan kategori");
+    }
+  };
+
   const filterDrugs = () => {
     let filtered = drugs.filter((drug) => {
       const matchesSearch =
         drug.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         drug.description.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory =
-        !categoryFilter || drug.category === categoryFilter;
+        !categoryFilter ||
+        drug.category_name === categoryFilter ||
+        drug.category === categoryFilter;
       const matchesPrescription =
         !prescriptionFilter ||
         (
@@ -209,37 +243,78 @@ const DrugManagement = () => {
     setShowModal(true);
   };
 
-  const openEditModal = (drug) => {
+  const openEditModal = async (drug) => {
+    // Show modal immediately for better UX (will populate after fetch)
+    setShowModal(true);
     setCurrentDrug(drug);
-    setImagePreview(drug.image || null);
     setImageFile(null);
-    setFormData({
-      name: drug.name,
-      // map category name to id if possible
-      category:
-        typeof drug.category === "number"
-          ? drug.category
-          : backendCategories.find(
-              (c) =>
-                c.category_name === drug.category || c.name === drug.category
-            )?.category_id || "",
-      price: drug.price,
-      stock: drug.stock,
-      description: drug.description,
-      image: drug.image || "",
-      prescriptionRequired:
-        drug.prescriptionRequired || drug.requiresPrescription || false,
-      brand: drug.brand || "",
-      uses: drug.uses || "",
-      howItWorks: drug.howItWorks || "",
-      genericName: drug.genericName || drug.generic || "",
-      importantInfo: drug.importantInfo || [],
-      ingredients: drug.ingredients || [],
-      precaution: drug.precaution || drug.warnings || [],
-      sideEffects: drug.sideEffects || [],
-      interactions: drug.interactions || drug.drugInteractions || [],
-      indication: drug.indication || drug.indications || [],
-    });
+    try {
+      // Prefer fetching fresh full detail object from backend
+      const resp = await ProductService.getProductById(drug.id || drug.product_id);
+      const full = resp?.data || drug;
+      setImagePreview(full.image || full.main_image_url || null);
+      setFormData({
+        name: full.name || "",
+        category:
+          full.category_id ||
+          (typeof full.category === "number"
+            ? full.category
+            : backendCategories.find(
+                (c) =>
+                  c.category_name === full.category_name ||
+                  c.category_name === full.category ||
+                  c.name === full.category
+              )?.category_id) ||
+          "",
+        price: full.price ?? "",
+        stock: full.stock ?? "",
+        description: full.description || "",
+        image: full.image || full.main_image_url || "",
+        prescriptionRequired:
+          full.prescriptionRequired ||
+          full.prescription_required ||
+          full.requiresPrescription ||
+          false,
+        brand: full.brand || "",
+        uses: full.uses || "",
+        howItWorks: full.howItWorks || "",
+        genericName:
+          full.genericName ||
+          full.generic_name ||
+          full.generic ||
+          "",
+        importantInfo: full.importantInfo || [],
+        ingredients: full.ingredients || [],
+        precaution: full.precaution || full.warnings || [],
+        sideEffects: full.sideEffects || full.side_effects || [],
+        interactions: full.interactions || full.drugInteractions || [],
+        indication: full.indication || full.indications || [],
+      });
+    } catch (err) {
+      console.error("Failed to load full product details for edit:", err);
+      // Fallback to existing drug object if fetch fails
+      setImagePreview(drug.image || null);
+      setFormData((prev) => ({
+        ...prev,
+        name: drug.name || "",
+        category: drug.category_id || "",
+        price: drug.price ?? "",
+        stock: drug.stock ?? "",
+        description: drug.description || "",
+        image: drug.image || "",
+        prescriptionRequired:
+          drug.prescriptionRequired || drug.prescription_required || false,
+        brand: drug.brand || "",
+        uses: drug.uses || "",
+        genericName:
+          drug.genericName || drug.generic_name || drug.generic || "",
+        ingredients: drug.ingredients || [],
+        precaution: drug.precaution || [],
+        sideEffects: drug.sideEffects || drug.side_effects || [],
+        interactions: drug.interactions || [],
+        indication: drug.indication || [],
+      }));
+    }
     setTempInputs({
       importantInfo: "",
       ingredients: "",
@@ -255,20 +330,59 @@ const DrugManagement = () => {
       <label className="block text-sm font-medium text-gray-700 mb-2">
         Kategori
       </label>
-      <select
-        value={formData.category}
-        onChange={(e) =>
-          setFormData({ ...formData, category: Number(e.target.value) || "" })
-        }
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
-        <option value="">Pilih Kategori</option>
-        {backendCategories.map((cat) => (
-          <option key={cat.category_id} value={cat.category_id}>
-            {cat.category_name || cat.name}
-          </option>
-        ))}
-      </select>
+      <div>
+        <select
+          value={formData.category}
+          onChange={(e) =>
+            setFormData({ ...formData, category: Number(e.target.value) || "" })
+          }
+          required
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">Pilih Kategori</option>
+          {backendCategories.map((cat) => (
+            <option key={cat.category_id} value={cat.category_id}>
+              {cat.category_name || cat.name}
+            </option>
+          ))}
+        </select>
+        {!showAddCategory ? (
+          <button
+            type="button"
+            onClick={() => setShowAddCategory(true)}
+            className="text-sm text-blue-600 hover:text-blue-800 mt-2"
+          >
+            + Tambah Kategori Baru
+          </button>
+        ) : (
+          <div className="flex gap-2 mt-2">
+            <input
+              type="text"
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+              placeholder="Nama kategori baru"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            />
+            <button
+              type="button"
+              onClick={handleAddCategory}
+              className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              Tambah
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddCategory(false);
+                setNewCategory("");
+              }}
+              className="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              Batal
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 
@@ -364,28 +478,46 @@ const DrugManagement = () => {
       // Build backend payload
       const payload = {
         name: formData.name,
+        brand: formData.brand || null,
         price: parseInt(formData.price),
         stock: parseInt(formData.stock),
         description: formData.description,
-        image_url: imageUrl,
-        // Expect category_id from selected category name (adjust UI to set id)
+        main_image_url: imageUrl,
+        prescription_required: !!formData.prescriptionRequired,
         category_id:
           typeof formData.category === "number" ? formData.category : null,
-        generic_name: formData.genericName,
-        uses: formData.uses,
-        ingredients: formData.ingredients,
-        side_effects: formData.sideEffects,
-        dosage: formData.howItWorks || null,
-        storage: null,
-        warnings: formData.precaution,
+        // Product details
+        generic_name: formData.genericName || null,
+        uses: formData.uses || null,
+        ingredients: formData.ingredients || [],
+        side_effects: formData.sideEffects || [],
+        precaution: formData.precaution || [],
+        interactions: formData.interactions || [],
+        indication: formData.indication || [],
       };
 
-      const resp = await ProductService.createProduct(payload);
-      const created = resp?.data;
+      // Create or Update based on whether we're editing
+      let resp;
+      if (currentDrug) {
+        // Update existing product
+        resp = await ProductService.updateProduct(currentDrug.id || currentDrug.product_id, payload);
+        if (resp.success) {
+          setShowModal(false);
+          setIsUploading(false);
+          alert("Produk berhasil diperbarui!");
+        }
+      } else {
+        // Create new product
+        resp = await ProductService.createProduct(payload);
+        if (resp.success) {
+          setShowModal(false);
+          setIsUploading(false);
+          alert("Produk berhasil ditambahkan!");
+        }
+      }
 
-      setShowModal(false);
-      setIsUploading(false);
-      alert("Produk berhasil disimpan ke database!");
+      // Refresh list to reflect changes
+      await loadDrugs();
     } catch (error) {
       setIsUploading(false);
       alert("Gagal menyimpan data: " + error.message);
@@ -398,12 +530,23 @@ const DrugManagement = () => {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    const updatedDrugs = drugs.filter((d) => d.id !== deleteId);
-    localStorage.setItem("adminDrugs", JSON.stringify(updatedDrugs));
-    setDrugs(updatedDrugs);
-    setShowDeleteModal(false);
-    alert("Obat berhasil dihapus!");
+  const confirmDelete = async () => {
+    try {
+      // Call backend API to delete product (soft delete)
+      const response = await ProductService.deleteProduct(deleteId);
+      
+      if (response.success) {
+        // Refresh the product list
+        await loadDrugs();
+        setShowDeleteModal(false);
+        alert("Obat berhasil dihapus!");
+      } else {
+        alert("Gagal menghapus obat: " + (response.message || "Unknown error"));
+      }
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      alert("Gagal menghapus obat: " + error.message);
+    }
   };
 
   const formatCurrency = (amount) => {
@@ -514,11 +657,11 @@ const DrugManagement = () => {
                 className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Semua Kategori</option>
-                <option value="Analgesik">Analgesik</option>
-                <option value="Antibiotik">Antibiotik</option>
-                <option value="Vitamin">Vitamin</option>
-                <option value="Antasida">Antasida</option>
-                <option value="Antihistamin">Antihistamin</option>
+                {backendCategories.map((cat) => (
+                  <option key={cat.category_id} value={cat.category_name}>
+                    {cat.category_name}
+                  </option>
+                ))}
               </select>
               <select
                 value={prescriptionFilter}
@@ -597,7 +740,7 @@ const DrugManagement = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {drug.category}
+                        {drug.category_name || drug.category || "Tidak ada kategori"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -690,24 +833,7 @@ const DrugManagement = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Kategori *
-                      </label>
-                      <select
-                        value={formData.category}
-                        onChange={(e) =>
-                          setFormData({ ...formData, category: e.target.value })
-                        }
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        <option value="">Pilih Kategori</option>
-                        <option value="Analgesik">Analgesik</option>
-                        <option value="Antibiotik">Antibiotik</option>
-                        <option value="Vitamin">Vitamin</option>
-                        <option value="Antasida">Antasida</option>
-                        <option value="Antihistamin">Antihistamin</option>
-                      </select>
+                        {renderCategorySelect()}
                     </div>
                   </div>
 

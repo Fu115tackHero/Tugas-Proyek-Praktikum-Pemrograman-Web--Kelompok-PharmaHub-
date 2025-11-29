@@ -29,8 +29,17 @@ async function createProduct(data) {
       prescription_required,
       min_stock,
       main_image_url,
+      // Product details
+      generic_name,
+      uses,
+      ingredients,
+      side_effects,
+      precaution,
+      interactions,
+      indication,
     } = data;
 
+    // Insert into products table
     const insertProductQuery = `
       INSERT INTO products (name, brand, price, stock, description, category_id, prescription_required, min_stock, main_image_url)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -49,6 +58,34 @@ async function createProduct(data) {
     ];
     const productResult = await client.query(insertProductQuery, productValues);
     const product = productResult.rows[0];
+
+    // Insert into product_details table if any detail is provided
+    if (generic_name || uses || ingredients || side_effects || precaution || interactions || indication) {
+      const insertDetailsQuery = `
+        INSERT INTO product_details (
+          product_id,
+          generic_name,
+          uses,
+          ingredients,
+          side_effects,
+          precaution,
+          interactions,
+          indication
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING detail_id;
+      `;
+      
+      await client.query(insertDetailsQuery, [
+        product.product_id,
+        generic_name || null,
+        uses || null,
+        ingredients || [],
+        side_effects || [],
+        precaution || [],
+        interactions || [],
+        indication || [],
+      ]);
+    }
 
     await client.query("COMMIT");
     return product;
@@ -78,9 +115,18 @@ async function getAllProducts() {
       p.sold_count,
       p.main_image_url,
       p.created_at,
-      c.category_name
+      p.category_id,
+      c.category_name,
+      pd.generic_name,
+      pd.uses,
+      pd.ingredients,
+      pd.side_effects,
+      pd.precaution,
+      pd.interactions,
+      pd.indication
     FROM products p
     LEFT JOIN product_categories c ON p.category_id = c.category_id
+    LEFT JOIN product_details pd ON p.product_id = pd.product_id
     WHERE p.is_active = true
     ORDER BY p.created_at DESC
   `;
@@ -91,7 +137,10 @@ async function getAllProducts() {
     ...row,
     id: row.product_id, // Also add 'id' field for frontend
     image: row.main_image_url,
-    prescriptionRequired: row.prescription_required
+    prescriptionRequired: row.prescription_required,
+    // Map detail fields to match formData field names
+    genericName: row.generic_name,
+    sideEffects: row.side_effects
   }));
 }
 
@@ -114,9 +163,17 @@ async function getProductById(id) {
       p.category_id,
       p.main_image_url,
       p.created_at,
-      c.category_name
+      c.category_name,
+      pd.generic_name,
+      pd.uses,
+      pd.ingredients,
+      pd.side_effects,
+      pd.precaution,
+      pd.interactions,
+      pd.indication
     FROM products p
     LEFT JOIN product_categories c ON p.category_id = c.category_id
+    LEFT JOIN product_details pd ON p.product_id = pd.product_id
     WHERE p.product_id = $1
     LIMIT 1
   `;
@@ -129,7 +186,10 @@ async function getProductById(id) {
       ...product,
       id: product.product_id,
       image: product.main_image_url,
-      prescriptionRequired: product.prescription_required
+      prescriptionRequired: product.prescription_required,
+      // Map detail fields to match formData field names
+      genericName: product.generic_name,
+      sideEffects: product.side_effects
     };
   }
   
@@ -140,6 +200,8 @@ async function getProductById(id) {
 async function updateProduct(id, data) {
   const client = await pool.connect();
   try {
+    await client.query("BEGIN");
+
     const {
       name,
       brand,
@@ -152,8 +214,17 @@ async function updateProduct(id, data) {
       is_active,
       featured,
       main_image_url,
+      // Product details
+      generic_name,
+      uses,
+      ingredients,
+      side_effects,
+      precaution,
+      interactions,
+      indication,
     } = data;
 
+    // Update products table
     const updateQuery = `
       UPDATE products
       SET 
@@ -189,22 +260,110 @@ async function updateProduct(id, data) {
     ];
 
     const result = await client.query(updateQuery, values);
-    return result.rows[0] || null;
+    const updatedProduct = result.rows[0] || null;
+
+    // Update or insert product_details if any detail field is provided
+    if (updatedProduct && (generic_name !== undefined || uses !== undefined || 
+        ingredients !== undefined || side_effects !== undefined || 
+        precaution !== undefined || interactions !== undefined || 
+        indication !== undefined)) {
+      
+      // Check if details exist
+      const checkDetailsQuery = `SELECT detail_id FROM product_details WHERE product_id = $1;`;
+      const detailsCheck = await client.query(checkDetailsQuery, [id]);
+
+      if (detailsCheck.rows.length > 0) {
+        // Update existing details
+        const updateDetailsQuery = `
+          UPDATE product_details
+          SET
+            generic_name = COALESCE($1, generic_name),
+            uses = COALESCE($2, uses),
+            ingredients = COALESCE($3, ingredients),
+            side_effects = COALESCE($4, side_effects),
+            precaution = COALESCE($5, precaution),
+            interactions = COALESCE($6, interactions),
+            indication = COALESCE($7, indication),
+            updated_at = CURRENT_TIMESTAMP
+          WHERE product_id = $8;
+        `;
+
+        await client.query(updateDetailsQuery, [
+          generic_name,
+          uses,
+          ingredients,
+          side_effects,
+          precaution,
+          interactions,
+          indication,
+          id,
+        ]);
+      } else {
+        // Insert new details
+        const insertDetailsQuery = `
+          INSERT INTO product_details (
+            product_id,
+            generic_name,
+            uses,
+            ingredients,
+            side_effects,
+            precaution,
+            interactions,
+            indication
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+        `;
+
+        await client.query(insertDetailsQuery, [
+          id,
+          generic_name || null,
+          uses || null,
+          ingredients || [],
+          side_effects || [],
+          precaution || [],
+          interactions || [],
+          indication || [],
+        ]);
+      }
+    }
+
+    await client.query("COMMIT");
+    return updatedProduct;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
   } finally {
     client.release();
   }
 }
 
-/** Delete product (soft delete) */
+/** Delete product (hard delete) */
 async function deleteProduct(id) {
-  const query = `
-    UPDATE products
-    SET is_active = false, updated_at = CURRENT_TIMESTAMP
-    WHERE product_id = $1
-    RETURNING product_id;
-  `;
-  const { rows } = await pool.query(query, [id]);
-  return rows[0] || null;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Delete from product_details first (if exists)
+    await client.query(
+      `DELETE FROM product_details WHERE product_id = $1`,
+      [id]
+    );
+
+    // Delete from products
+    const query = `
+      DELETE FROM products
+      WHERE product_id = $1
+      RETURNING product_id;
+    `;
+    const { rows } = await client.query(query, [id]);
+
+    await client.query("COMMIT");
+    return rows[0] || null;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 module.exports = {
