@@ -6,6 +6,8 @@ const History = () => {
   const [orders, setOrders] = useState([]);
   const [trackingEnabled, setTrackingEnabled] = useState(false);
   const [trackingError, setTrackingError] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const mapRef = useRef(null);
   const userMarkerRef = useRef(null);
   const pharmacyMarkerRef = useRef(null);
@@ -365,8 +367,15 @@ const History = () => {
               </div>
             ) : (
               filteredOrders.map((order) => (
-                <div key={order.id} className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                  <div>
+                <div
+                  key={order.id}
+                  onClick={() => {
+                    setSelectedOrder(order);
+                    setShowDetailModal(true);
+                  }}
+                  className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:bg-blue-50 cursor-pointer transition"
+                >
+                  <div className="flex-1">
                     <p className="text-sm text-gray-500 mb-1">ID Pesanan: <span className="font-mono text-gray-700">{order.id}</span></p>
                     <p className="text-base font-semibold text-gray-800 mb-1">{order.customerName}</p>
                     <p className="text-sm text-gray-500">
@@ -386,6 +395,9 @@ const History = () => {
                     `}>
                       {order.status}
                     </span>
+                    <button className="text-blue-600 hover:text-blue-800 text-sm font-semibold mt-1">
+                      <i className="fas fa-chevron-right mr-1"></i>Lihat Detail
+                    </button>
                   </div>
                 </div>
               ))
@@ -439,6 +451,187 @@ const History = () => {
                 <p className="text-sm font-medium text-gray-600">Perlu Ulasan</p>
                 <p className="text-2xl font-bold text-gray-900">0</p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== ORDER DETAIL MODAL (HISTORY) ===== */}
+      {showDetailModal && selectedOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold">Detail Pesanan</h2>
+                <p className="text-blue-100 text-sm">Pesanan #{selectedOrder.id}</p>
+              </div>
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="text-white hover:bg-blue-800 p-2 rounded-full transition"
+              >
+                <i className="fas fa-times text-xl"></i>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-6">
+              {/* Order Time & Status */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-600 font-medium">Waktu Pemesanan</p>
+                    <p className="text-sm font-semibold text-gray-800">
+                      {new Date(selectedOrder.date).toLocaleString('id-ID', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600 font-medium">Status</p>
+                    <p className={`text-sm font-semibold
+                      ${selectedOrder.status?.toLowerCase().includes('lunas') ? 'text-green-600' : ''}
+                      ${selectedOrder.status?.toLowerCase().includes('menunggu') || selectedOrder.status?.toLowerCase().includes('pending') ? 'text-yellow-600' : ''}
+                    `}>
+                      {selectedOrder.status}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Customer Info */}
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-3">
+                  <i className="fas fa-user-circle text-blue-600 mr-2"></i>
+                  Informasi Pemesan
+                </h3>
+                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium text-gray-700">Nama:</span> {selectedOrder.customerName}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium text-gray-700">Telepon:</span> {selectedOrder.customerPhone}
+                  </p>
+                  {selectedOrder.customerAddress && (
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium text-gray-700">Alamat:</span> {selectedOrder.customerAddress}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Products */}
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-3">
+                  <i className="fas fa-shopping-bag text-blue-600 mr-2"></i>
+                  Produk Pesanan
+                </h3>
+                <div className="space-y-3">
+                  {selectedOrder.items && selectedOrder.items.map((item, idx) => (
+                    <div key={idx} className="flex gap-4 bg-gray-50 p-3 rounded-lg">
+                      <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden">
+                        <img
+                          src={
+                            item.image && item.image.startsWith("/")
+                              ? `${import.meta.env.VITE_API_URL || "http://localhost:3001"}${item.image}`
+                              : item.image || `${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/products/${item.id}/image`
+                          }
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.src = "https://via.placeholder.com/80?text=No+Image";
+                          }}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-800">{item.name}</p>
+                        <div className="flex justify-between items-end mt-2">
+                          <div>
+                            <p className="text-xs text-gray-600">Jumlah</p>
+                            <p className="font-semibold text-gray-800">{item.quantity}x</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-600">Harga Satuan</p>
+                            <p className="font-semibold text-gray-800">
+                              Rp {(item.price || 0).toLocaleString('id-ID')}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Order Notes */}
+              {selectedOrder.notes && (
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-3">
+                    <i className="fas fa-sticky-note text-blue-600 mr-2"></i>
+                    Catatan Pesanan
+                  </h3>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <p className="text-sm text-gray-700">{selectedOrder.notes}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Admin Notes */}
+              {selectedOrder.adminNotes && (
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-3">
+                    <i className="fas fa-comment-dots text-orange-600 mr-2"></i>
+                    Pesan dari Admin
+                  </h3>
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                    <p className="text-sm text-gray-700">{selectedOrder.adminNotes}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Price Summary */}
+              <div className="border-t pt-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Subtotal</span>
+                    <span className="font-medium text-gray-800">
+                      Rp {(selectedOrder.subtotal || 0).toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                  {selectedOrder.discount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Diskon</span>
+                      <span className="font-medium">
+                        -Rp {(selectedOrder.discount || 0).toLocaleString('id-ID')}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Pajak (PPN 10%)</span>
+                    <span className="font-medium text-gray-800">
+                      Rp {(selectedOrder.tax || 0).toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-lg font-bold border-t pt-2">
+                    <span>Total</span>
+                    <span className="text-blue-600">
+                      Rp {(selectedOrder.total || 0).toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Close Button */}
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition"
+              >
+                <i className="fas fa-check mr-2"></i>Tutup
+              </button>
             </div>
           </div>
         </div>

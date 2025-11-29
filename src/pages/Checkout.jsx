@@ -64,7 +64,7 @@ const Checkout = () => {
     }));
   };
 
-  const addOrderNotification = (orderId, statusText) => {
+  const addOrderNotification = (orderId, statusText, orderDetails = null) => {
     try {
       const existingNotifications = JSON.parse(
         localStorage.getItem("notifications") || "[]"
@@ -79,6 +79,24 @@ const Checkout = () => {
         message: `Pesanan ${orderId} ${statusText}.`,
         createdAt: new Date().toISOString(),
         read: false,
+        // Detail lengkap pesanan untuk preview
+        orderDetails: orderDetails || {
+          items: cart.map((item) => ({
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            image: item.image,
+          })),
+          subtotal: subtotal,
+          tax: tax,
+          discount: discount,
+          total: total,
+          customerName: formData.name,
+          customerPhone: formData.phone,
+          notes: formData.notes || "",
+          adminNotes: "", // Akan diisi admin kemudian
+        },
       };
 
       localStorage.setItem(
