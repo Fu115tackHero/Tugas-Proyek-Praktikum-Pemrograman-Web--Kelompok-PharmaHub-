@@ -14,4 +14,10 @@ router.get("/products", productController.getAllProducts);
  */
 router.get("/products/:id", productController.getProductById);
 
+/**
+ * POST /api/products
+ * Create a new product with details
+ */
+router.post("/products", productController.createProduct);
+
 module.exports = router;

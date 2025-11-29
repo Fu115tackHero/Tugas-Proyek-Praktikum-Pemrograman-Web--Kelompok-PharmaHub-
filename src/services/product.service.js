@@ -3,7 +3,7 @@
  * Handles product data operations
  */
 
-import { get } from "./api";
+import apiClient, { get, post } from "./api";
 
 /**
  * Retrieve all products
@@ -34,7 +34,31 @@ export async function getProductById(id) {
   }
 }
 
+/** Get categories */
+export async function getCategories() {
+  try {
+    const response = await get(`/categories`);
+    return response;
+  } catch (error) {
+    console.error("Product service error:", error);
+    throw error;
+  }
+}
+
+/** Create product */
+export async function createProduct(data) {
+  try {
+    const response = await post(`/products`, data);
+    return response;
+  } catch (error) {
+    console.error("Product creation error:", error);
+    throw error;
+  }
+}
+
 export default {
   getAllProducts,
   getProductById,
+  getCategories,
+  createProduct,
 };

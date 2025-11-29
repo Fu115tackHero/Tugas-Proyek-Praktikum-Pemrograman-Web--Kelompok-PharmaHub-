@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { getProductById } from "../data/products";
+import ProductService from "../services/product.service";
 import { useCart } from "../context/CartContext";
 
 const ProductDetail = () => {
@@ -14,12 +14,39 @@ const ProductDetail = () => {
   const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
-    const foundProduct = getProductById(id);
-    if (!foundProduct) {
-      navigate("/products");
-    } else {
-      setProduct(foundProduct);
+    async function load() {
+      try {
+        const res = await ProductService.getProductById(id);
+        const p = res?.data;
+        if (!p) {
+          navigate("/products");
+          return;
+        }
+        // Normalize fields from backend to UI expectations
+        const normalized = {
+          id: p.product_id,
+          name: p.name,
+          price: p.price,
+          stock: p.stock,
+          description: p.description,
+          image: p.image_url,
+          brand: p.brand || "",
+          genericName: p.generic_name || "",
+          uses: p.uses || "",
+          prescriptionRequired: p.prescription_required || false,
+          ingredients: p.ingredients || [],
+          precaution: p.warnings || [],
+          sideEffects: p.side_effects || [],
+          interactions: p.interactions || [],
+          indication: p.indication || [],
+        };
+        setProduct(normalized);
+      } catch (e) {
+        console.error("Failed to load product detail", e);
+        navigate("/products");
+      }
     }
+    load();
   }, [id, navigate]);
 
   if (!product) {
@@ -54,7 +81,7 @@ const ProductDetail = () => {
     // 1. Masukkan produk ke keranjang
     addToCart(product, quantity);
     // 2. Arahkan ke halaman KERANJANG (Cart) agar bisa input diskon
-    navigate("/cart"); 
+    navigate("/cart");
   };
 
   const tabs = [

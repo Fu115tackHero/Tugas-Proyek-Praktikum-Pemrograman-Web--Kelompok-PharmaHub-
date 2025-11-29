@@ -5,6 +5,7 @@ const router = express.Router();
 const authRoutes = require("./authRoutes");
 const paymentRoutes = require("./paymentRoutes");
 const productRoutes = require("./productRoutes");
+const categoryRoutes = require("./categoryRoutes");
 
 /**
  * Health check endpoint
@@ -23,5 +24,6 @@ router.get("/", (req, res) => {
 router.use("/auth", authRoutes);
 router.use(paymentRoutes);
 router.use(productRoutes);
+router.use(categoryRoutes);
 
 module.exports = router;

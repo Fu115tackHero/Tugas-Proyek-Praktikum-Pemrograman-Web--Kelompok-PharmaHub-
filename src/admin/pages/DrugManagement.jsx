@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase, isSupabaseConfigured } from "../../utils/supabase";
+import ProductService from "../../services/product.service";
 
 const DrugManagement = () => {
   const [drugs, setDrugs] = useState([]);
@@ -12,6 +13,7 @@ const DrugManagement = () => {
   const [currentDrug, setCurrentDrug] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [availableGenerics, setAvailableGenerics] = useState([]);
+  const [backendCategories, setBackendCategories] = useState([]); // {category_id, category_name}
   const [newGeneric, setNewGeneric] = useState("");
   const [showAddGeneric, setShowAddGeneric] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
@@ -92,6 +94,16 @@ const DrugManagement = () => {
   useEffect(() => {
     loadDrugs();
     loadGenerics();
+    // Fetch categories for dropdown from backend
+    (async () => {
+      try {
+        const res = await ProductService.getCategories();
+        const categories = res?.data || [];
+        setBackendCategories(categories);
+      } catch (e) {
+        console.error("Failed to fetch categories", e);
+      }
+    })();
   }, []);
 
   useEffect(() => {
@@ -168,7 +180,7 @@ const DrugManagement = () => {
     setImageFile(null);
     setFormData({
       name: "",
-      category: "",
+      category: "", // will hold category_id once selected
       price: "",
       stock: "",
       description: "",
@@ -202,7 +214,14 @@ const DrugManagement = () => {
     setImageFile(null);
     setFormData({
       name: drug.name,
-      category: drug.category,
+      // map category name to id if possible
+      category:
+        typeof drug.category === "number"
+          ? drug.category
+          : backendCategories.find(
+              (c) =>
+                c.category_name === drug.category || c.name === drug.category
+            )?.category_id || "",
       price: drug.price,
       stock: drug.stock,
       description: drug.description,
@@ -230,6 +249,27 @@ const DrugManagement = () => {
     });
     setShowModal(true);
   };
+  const renderCategorySelect = () => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Kategori
+      </label>
+      <select
+        value={formData.category}
+        onChange={(e) =>
+          setFormData({ ...formData, category: Number(e.target.value) || "" })
+        }
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="">Pilih Kategori</option>
+        {backendCategories.map((cat) => (
+          <option key={cat.category_id} value={cat.category_id}>
+            {cat.category_name || cat.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
 
   const addArrayItem = (field) => {
     if (tempInputs[field].trim()) {
@@ -320,32 +360,31 @@ const DrugManagement = () => {
         }
       }
 
-      const drugData = {
-        ...formData,
-        image: imageUrl, // Use Supabase URL or Base64
+      // Build backend payload
+      const payload = {
+        name: formData.name,
         price: parseInt(formData.price),
         stock: parseInt(formData.stock),
-        id: currentDrug
-          ? currentDrug.id
-          : `drug_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        description: formData.description,
+        image_url: imageUrl,
+        // Expect category_id from selected category name (adjust UI to set id)
+        category_id:
+          typeof formData.category === "number" ? formData.category : null,
+        generic_name: formData.genericName,
+        uses: formData.uses,
+        ingredients: formData.ingredients,
+        side_effects: formData.sideEffects,
+        dosage: formData.howItWorks || null,
+        storage: null,
+        warnings: formData.precaution,
       };
 
-      let updatedDrugs;
-      if (currentDrug) {
-        updatedDrugs = drugs.map((d) =>
-          d.id === currentDrug.id ? drugData : d
-        );
-      } else {
-        updatedDrugs = [...drugs, drugData];
-      }
+      const resp = await ProductService.createProduct(payload);
+      const created = resp?.data;
 
-      localStorage.setItem("adminDrugs", JSON.stringify(updatedDrugs));
-      setDrugs(updatedDrugs);
       setShowModal(false);
       setIsUploading(false);
-      alert(
-        currentDrug ? "Obat berhasil diperbarui!" : "Obat berhasil ditambahkan!"
-      );
+      alert("Produk berhasil disimpan ke database!");
     } catch (error) {
       setIsUploading(false);
       alert("Gagal menyimpan data: " + error.message);

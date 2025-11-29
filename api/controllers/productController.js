@@ -55,4 +55,17 @@ const getProductById = async (req, res) => {
 module.exports = {
   getAllProducts,
   getProductById,
+  /** Create product handler */
+  async createProduct(req, res) {
+    try {
+      const payload = req.body;
+      const created = await productService.createProduct(payload);
+      res.status(201).json({ success: true, data: created });
+    } catch (error) {
+      console.error("❌ Error creating product:", error.message);
+      res
+        .status(500)
+        .json({ success: false, message: "Failed to create product" });
+    }
+  },
 };
