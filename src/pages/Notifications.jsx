@@ -360,19 +360,43 @@ const Notifications = () => {
                   Produk Pesanan
                 </h3>
                 <div className="space-y-3">
-                  {selectedNotif.orderDetails.items.map((item, idx) => (
+                  {selectedNotif.orderDetails.items.map((item, idx) => {
+                    // Generate image URL dengan fallback chain
+                    const getImageUrl = () => {
+                      // Jika tidak ada image, return placeholder
+                      if (!item.image) {
+                        return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23eee" width="100" height="100"/%3E%3C/svg%3E';
+                      }
+
+                      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
+                      
+                      // 1. Jika image starts with /, coba API endpoint dulu, jika gagal gunakan path relatif
+                      if (item.image.startsWith("/")) {
+                        // First try: API endpoint
+                        // Second try: relative path (fallback jika server down)
+                        // Kita return keduanya dalam image tag melalui srcSet atau langsung relative
+                        return item.image;
+                      }
+                      
+                      // 2. Jika sudah URL lengkap
+                      if (item.image.startsWith("http")) {
+                        return item.image;
+                      }
+                      
+                      // 3. Jika hanya nama file, coba lokasi relatif
+                      return `/images/allproducts/${item.image}`;
+                    };
+
+                    return (
                     <div key={idx} className="flex gap-4 bg-gray-50 p-3 rounded-lg">
-                      <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden">
+                      <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden flex items-center justify-center">
                         <img
-                          src={
-                            item.image && item.image.startsWith("/")
-                              ? `${import.meta.env.VITE_API_URL || "http://localhost:3001"}${item.image}`
-                              : item.image || `${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/products/${item.id}/image`
-                          }
+                          src={getImageUrl()}
                           alt={item.name}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            e.target.src = "https://via.placeholder.com/80?text=No+Image";
+                            e.target.style.display = "none";
+                            e.target.parentElement.innerHTML = '<i class="fas fa-image text-gray-400 text-2xl"></i>';
                           }}
                         />
                       </div>
@@ -392,7 +416,8 @@ const Notifications = () => {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -428,27 +453,27 @@ const Notifications = () => {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Subtotal</span>
                     <span className="font-medium text-gray-800">
-                      Rp {(selectedNotif.orderDetails.subtotal || 0).toLocaleString("id-ID")}
+                      Rp {(Number(selectedNotif.orderDetails.subtotal) || 0).toLocaleString("id-ID")}
                     </span>
                   </div>
-                  {selectedNotif.orderDetails.discount > 0 && (
+                  {Number(selectedNotif.orderDetails.discount) > 0 && (
                     <div className="flex justify-between text-sm text-green-600">
                       <span>Diskon</span>
                       <span className="font-medium">
-                        -Rp {(selectedNotif.orderDetails.discount || 0).toLocaleString("id-ID")}
+                        -Rp {(Number(selectedNotif.orderDetails.discount) || 0).toLocaleString("id-ID")}
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Pajak (PPN 10%)</span>
                     <span className="font-medium text-gray-800">
-                      Rp {(selectedNotif.orderDetails.tax || 0).toLocaleString("id-ID")}
+                      Rp {(Number(selectedNotif.orderDetails.tax) || 0).toLocaleString("id-ID")}
                     </span>
                   </div>
                   <div className="flex justify-between text-lg font-bold border-t pt-2">
                     <span>Total</span>
                     <span className="text-blue-600">
-                      Rp {(selectedNotif.orderDetails.total || 0).toLocaleString("id-ID")}
+                      Rp {(Number(selectedNotif.orderDetails.total) || 0).toLocaleString("id-ID")}
                     </span>
                   </div>
                 </div>

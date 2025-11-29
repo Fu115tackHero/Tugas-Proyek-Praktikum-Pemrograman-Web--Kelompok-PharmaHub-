@@ -8,6 +8,7 @@ const History = () => {
   const [trackingError, setTrackingError] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const mapRef = useRef(null);
   const userMarkerRef = useRef(null);
   const pharmacyMarkerRef = useRef(null);
@@ -171,6 +172,12 @@ const History = () => {
     return true;
   });
 
+  const handleDeleteAllHistory = () => {
+    localStorage.setItem('order_history', '[]');
+    setOrders([]);
+    setShowDeleteConfirm(false);
+  };
+
   return (
     <main className="container mx-auto px-4 py-8 min-h-screen bg-gray-50">
       {/* Page Header */}
@@ -250,8 +257,8 @@ const History = () => {
 
       {/* Filter Tabs */}
       <div className="mb-6">
-        <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 overflow-x-auto">
+        <div className="border-b border-gray-200 flex items-center justify-between">
+          <nav className="flex space-x-8 overflow-x-auto flex-1">
             <button
               onClick={() => setActiveTab('all')}
               className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
@@ -313,6 +320,17 @@ const History = () => {
               </span>
             </button>
           </nav>
+          
+          {/* Delete All Button */}
+          {orders.length > 0 && (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="ml-4 px-4 py-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg font-medium text-sm transition flex items-center whitespace-nowrap border border-red-300"
+            >
+              <i className="fas fa-trash-alt mr-2"></i>
+              Hapus Semua
+            </button>
+          )}
         </div>
       </div>
 
@@ -531,19 +549,40 @@ const History = () => {
                   Produk Pesanan
                 </h3>
                 <div className="space-y-3">
-                  {selectedOrder.items && selectedOrder.items.map((item, idx) => (
+                  {selectedOrder.items && selectedOrder.items.map((item, idx) => {
+                    // Generate image URL dengan fallback chain
+                    const getImageUrl = () => {
+                      // Jika tidak ada image, return placeholder
+                      if (!item.image) {
+                        return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23eee" width="100" height="100"/%3E%3C/svg%3E';
+                      }
+
+                      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
+                      
+                      // 1. Jika image starts with /, gunakan path relatif (fallback jika server down)
+                      if (item.image.startsWith("/")) {
+                        return item.image;
+                      }
+                      
+                      // 2. Jika sudah URL lengkap
+                      if (item.image.startsWith("http")) {
+                        return item.image;
+                      }
+                      
+                      // 3. Jika hanya nama file, coba lokasi relatif
+                      return `/images/allproducts/${item.image}`;
+                    };
+
+                    return (
                     <div key={idx} className="flex gap-4 bg-gray-50 p-3 rounded-lg">
-                      <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden">
+                      <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden flex items-center justify-center">
                         <img
-                          src={
-                            item.image && item.image.startsWith("/")
-                              ? `${import.meta.env.VITE_API_URL || "http://localhost:3001"}${item.image}`
-                              : item.image || `${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/products/${item.id}/image`
-                          }
+                          src={getImageUrl()}
                           alt={item.name}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            e.target.src = "https://via.placeholder.com/80?text=No+Image";
+                            e.target.style.display = "none";
+                            e.target.parentElement.innerHTML = '<i class="fas fa-image text-gray-400 text-2xl"></i>';
                           }}
                         />
                       </div>
@@ -563,7 +602,8 @@ const History = () => {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -599,27 +639,27 @@ const History = () => {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Subtotal</span>
                     <span className="font-medium text-gray-800">
-                      Rp {(selectedOrder.subtotal || 0).toLocaleString('id-ID')}
+                      Rp {(Number(selectedOrder.subtotal) || 0).toLocaleString('id-ID')}
                     </span>
                   </div>
-                  {selectedOrder.discount > 0 && (
+                  {Number(selectedOrder.discount) > 0 && (
                     <div className="flex justify-between text-sm text-green-600">
                       <span>Diskon</span>
                       <span className="font-medium">
-                        -Rp {(selectedOrder.discount || 0).toLocaleString('id-ID')}
+                        -Rp {(Number(selectedOrder.discount) || 0).toLocaleString('id-ID')}
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Pajak (PPN 10%)</span>
                     <span className="font-medium text-gray-800">
-                      Rp {(selectedOrder.tax || 0).toLocaleString('id-ID')}
+                      Rp {(Number(selectedOrder.tax) || 0).toLocaleString('id-ID')}
                     </span>
                   </div>
                   <div className="flex justify-between text-lg font-bold border-t pt-2">
                     <span>Total</span>
                     <span className="text-blue-600">
-                      Rp {(selectedOrder.total || 0).toLocaleString('id-ID')}
+                      Rp {(Number(selectedOrder.total) || 0).toLocaleString('id-ID')}
                     </span>
                   </div>
                 </div>
@@ -631,6 +671,42 @@ const History = () => {
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition"
               >
                 <i className="fas fa-check mr-2"></i>Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete All History Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full">
+            <div className="bg-red-50 border-b border-red-200 px-6 py-4">
+              <h3 className="text-lg font-bold text-red-700 flex items-center">
+                <i className="fas fa-exclamation-triangle mr-3 text-red-600"></i>
+                Hapus Semua Riwayat
+              </h3>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-700 mb-2">
+                Anda yakin ingin menghapus <strong>seluruh riwayat transaksi</strong>?
+              </p>
+              <p className="text-sm text-gray-500">
+                Tindakan ini tidak dapat dibatalkan. Data riwayat pembelian yang sudah dihapus tidak bisa dipulihkan.
+              </p>
+            </div>
+            <div className="border-t px-6 py-4 flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg font-medium transition"
+              >
+                <i className="fas fa-times mr-2"></i>Batal
+              </button>
+              <button
+                onClick={handleDeleteAllHistory}
+                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg font-medium transition"
+              >
+                <i className="fas fa-trash-alt mr-2"></i>Hapus Semua
               </button>
             </div>
           </div>
