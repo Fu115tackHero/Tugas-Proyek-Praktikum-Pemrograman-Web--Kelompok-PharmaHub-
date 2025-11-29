@@ -1,0 +1,24 @@
+{
+  "type": "commonjs",
+  "name": "api",
+  "version": "1.0.0",
+  "description": "PharmaHub Backend API - Midtrans Integration",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "midtrans-client": "^1.4.3",
+    "multer": "^2.0.2",
+    "pg": "^8.16.3",
+    "sharp": "^0.34.5"
+  }
+}
