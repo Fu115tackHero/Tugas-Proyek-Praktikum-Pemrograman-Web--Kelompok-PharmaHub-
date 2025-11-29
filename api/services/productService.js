@@ -32,6 +32,7 @@ async function createProduct(data) {
       // Product details
       generic_name,
       uses,
+      how_it_works,
       ingredients,
       side_effects,
       precaution,
@@ -60,18 +61,19 @@ async function createProduct(data) {
     const product = productResult.rows[0];
 
     // Insert into product_details table if any detail is provided
-    if (generic_name || uses || ingredients || side_effects || precaution || interactions || indication) {
+    if (generic_name || uses || how_it_works || ingredients || side_effects || precaution || interactions || indication) {
       const insertDetailsQuery = `
         INSERT INTO product_details (
           product_id,
           generic_name,
           uses,
+          how_it_works,
           ingredients,
           side_effects,
           precaution,
           interactions,
           indication
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING detail_id;
       `;
       
@@ -79,6 +81,7 @@ async function createProduct(data) {
         product.product_id,
         generic_name || null,
         uses || null,
+        how_it_works || null,
         ingredients || [],
         side_effects || [],
         precaution || [],
@@ -119,6 +122,7 @@ async function getAllProducts() {
       c.category_name,
       pd.generic_name,
       pd.uses,
+      pd.how_it_works,
       pd.ingredients,
       pd.side_effects,
       pd.precaution,
@@ -140,7 +144,8 @@ async function getAllProducts() {
     prescriptionRequired: row.prescription_required,
     // Map detail fields to match formData field names
     genericName: row.generic_name,
-    sideEffects: row.side_effects
+    sideEffects: row.side_effects,
+    howItWorks: row.how_it_works
   }));
 }
 
@@ -166,6 +171,7 @@ async function getProductById(id) {
       c.category_name,
       pd.generic_name,
       pd.uses,
+      pd.how_it_works,
       pd.ingredients,
       pd.side_effects,
       pd.precaution,
@@ -189,7 +195,8 @@ async function getProductById(id) {
       prescriptionRequired: product.prescription_required,
       // Map detail fields to match formData field names
       genericName: product.generic_name,
-      sideEffects: product.side_effects
+      sideEffects: product.side_effects,
+      howItWorks: product.how_it_works
     };
   }
   
@@ -217,6 +224,7 @@ async function updateProduct(id, data) {
       // Product details
       generic_name,
       uses,
+      how_it_works,
       ingredients,
       side_effects,
       precaution,
@@ -264,9 +272,9 @@ async function updateProduct(id, data) {
 
     // Update or insert product_details if any detail field is provided
     if (updatedProduct && (generic_name !== undefined || uses !== undefined || 
-        ingredients !== undefined || side_effects !== undefined || 
-        precaution !== undefined || interactions !== undefined || 
-        indication !== undefined)) {
+        how_it_works !== undefined || ingredients !== undefined || 
+        side_effects !== undefined || precaution !== undefined || 
+        interactions !== undefined || indication !== undefined)) {
       
       // Check if details exist
       const checkDetailsQuery = `SELECT detail_id FROM product_details WHERE product_id = $1;`;
@@ -279,18 +287,20 @@ async function updateProduct(id, data) {
           SET
             generic_name = COALESCE($1, generic_name),
             uses = COALESCE($2, uses),
-            ingredients = COALESCE($3, ingredients),
-            side_effects = COALESCE($4, side_effects),
-            precaution = COALESCE($5, precaution),
-            interactions = COALESCE($6, interactions),
-            indication = COALESCE($7, indication),
+            how_it_works = COALESCE($3, how_it_works),
+            ingredients = COALESCE($4, ingredients),
+            side_effects = COALESCE($5, side_effects),
+            precaution = COALESCE($6, precaution),
+            interactions = COALESCE($7, interactions),
+            indication = COALESCE($8, indication),
             updated_at = CURRENT_TIMESTAMP
-          WHERE product_id = $8;
+          WHERE product_id = $9;
         `;
 
         await client.query(updateDetailsQuery, [
           generic_name,
           uses,
+          how_it_works,
           ingredients,
           side_effects,
           precaution,
@@ -305,18 +315,20 @@ async function updateProduct(id, data) {
             product_id,
             generic_name,
             uses,
+            how_it_works,
             ingredients,
             side_effects,
             precaution,
             interactions,
             indication
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
         `;
 
         await client.query(insertDetailsQuery, [
           id,
           generic_name || null,
           uses || null,
+          how_it_works || null,
           ingredients || [],
           side_effects || [],
           precaution || [],
