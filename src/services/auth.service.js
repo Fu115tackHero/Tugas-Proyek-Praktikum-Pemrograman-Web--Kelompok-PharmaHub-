@@ -12,7 +12,7 @@ import { post, get, put } from "./api";
  */
 export async function register(userData) {
   try {
-    const response = await post("/auth/register", userData);
+    const response = await post("/api/auth/register", userData);
 
     // Save token to localStorage
     if (response.success && response.token) {
@@ -35,7 +35,7 @@ export async function register(userData) {
  */
 export async function login(email, password) {
   try {
-    const response = await post("/auth/login", { email, password });
+    const response = await post("/api/auth/login", { email, password });
 
     // Save token to localStorage
     if (response.success && response.token) {
@@ -63,7 +63,7 @@ export async function getProfile() {
     }
 
     // Make request with token in header (handled by api.js)
-    const response = await get("/auth/me");
+    const response = await get("/api/auth/me");
 
     // Update user in localStorage
     if (response.success && response.user) {
@@ -124,7 +124,7 @@ export async function updateProfile(userId, userData) {
       ...userData,
     };
 
-    const response = await put("/auth/profile", payload);
+    const response = await put("/api/auth/profile", payload);
 
     // Update user in localStorage
     if (response.success && response.user) {

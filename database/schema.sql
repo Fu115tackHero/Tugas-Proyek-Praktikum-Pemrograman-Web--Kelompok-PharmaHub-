@@ -127,6 +127,11 @@ VALUES (
     '081234567890',
     '09:00-21:00'
 ) ON CONFLICT DO NOTHING;
+
+-- ============================================
+-- TABEL USER ADDRESSES (Alamat User dari Google Maps)
+-- ============================================
+CREATE TABLE user_addresses (
     address_id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     
@@ -202,10 +207,11 @@ CREATE TABLE products (
     min_stock INTEGER DEFAULT 10, -- Minimum stok untuk alert
     prescription_required BOOLEAN DEFAULT FALSE,
     
-    -- Gambar Utama Produk
-    main_image BYTEA, -- Gambar utama produk
-    main_image_mime_type VARCHAR(50),
-    main_image_filename VARCHAR(255),
+    -- Gambar Utama Produk (URL dari Supabase Storage)
+    main_image_url VARCHAR(500), -- URL gambar dari Supabase Storage
+    -- main_image BYTEA, -- DEPRECATED: Don't store binary, use URL instead
+    -- main_image_mime_type VARCHAR(50),
+    -- main_image_filename VARCHAR(255),
     
     -- Status & Metadata
     is_active BOOLEAN DEFAULT TRUE,

@@ -55,7 +55,7 @@ async function registerUser(userData) {
 
   try {
     // Check if email already exists
-    const checkEmailQuery = "SELECT id FROM users WHERE email = $1";
+    const checkEmailQuery = "SELECT user_id FROM users WHERE email = $1";
     const existingUser = await pool.query(checkEmailQuery, [
       email.toLowerCase(),
     ]);
@@ -69,9 +69,9 @@ async function registerUser(userData) {
 
     // Insert new user
     const insertQuery = `
-      INSERT INTO users (name, email, password, phone, address, role)
+      INSERT INTO users (name, email, password_hash, phone, address, role)
       VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id, name, email, phone, address, role, created_at;
+      RETURNING user_id, name, email, phone, address, role, created_at;
     `;
 
     const values = [
@@ -89,7 +89,7 @@ async function registerUser(userData) {
     // Generate JWT token
     const token = jwt.sign(
       {
-        userId: user.id,
+        userId: user.user_id,
         email: user.email,
         role: user.role,
       },
@@ -103,7 +103,7 @@ async function registerUser(userData) {
       success: true,
       message: "Registration successful",
       user: {
-        id: user.id,
+        id: user.user_id,
         name: user.name,
         email: user.email,
         phone: user.phone,
@@ -137,7 +137,7 @@ async function loginUser(credentials) {
   try {
     // Find user by email
     const query = `
-      SELECT id, name, email, password, phone, address, role, created_at
+      SELECT user_id, name, email, password_hash, phone, address, role, created_at
       FROM users
       WHERE email = $1;
     `;
@@ -151,7 +151,7 @@ async function loginUser(credentials) {
     const user = result.rows[0];
 
     // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
 
     if (!isPasswordValid) {
       throw new Error("Invalid email or password");
@@ -160,7 +160,7 @@ async function loginUser(credentials) {
     // Generate JWT token
     const token = jwt.sign(
       {
-        userId: user.id,
+        userId: user.user_id,
         email: user.email,
         role: user.role,
       },
@@ -174,7 +174,7 @@ async function loginUser(credentials) {
       success: true,
       message: "Login successful",
       user: {
-        id: user.id,
+        id: user.user_id,
         name: user.name,
         email: user.email,
         phone: user.phone,
@@ -212,9 +212,9 @@ function verifyToken(token) {
 async function getUserById(userId) {
   try {
     const query = `
-      SELECT id, name, email, phone, address, role, profile_photo_url, created_at
+      SELECT user_id, name, email, phone, address, role, profile_photo_url, created_at
       FROM users
-      WHERE id = $1;
+      WHERE user_id = $1;
     `;
 
     const result = await pool.query(query, [userId]);
@@ -277,8 +277,8 @@ async function updateProfile(userId, userData) {
     const query = `
       UPDATE users
       SET ${fields.join(", ")}
-      WHERE id = $${paramIndex}
-      RETURNING id, name, email, phone, address, profile_photo_url, role, created_at, updated_at;
+      WHERE user_id = $${paramIndex}
+      RETURNING user_id, name, email, phone, address, profile_photo_url, role, created_at, updated_at;
     `;
 
     const result = await pool.query(query, values);

@@ -16,8 +16,20 @@ router.get("/products/:id", productController.getProductById);
 
 /**
  * POST /api/products
- * Create a new product with details
+ * Create a new product
  */
 router.post("/products", productController.createProduct);
+
+/**
+ * PUT /api/products/:id
+ * Update a product by ID
+ */
+router.put("/products/:id", productController.updateProduct);
+
+/**
+ * DELETE /api/products/:id
+ * Delete a product by ID (soft delete)
+ */
+router.delete("/products/:id", productController.deleteProduct);
 
 module.exports = router;

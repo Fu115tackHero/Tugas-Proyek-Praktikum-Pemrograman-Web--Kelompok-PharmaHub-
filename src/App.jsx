@@ -18,6 +18,7 @@ import History from './pages/History';
 import Notifications from './pages/Notifications';
 import Debug from './pages/Debug';
 import ForgetPassword from './pages/Forget-Password'; // <-- TAMBAHKAN INI
+import ImageUploadTest from './pages/ImageUploadTest'; // Test upload Supabase
 // ... impor lainnya
 
 // Admin
@@ -44,6 +45,7 @@ function App() {
               <Route path="products" element={<Products />} />
               <Route path="product/:id" element={<ProductDetail />} />
               <Route path="debug" element={<Debug />} />
+              <Route path="test-upload" element={<ImageUploadTest />} />
               <Route path="history" element={<History />} />
               <Route path="notifications" element={<Notifications />} />
               

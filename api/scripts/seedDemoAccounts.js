@@ -45,7 +45,7 @@ async function seedDemoAccounts() {
 
     for (const account of demoAccounts) {
       // Check if account already exists
-      const checkQuery = "SELECT id FROM users WHERE email = $1";
+      const checkQuery = "SELECT user_id FROM users WHERE email = $1";
       const existing = await pool.query(checkQuery, [account.email]);
 
       if (existing.rows.length > 0) {
@@ -60,9 +60,9 @@ async function seedDemoAccounts() {
 
       // Insert account
       const insertQuery = `
-        INSERT INTO users (name, email, password, phone, address, role)
+        INSERT INTO users (name, email, password_hash, phone, address, role)
         VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING id, name, email, role;
+        RETURNING user_id, name, email, role;
       `;
 
       const values = [
@@ -80,7 +80,7 @@ async function seedDemoAccounts() {
       console.log(`✅ Created ${user.role} account:`);
       console.log(`   Email: ${account.email}`);
       console.log(`   Password: ${account.password}`);
-      console.log(`   ID: ${user.id}\n`);
+      console.log(`   User ID: ${user.user_id}\n`);
     }
 
     console.log("🎉 Demo accounts seeded successfully!\n");

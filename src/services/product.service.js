@@ -3,7 +3,7 @@
  * Handles product data operations
  */
 
-import apiClient, { get, post } from "./api";
+import apiClient, { get, post, put, del } from "./api";
 
 /**
  * Retrieve all products
@@ -11,7 +11,7 @@ import apiClient, { get, post } from "./api";
  */
 export async function getAllProducts() {
   try {
-    const response = await get("/products");
+    const response = await get("/api/products");
     return response;
   } catch (error) {
     console.error("Product service error:", error);
@@ -26,7 +26,7 @@ export async function getAllProducts() {
  */
 export async function getProductById(id) {
   try {
-    const response = await get(`/products/${id}`);
+    const response = await get(`/api/products/${id}`);
     return response;
   } catch (error) {
     console.error("Product service error:", error);
@@ -37,7 +37,7 @@ export async function getProductById(id) {
 /** Get categories */
 export async function getCategories() {
   try {
-    const response = await get(`/categories`);
+    const response = await get(`/api/categories`);
     return response;
   } catch (error) {
     console.error("Product service error:", error);
@@ -48,10 +48,32 @@ export async function getCategories() {
 /** Create product */
 export async function createProduct(data) {
   try {
-    const response = await post(`/products`, data);
+    const response = await post(`/api/products`, data);
     return response;
   } catch (error) {
     console.error("Product creation error:", error);
+    throw error;
+  }
+}
+
+/** Update product */
+export async function updateProduct(id, data) {
+  try {
+    const response = await put(`/api/products/${id}`, data);
+    return response;
+  } catch (error) {
+    console.error("Product update error:", error);
+    throw error;
+  }
+}
+
+/** Delete product */
+export async function deleteProduct(id) {
+  try {
+    const response = await del(`/api/products/${id}`);
+    return response;
+  } catch (error) {
+    console.error("Product delete error:", error);
     throw error;
   }
 }
@@ -61,4 +83,6 @@ export default {
   getProductById,
   getCategories,
   createProduct,
+  updateProduct,
+  deleteProduct,
 };

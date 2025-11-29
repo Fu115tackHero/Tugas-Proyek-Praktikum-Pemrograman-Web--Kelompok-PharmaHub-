@@ -110,14 +110,15 @@ const DrugManagement = () => {
     filterDrugs();
   }, [drugs, searchTerm, categoryFilter, prescriptionFilter]);
 
-  const loadDrugs = () => {
-    const savedDrugs = localStorage.getItem("adminDrugs");
-    if (savedDrugs) {
-      setDrugs(JSON.parse(savedDrugs));
-    } else {
-      const defaultDrugs = getDefaultDrugs();
-      localStorage.setItem("adminDrugs", JSON.stringify(defaultDrugs));
-      setDrugs(defaultDrugs);
+  const loadDrugs = async () => {
+    try {
+      const response = await ProductService.getAllProducts();
+      if (response.success) {
+        setDrugs(response.data);
+      }
+    } catch (error) {
+      console.error("Error loading products:", error);
+      alert("Gagal memuat data produk dari server");
     }
   };
 
