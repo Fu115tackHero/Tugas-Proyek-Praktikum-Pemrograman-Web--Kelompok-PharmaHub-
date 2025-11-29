@@ -3,7 +3,7 @@
  * Handles authentication API calls
  */
 
-import { post, get } from "./api";
+import { post, get, put } from "./api";
 
 /**
  * Register new user
