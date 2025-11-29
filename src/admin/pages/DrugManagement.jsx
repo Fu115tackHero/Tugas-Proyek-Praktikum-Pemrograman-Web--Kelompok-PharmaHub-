@@ -277,7 +277,7 @@ const DrugManagement = () => {
           false,
         brand: full.brand || "",
         uses: full.uses || "",
-        howItWorks: full.howItWorks || "",
+        howItWorks: full.howItWorks || full.how_it_works || "",
         genericName:
           full.genericName ||
           full.generic_name ||
@@ -306,6 +306,7 @@ const DrugManagement = () => {
           drug.prescriptionRequired || drug.prescription_required || false,
         brand: drug.brand || "",
         uses: drug.uses || "",
+        howItWorks: drug.howItWorks || drug.how_it_works || "",
         genericName:
           drug.genericName || drug.generic_name || drug.generic || "",
         ingredients: drug.ingredients || [],
@@ -489,6 +490,7 @@ const DrugManagement = () => {
         // Product details
         generic_name: formData.genericName || null,
         uses: formData.uses || null,
+        how_it_works: formData.howItWorks || null,
         ingredients: formData.ingredients || [],
         side_effects: formData.sideEffects || [],
         precaution: formData.precaution || [],
@@ -733,7 +735,12 @@ const DrugManagement = () => {
                             {drug.name}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {drug.description?.substring(0, 50)}...
+                            {(() => {
+                              const hw = drug.howItWorks || drug.how_it_works || drug.description || "";
+                              if (!hw) return "";
+                              const snippet = hw.length > 50 ? hw.substring(0, 50) + "..." : hw;
+                              return snippet;
+                            })()}
                           </div>
                         </div>
                       </div>

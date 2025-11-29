@@ -28,7 +28,7 @@ const ProductDetail = () => {
           name: p.name,
           price: p.price,
           stock: p.stock,
-          description: p.description || "",
+          description: p.howItWorks || p.how_it_works || p.description || "",
           image: p.image || p.main_image_url || "",
           brand: p.brand || "",
           genericName: p.genericName || p.generic_name || "",
