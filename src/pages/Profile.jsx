@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
-import { waitForGoogleMaps } from "../utils/googleMapsLoader";
 
 const Profile = () => {
   const { user, updateProfile } = useAuth();
@@ -19,11 +18,6 @@ const Profile = () => {
   });
   const [photoPreview, setPhotoPreview] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [mapError, setMapError] = useState(false);
-  const [mapLoading, setMapLoading] = useState(false);
-
-  const profileMapRef = useRef(null);
-  const profileMarkerRef = useRef(null);
 
   // Load user data and statistics
   useEffect(() => {
@@ -33,7 +27,6 @@ const Profile = () => {
         phone: user.phone || "",
         address: user.address || "",
         photo: user.photo || "",
-        location: user.location || null,
       });
       setPhotoPreview(user.photo || "");
 
@@ -58,100 +51,6 @@ const Profile = () => {
       setStatistics(stats);
     }
   }, [user]);
-
-  useEffect(() => {
-    if (!isEditing) {
-      if (profileMarkerRef.current) {
-        profileMarkerRef.current.setMap(null);
-      }
-      profileMapRef.current = null;
-      setMapLoading(false);
-      return;
-    }
-
-    const initMap = async () => {
-      try {
-        setMapLoading(true);
-        await waitForGoogleMaps();
-
-        // Add delay to ensure DOM is fully ready
-        await new Promise((resolve) => setTimeout(resolve, 200));
-
-        const mapElement = document.getElementById("profile-map");
-        if (!mapElement || !mapElement.offsetParent) {
-          console.warn("Map element not ready yet");
-          setMapError(true);
-          setMapLoading(false);
-          return;
-        }
-
-        if (profileMapRef.current) {
-          setMapLoading(false);
-          return;
-        }
-
-        const defaultCenter = formData.location || {
-          lat: -6.2088,
-          lng: 106.8456,
-        };
-
-        const map = new window.google.maps.Map(mapElement, {
-          center: defaultCenter,
-          zoom: 14,
-          mapTypeControl: true,
-          streetViewControl: false,
-          fullscreenControl: false,
-        });
-
-        // Set initial marker if location exists
-        if (formData.location) {
-          profileMarkerRef.current = new window.google.maps.Marker({
-            position: formData.location,
-            map,
-            animation: window.google.maps.Animation.DROP,
-          });
-        }
-
-        map.addListener("click", (event) => {
-          const position = {
-            lat: event.latLng.lat(),
-            lng: event.latLng.lng(),
-          };
-
-          if (profileMarkerRef.current) {
-            profileMarkerRef.current.setMap(null);
-          }
-
-          profileMarkerRef.current = new window.google.maps.Marker({
-            position,
-            map,
-            animation: window.google.maps.Animation.DROP,
-          });
-
-          setFormData((prev) => ({
-            ...prev,
-            location: position,
-          }));
-        });
-
-        profileMapRef.current = map;
-        setMapLoading(false);
-        setMapError(false);
-      } catch (error) {
-        if (error.message?.includes("InvalidKey")) {
-          console.error(
-            "Google Maps API key error - falling back to manual input"
-          );
-        } else {
-          console.error("Failed to initialize map:", error);
-        }
-        setMapError(true);
-        setMapLoading(false);
-      }
-    };
-
-    initMap();
-  }, [isEditing, formData.location]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -192,7 +91,6 @@ const Profile = () => {
       phone: user.phone || "",
       address: user.address || "",
       photo: user.photo || "",
-      location: user.location || null,
     });
     setPhotoPreview(user.photo || "");
     setIsEditing(false);
@@ -387,90 +285,8 @@ const Profile = () => {
                     placeholder="Jl. Contoh No. 123, Jakarta"
                   ></textarea>
                   <p className="text-xs text-gray-500 mt-2">
-                    {mapError
-                      ? "Peta tidak tersedia. Anda bisa input koordinat manual di bawah (opsional)."
-                      : "Klik pada peta untuk menyimpan titik lokasi alamat Anda (opsional)."}
+                    Alamat lengkap akan digunakan untuk keperluan pengiriman dan verifikasi
                   </p>
-
-                  {!mapError ? (
-                    <>
-                      {mapLoading && (
-                        <div className="mt-2 w-full h-64 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center">
-                          <div className="text-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                            <p className="text-sm text-gray-500">
-                              Memuat peta...
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                      <div
-                        id="profile-map"
-                        className={`mt-2 w-full h-64 rounded-lg border border-gray-200 overflow-hidden ${
-                          mapLoading ? "hidden" : ""
-                        }`}
-                      ></div>
-                    </>
-                  ) : (
-                    <div className="mt-2 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-sm text-yellow-800 mb-3">
-                        <i className="fas fa-exclamation-triangle mr-2"></i>
-                        Google Maps tidak dapat dimuat. Silakan input koordinat
-                        manual:
-                      </p>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Latitude
-                          </label>
-                          <input
-                            type="number"
-                            step="0.000001"
-                            value={formData.location?.lat || ""}
-                            onChange={(e) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                location: {
-                                  ...prev.location,
-                                  lat: parseFloat(e.target.value) || 0,
-                                },
-                              }))
-                            }
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="-6.2088"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Longitude
-                          </label>
-                          <input
-                            type="number"
-                            step="0.000001"
-                            value={formData.location?.lng || ""}
-                            onChange={(e) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                location: {
-                                  ...prev.location,
-                                  lng: parseFloat(e.target.value) || 0,
-                                },
-                              }))
-                            }
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="106.8456"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {formData.location && (
-                    <p className="mt-2 text-xs text-gray-500">
-                      Lokasi tersimpan: {formData.location.lat.toFixed(5)},{" "}
-                      {formData.location.lng.toFixed(5)}
-                    </p>
-                  )}
                 </div>
               </div>
 

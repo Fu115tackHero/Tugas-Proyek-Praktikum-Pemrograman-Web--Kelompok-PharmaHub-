@@ -1,6 +1,54 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
+  const [activeModal, setActiveModal] = useState(null);
+
+  const closeModal = () => {
+    setActiveModal(null);
+  };
+
+  const getModalTitle = () => {
+    if (activeModal === 'privacy') return 'Kebijakan Privasi';
+    if (activeModal === 'terms') return 'Syarat & Ketentuan Layanan';
+    if (activeModal === 'faq') return 'Pertanyaan yang Sering Diajukan (FAQ)';
+    return '';
+  };
+
+  const renderModalContent = () => {
+    if (activeModal === 'privacy') {
+      return (
+        <div className="space-y-2 text-sm text-gray-700 leading-relaxed">
+          <p>Data pribadi Anda (nama, email, nomor telepon, riwayat pesanan) digunakan untuk keperluan layanan dan tidak dijual ke pihak ketiga.</p>
+          <p>Kami hanya membagikan data ke mitra pembayaran dan logistik yang relevan, sesuai kebutuhan transaksi.</p>
+          <p>Untuk permintaan penghapusan atau perubahan data, silakan hubungi tim support PharmaHub.</p>
+        </div>
+      );
+    }
+
+    if (activeModal === 'terms') {
+      return (
+        <div className="space-y-2 text-sm text-gray-700 leading-relaxed">
+          <p>Dengan menggunakan PharmaHub, Anda menyetujui untuk memberikan data yang benar dan menggunakan layanan sesuai aturan yang berlaku.</p>
+          <p>Obat yang membutuhkan resep hanya boleh dibeli dengan rekomendasi tenaga kesehatan yang berwenang.</p>
+          <p>PharmaHub tidak menggantikan konsultasi langsung dengan dokter. Selalu konsultasikan kondisi medis Anda ke tenaga profesional.</p>
+        </div>
+      );
+    }
+
+    if (activeModal === 'faq') {
+      return (
+        <div className="space-y-2 text-sm text-gray-700 leading-relaxed">
+          <p><span className="font-semibold">Bagaimana cara melakukan pemesanan?</span> Tambahkan produk ke keranjang, lanjut ke checkout, lalu pilih metode pembayaran.</p>
+          <p><span className="font-semibold">Apakah bisa bayar di tempat?</span> Ya, tersedia opsi "Bayar di Tempat" saat pengambilan di apotek.</p>
+          <p><span className="font-semibold">Bagaimana jika ada kendala pembayaran?</span> Simpan ID pesanan Anda dan hubungi layanan pelanggan untuk bantuan.</p>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <footer className="bg-transparent text-white mt-16 relative overflow-hidden">
       {/* Background wrapper for footer content */}
@@ -126,20 +174,49 @@ const Footer = () => {
                 &copy; 2024 PharmaHub. All rights reserved.
               </p>
               <div className="flex space-x-6 text-sm">
-                <a href="#" className="text-gray-400 hover:text-white transition">
+                <button
+                  type="button"
+                  onClick={() => setActiveModal('privacy')}
+                  className="text-gray-400 hover:text-white transition underline-offset-4 hover:underline"
+                >
                   Privacy Policy
-                </a>
-                <a href="#" className="text-gray-400 hover:text-white transition">
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveModal('terms')}
+                  className="text-gray-400 hover:text-white transition underline-offset-4 hover:underline"
+                >
                   Terms of Service
-                </a>
-                <a href="#" className="text-gray-400 hover:text-white transition">
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveModal('faq')}
+                  className="text-gray-400 hover:text-white transition underline-offset-4 hover:underline"
+                >
                   FAQ
-                </a>
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
+      {activeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 text-gray-900 relative shadow-xl">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              {getModalTitle()}
+            </h2>
+            {renderModalContent()}
+          </div>
+        </div>
+      )}
     </footer>
   );
 };

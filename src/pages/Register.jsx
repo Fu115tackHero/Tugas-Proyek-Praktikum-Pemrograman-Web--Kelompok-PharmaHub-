@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { waitForGoogleMaps } from "../utils/googleMapsLoader";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -12,7 +11,6 @@ const Register = () => {
     email: "",
     phone: "",
     address: "",
-    location: null,
     password: "",
     confirmPassword: "",
   });
@@ -25,113 +23,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [passwordError, setPasswordError] = useState("");
-
-  const registerMapRef = useRef(null);
-  const registerMarkerRef = useRef(null);
-  const [mapError, setMapError] = useState(false);
-  const [mapLoading, setMapLoading] = useState(false);
-
-  useEffect(() => {
-    const initMap = async () => {
-      // Don't init if already initialized or errored
-      if (registerMapRef.current || mapError) {
-        return;
-      }
-
-      try {
-        setMapLoading(true);
-
-        // Wait for Google Maps API
-        await waitForGoogleMaps();
-
-        // Wait a bit more to ensure DOM is ready
-        await new Promise((resolve) => setTimeout(resolve, 200));
-
-        const mapElement = document.getElementById("register-map");
-        if (!mapElement || !mapElement.offsetParent) {
-          console.warn("Map element not ready yet");
-          setMapError(true);
-          setMapLoading(false);
-          return;
-        }
-
-        // Check if element is visible and has dimensions
-        const rect = mapElement.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) {
-          console.warn("Map element has no dimensions");
-          setMapError(true);
-          setMapLoading(false);
-          return;
-        }
-
-        const defaultCenter = { lat: -6.2088, lng: 106.8456 }; // Jakarta
-
-        const map = new window.google.maps.Map(mapElement, {
-          center: defaultCenter,
-          zoom: 14,
-          mapTypeControl: true,
-          streetViewControl: false,
-          fullscreenControl: false,
-        });
-
-        // Listen for Google Maps errors
-        window.gm_authFailure = () => {
-          console.error("Google Maps authentication failed");
-          setMapError(true);
-          setMapLoading(false);
-        };
-
-        map.addListener("click", (event) => {
-          const position = {
-            lat: event.latLng.lat(),
-            lng: event.latLng.lng(),
-          };
-
-          if (registerMarkerRef.current) {
-            registerMarkerRef.current.setMap(null);
-          }
-
-          registerMarkerRef.current = new window.google.maps.Marker({
-            position,
-            map,
-            animation: window.google.maps.Animation.DROP,
-          });
-
-          setFormData((prev) => ({
-            ...prev,
-            location: position,
-          }));
-        });
-
-        registerMapRef.current = map;
-        setMapLoading(false);
-        setMapError(false);
-      } catch (error) {
-        if (error.message?.includes("InvalidKey")) {
-          console.error(
-            "Google Maps API key error - falling back to manual input"
-          );
-        } else {
-          console.error("Failed to initialize map:", error);
-        }
-        setMapError(true);
-        setMapLoading(false);
-      }
-    };
-
-    // Delay untuk memastikan DOM ready
-    const timeoutId = setTimeout(() => {
-      initMap();
-    }, 100);
-
-    return () => {
-      clearTimeout(timeoutId);
-      if (registerMarkerRef.current) {
-        registerMarkerRef.current.setMap(null);
-      }
-      registerMapRef.current = null;
-    };
-  }, []);
+  const [policyModal, setPolicyModal] = useState({ open: false, type: null });
 
   // Redirect if already logged in
   if (isAuthenticated) {
@@ -241,7 +133,6 @@ const Register = () => {
         email: formData.email,
         phone: formData.phone,
         address: formData.address,
-        location: formData.location,
         password: formData.password,
       });
 
@@ -362,7 +253,7 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Address + Map Picker */}
+            {/* Address */}
             <div>
               <label
                 htmlFor="address"
@@ -386,89 +277,8 @@ const Register = () => {
                 ></textarea>
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                {mapError
-                  ? "Peta tidak tersedia. Anda bisa input koordinat manual di bawah (opsional)."
-                  : "Klik pada peta untuk menyimpan titik lokasi alamat Anda (opsional)."}
+                Alamat lengkap akan digunakan untuk keperluan pengiriman dan verifikasi
               </p>
-
-              {/* Map atau Fallback */}
-              {!mapError ? (
-                <>
-                  {mapLoading && (
-                    <div className="mt-2 w-full h-64 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                        <p className="text-sm text-gray-500">Memuat peta...</p>
-                      </div>
-                    </div>
-                  )}
-                  <div
-                    id="register-map"
-                    className={`mt-2 w-full h-64 rounded-lg border border-gray-200 overflow-hidden ${
-                      mapLoading ? "hidden" : ""
-                    }`}
-                  ></div>
-                </>
-              ) : (
-                <div className="mt-2 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-800 mb-3">
-                    <i className="fas fa-exclamation-triangle mr-2"></i>
-                    Google Maps tidak dapat dimuat. Silakan input koordinat
-                    manual:
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Latitude
-                      </label>
-                      <input
-                        type="number"
-                        step="0.000001"
-                        value={formData.location?.lat || ""}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            location: {
-                              ...prev.location,
-                              lat: parseFloat(e.target.value) || 0,
-                            },
-                          }))
-                        }
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="-6.2088"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Longitude
-                      </label>
-                      <input
-                        type="number"
-                        step="0.000001"
-                        value={formData.location?.lng || ""}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            location: {
-                              ...prev.location,
-                              lng: parseFloat(e.target.value) || 0,
-                            },
-                          }))
-                        }
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="106.8456"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {formData.location && (
-                <p className="mt-2 text-xs text-gray-500">
-                  Lokasi tersimpan: {formData.location.lat.toFixed(5)},{" "}
-                  {formData.location.lng.toFixed(5)}
-                </p>
-              )}
             </div>
 
             {/* Password dengan Indikator Kekuatan */}
@@ -635,15 +445,66 @@ const Register = () => {
           {/* Terms */}
           <p className="text-xs text-center text-gray-600">
             Dengan mendaftar, Anda menyetujui{" "}
-            <a href="#" className="text-blue-600 hover:text-blue-500">
+            <button
+              type="button"
+              onClick={() => setPolicyModal({ open: true, type: "terms" })}
+              className="text-blue-600 hover:text-blue-500 underline"
+            >
               Syarat & Ketentuan
-            </a>{" "}
+            </button>{" "}
             dan{" "}
-            <a href="#" className="text-blue-600 hover:text-blue-500">
+            <button
+              type="button"
+              onClick={() => setPolicyModal({ open: true, type: "privacy" })}
+              className="text-blue-600 hover:text-blue-500 underline"
+            >
               Kebijakan Privasi
-            </a>{" "}
+            </button>{" "}
             kami
           </p>
+          {policyModal.open && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4">
+              <div className="bg-white rounded-xl max-w-lg w-full p-6 text-gray-900 relative shadow-xl">
+                <button
+                  type="button"
+                  onClick={() => setPolicyModal({ open: false, type: null })}
+                  className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+                <h2 className="text-xl font-semibold mb-4 text-gray-800">
+                  {policyModal.type === "privacy"
+                    ? "Kebijakan Privasi"
+                    : "Syarat & Ketentuan Layanan"}
+                </h2>
+                <div className="space-y-2 text-sm text-gray-700 leading-relaxed max-h-72 overflow-y-auto">
+                  {policyModal.type === "privacy" ? (
+                    <>
+                      <p>
+                        Data yang Anda isi saat pendaftaran (nama, email, nomor telepon, alamat)
+                        digunakan untuk membuat akun dan mengelola pesanan di PharmaHub.
+                      </p>
+                      <p>
+                        Kami tidak membagikan data pribadi ke pihak ketiga tanpa persetujuan Anda,
+                        kecuali untuk kebutuhan operasional seperti pembayaran dan verifikasi.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p>
+                        Dengan membuat akun, Anda menyatakan bahwa informasi yang diberikan adalah benar
+                        dan bersedia mengikuti ketentuan penggunaan layanan PharmaHub.
+                      </p>
+                      <p>
+                        Obat yang membutuhkan resep hanya boleh digunakan sesuai anjuran dokter atau tenaga
+                        medis profesional.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </form>
       </div>
     </div>
