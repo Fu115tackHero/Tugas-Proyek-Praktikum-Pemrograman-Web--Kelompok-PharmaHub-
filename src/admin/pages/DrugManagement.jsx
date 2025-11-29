@@ -1,50 +1,93 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
+import { supabase, isSupabaseConfigured } from "../../utils/supabase";
 
 const DrugManagement = () => {
   const [drugs, setDrugs] = useState([]);
   const [filteredDrugs, setFilteredDrugs] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [prescriptionFilter, setPrescriptionFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [prescriptionFilter, setPrescriptionFilter] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [currentDrug, setCurrentDrug] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [availableGenerics, setAvailableGenerics] = useState([]);
-  const [newGeneric, setNewGeneric] = useState('');
+  const [newGeneric, setNewGeneric] = useState("");
   const [showAddGeneric, setShowAddGeneric] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    category: '',
-    price: '',
-    stock: '',
-    description: '',
-    image: '',
+    name: "",
+    category: "",
+    price: "",
+    stock: "",
+    description: "",
+    image: "",
     prescriptionRequired: false,
     // Detail fields
-    brand: '',
-    uses: '',
-    howItWorks: '',
-    genericName: '',
+    brand: "",
+    uses: "",
+    howItWorks: "",
+    genericName: "",
     importantInfo: [],
     ingredients: [],
     precaution: [],
     sideEffects: [],
     interactions: [],
-    indication: []
+    indication: [],
   });
 
   // Temporary inputs for adding items to arrays
   const [tempInputs, setTempInputs] = useState({
-    importantInfo: '',
-    ingredients: '',
-    precaution: '',
-    sideEffects: '',
-    interactions: '',
-    indication: ''
+    importantInfo: "",
+    ingredients: "",
+    precaution: "",
+    sideEffects: "",
+    interactions: "",
+    indication: "",
   });
+
+  // Helper function to upload image to Supabase Storage
+  const uploadImageToSupabase = async (file) => {
+    // Check if Supabase is configured
+    if (!isSupabaseConfigured()) {
+      throw new Error(
+        "Supabase belum dikonfigurasi. Silakan set VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY di file .env"
+      );
+    }
+
+    try {
+      // Generate unique filename using timestamp and random string
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 9);
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${timestamp}_${randomString}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      // Upload file to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from("product-images")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      // Get public URL
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("product-images").getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      throw new Error("Gagal mengupload gambar: " + error.message);
+    }
+  };
 
   useEffect(() => {
     loadDrugs();
@@ -56,34 +99,34 @@ const DrugManagement = () => {
   }, [drugs, searchTerm, categoryFilter, prescriptionFilter]);
 
   const loadDrugs = () => {
-    const savedDrugs = localStorage.getItem('adminDrugs');
+    const savedDrugs = localStorage.getItem("adminDrugs");
     if (savedDrugs) {
       setDrugs(JSON.parse(savedDrugs));
     } else {
       const defaultDrugs = getDefaultDrugs();
-      localStorage.setItem('adminDrugs', JSON.stringify(defaultDrugs));
+      localStorage.setItem("adminDrugs", JSON.stringify(defaultDrugs));
       setDrugs(defaultDrugs);
     }
   };
 
   const loadGenerics = () => {
-    const savedGenerics = localStorage.getItem('drugGenerics');
+    const savedGenerics = localStorage.getItem("drugGenerics");
     if (savedGenerics) {
       setAvailableGenerics(JSON.parse(savedGenerics));
     } else {
       const defaultGenerics = [
-        'Paracetamol',
-        'Amoxicillin',
-        'Ascorbic Acid',
-        'Magnesium Hydroxide',
-        'Chlorpheniramine Maleate',
-        'Ibuprofen',
-        'Cetirizine',
-        'Omeprazole',
-        'Metformin',
-        'Amlodipine'
+        "Paracetamol",
+        "Amoxicillin",
+        "Ascorbic Acid",
+        "Magnesium Hydroxide",
+        "Chlorpheniramine Maleate",
+        "Ibuprofen",
+        "Cetirizine",
+        "Omeprazole",
+        "Metformin",
+        "Amlodipine",
       ];
-      localStorage.setItem('drugGenerics', JSON.stringify(defaultGenerics));
+      localStorage.setItem("drugGenerics", JSON.stringify(defaultGenerics));
       setAvailableGenerics(defaultGenerics);
     }
   };
@@ -92,21 +135,28 @@ const DrugManagement = () => {
     if (newGeneric.trim() && !availableGenerics.includes(newGeneric.trim())) {
       const updatedGenerics = [...availableGenerics, newGeneric.trim()].sort();
       setAvailableGenerics(updatedGenerics);
-      localStorage.setItem('drugGenerics', JSON.stringify(updatedGenerics));
+      localStorage.setItem("drugGenerics", JSON.stringify(updatedGenerics));
       setFormData({ ...formData, genericName: newGeneric.trim() });
-      setNewGeneric('');
+      setNewGeneric("");
       setShowAddGeneric(false);
     }
   };
 
   const filterDrugs = () => {
-    let filtered = drugs.filter(drug => {
-      const matchesSearch = drug.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          drug.description.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = !categoryFilter || drug.category === categoryFilter;
-      const matchesPrescription = !prescriptionFilter || 
-                                (drug.prescriptionRequired || drug.requiresPrescription || false).toString() === prescriptionFilter;
-      
+    let filtered = drugs.filter((drug) => {
+      const matchesSearch =
+        drug.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        drug.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory =
+        !categoryFilter || drug.category === categoryFilter;
+      const matchesPrescription =
+        !prescriptionFilter ||
+        (
+          drug.prescriptionRequired ||
+          drug.requiresPrescription ||
+          false
+        ).toString() === prescriptionFilter;
+
       return matchesSearch && matchesCategory && matchesPrescription;
     });
     setFilteredDrugs(filtered);
@@ -117,31 +167,31 @@ const DrugManagement = () => {
     setImagePreview(null);
     setImageFile(null);
     setFormData({
-      name: '',
-      category: '',
-      price: '',
-      stock: '',
-      description: '',
-      image: '',
+      name: "",
+      category: "",
+      price: "",
+      stock: "",
+      description: "",
+      image: "",
       prescriptionRequired: false,
-      brand: '',
-      uses: '',
-      howItWorks: '',
-      genericName: '',
+      brand: "",
+      uses: "",
+      howItWorks: "",
+      genericName: "",
       importantInfo: [],
       ingredients: [],
       precaution: [],
       sideEffects: [],
       interactions: [],
-      indication: []
+      indication: [],
     });
     setTempInputs({
-      importantInfo: '',
-      ingredients: '',
-      precaution: '',
-      sideEffects: '',
-      interactions: '',
-      indication: ''
+      importantInfo: "",
+      ingredients: "",
+      precaution: "",
+      sideEffects: "",
+      interactions: "",
+      indication: "",
     });
     setShowModal(true);
   };
@@ -156,26 +206,27 @@ const DrugManagement = () => {
       price: drug.price,
       stock: drug.stock,
       description: drug.description,
-      image: drug.image || '',
-      prescriptionRequired: drug.prescriptionRequired || drug.requiresPrescription || false,
-      brand: drug.brand || '',
-      uses: drug.uses || '',
-      howItWorks: drug.howItWorks || '',
-      genericName: drug.genericName || drug.generic || '',
+      image: drug.image || "",
+      prescriptionRequired:
+        drug.prescriptionRequired || drug.requiresPrescription || false,
+      brand: drug.brand || "",
+      uses: drug.uses || "",
+      howItWorks: drug.howItWorks || "",
+      genericName: drug.genericName || drug.generic || "",
       importantInfo: drug.importantInfo || [],
       ingredients: drug.ingredients || [],
       precaution: drug.precaution || drug.warnings || [],
       sideEffects: drug.sideEffects || [],
       interactions: drug.interactions || drug.drugInteractions || [],
-      indication: drug.indication || drug.indications || []
+      indication: drug.indication || drug.indications || [],
     });
     setTempInputs({
-      importantInfo: '',
-      ingredients: '',
-      precaution: '',
-      sideEffects: '',
-      interactions: '',
-      indication: ''
+      importantInfo: "",
+      ingredients: "",
+      precaution: "",
+      sideEffects: "",
+      interactions: "",
+      indication: "",
     });
     setShowModal(true);
   };
@@ -184,16 +235,16 @@ const DrugManagement = () => {
     if (tempInputs[field].trim()) {
       setFormData({
         ...formData,
-        [field]: [...formData[field], tempInputs[field].trim()]
+        [field]: [...formData[field], tempInputs[field].trim()],
       });
-      setTempInputs({ ...tempInputs, [field]: '' });
+      setTempInputs({ ...tempInputs, [field]: "" });
     }
   };
 
   const removeArrayItem = (field, index) => {
     setFormData({
       ...formData,
-      [field]: formData[field].filter((_, i) => i !== index)
+      [field]: formData[field].filter((_, i) => i !== index),
     });
   };
 
@@ -201,26 +252,32 @@ const DrugManagement = () => {
     const file = e.target.files[0];
     if (file) {
       // Validasi tipe file
-      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      const validTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+      ];
       if (!validTypes.includes(file.type)) {
-        alert('Format file tidak valid. Gunakan JPG, PNG, GIF, atau WEBP.');
+        alert("Format file tidak valid. Gunakan JPG, PNG, GIF, atau WEBP.");
         return;
       }
 
       // Validasi ukuran file (max 5MB)
       const maxSize = 5 * 1024 * 1024; // 5MB
       if (file.size > maxSize) {
-        alert('Ukuran file terlalu besar. Maksimal 5MB.');
+        alert("Ukuran file terlalu besar. Maksimal 5MB.");
         return;
       }
 
+      // Store the raw file object for uploading
       setImageFile(file);
 
       // Preview image
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
-        setFormData({ ...formData, image: reader.result });
       };
       reader.readAsDataURL(file);
     }
@@ -229,30 +286,71 @@ const DrugManagement = () => {
   const removeImage = () => {
     setImageFile(null);
     setImagePreview(null);
-    setFormData({ ...formData, image: '' });
+    setFormData({ ...formData, image: "" });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const drugData = {
-      ...formData,
-      price: parseInt(formData.price),
-      stock: parseInt(formData.stock),
-      id: currentDrug ? currentDrug.id : `drug_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    };
 
-    let updatedDrugs;
-    if (currentDrug) {
-      updatedDrugs = drugs.map(d => d.id === currentDrug.id ? drugData : d);
-    } else {
-      updatedDrugs = [...drugs, drugData];
+    try {
+      setIsUploading(true);
+
+      let imageUrl = formData.image; // Default to existing image URL
+
+      // If user selected a new image
+      if (imageFile) {
+        // Try to upload to Supabase if configured
+        if (isSupabaseConfigured()) {
+          try {
+            imageUrl = await uploadImageToSupabase(imageFile);
+          } catch (uploadError) {
+            console.warn(
+              "Supabase upload failed, falling back to Base64:",
+              uploadError
+            );
+            // Fallback to Base64 if Supabase upload fails
+            imageUrl = imagePreview; // Use the Base64 preview
+          }
+        } else {
+          // If Supabase not configured, use Base64
+          console.warn(
+            "Supabase not configured, using Base64 for image storage"
+          );
+          imageUrl = imagePreview; // Use the Base64 preview
+        }
+      }
+
+      const drugData = {
+        ...formData,
+        image: imageUrl, // Use Supabase URL or Base64
+        price: parseInt(formData.price),
+        stock: parseInt(formData.stock),
+        id: currentDrug
+          ? currentDrug.id
+          : `drug_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      };
+
+      let updatedDrugs;
+      if (currentDrug) {
+        updatedDrugs = drugs.map((d) =>
+          d.id === currentDrug.id ? drugData : d
+        );
+      } else {
+        updatedDrugs = [...drugs, drugData];
+      }
+
+      localStorage.setItem("adminDrugs", JSON.stringify(updatedDrugs));
+      setDrugs(updatedDrugs);
+      setShowModal(false);
+      setIsUploading(false);
+      alert(
+        currentDrug ? "Obat berhasil diperbarui!" : "Obat berhasil ditambahkan!"
+      );
+    } catch (error) {
+      setIsUploading(false);
+      alert("Gagal menyimpan data: " + error.message);
+      console.error("Error saving drug:", error);
     }
-
-    localStorage.setItem('adminDrugs', JSON.stringify(updatedDrugs));
-    setDrugs(updatedDrugs);
-    setShowModal(false);
-    alert(currentDrug ? 'Obat berhasil diperbarui!' : 'Obat berhasil ditambahkan!');
   };
 
   const openDeleteModal = (drugId) => {
@@ -261,73 +359,75 @@ const DrugManagement = () => {
   };
 
   const confirmDelete = () => {
-    const updatedDrugs = drugs.filter(d => d.id !== deleteId);
-    localStorage.setItem('adminDrugs', JSON.stringify(updatedDrugs));
+    const updatedDrugs = drugs.filter((d) => d.id !== deleteId);
+    localStorage.setItem("adminDrugs", JSON.stringify(updatedDrugs));
     setDrugs(updatedDrugs);
     setShowDeleteModal(false);
-    alert('Obat berhasil dihapus!');
+    alert("Obat berhasil dihapus!");
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0
-    }).format(amount).replace('IDR', 'Rp');
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    })
+      .format(amount)
+      .replace("IDR", "Rp");
   };
 
   const getDefaultDrugs = () => {
     return [
       {
-        id: 'drug_001',
-        name: 'Paracetamol 500mg',
-        category: 'Analgesik',
+        id: "drug_001",
+        name: "Paracetamol 500mg",
+        category: "Analgesik",
         price: 5000,
         stock: 50,
-        description: 'Obat penurun demam dan pereda nyeri',
-        image: '/images/products/paracetamol.png',
-        prescriptionRequired: false
+        description: "Obat penurun demam dan pereda nyeri",
+        image: "/images/products/paracetamol.png",
+        prescriptionRequired: false,
       },
       {
-        id: 'drug_002',
-        name: 'Ibuprofen 400mg',
-        category: 'Analgesik',
+        id: "drug_002",
+        name: "Ibuprofen 400mg",
+        category: "Analgesik",
         price: 25000,
         stock: 30,
-        description: 'Obat anti inflamasi untuk nyeri dan demam',
-        image: '/images/products/ibuprofen.jpg',
-        prescriptionRequired: false
+        description: "Obat anti inflamasi untuk nyeri dan demam",
+        image: "/images/products/ibuprofen.jpg",
+        prescriptionRequired: false,
       },
       {
-        id: 'drug_003',
-        name: 'Cetirizine 10mg',
-        category: 'Antihistamin',
+        id: "drug_003",
+        name: "Cetirizine 10mg",
+        category: "Antihistamin",
         price: 15000,
         stock: 75,
-        description: 'Obat alergi dan antihistamin',
-        image: '/images/products/cetirizine.jpeg',
-        prescriptionRequired: false
+        description: "Obat alergi dan antihistamin",
+        image: "/images/products/cetirizine.jpeg",
+        prescriptionRequired: false,
       },
       {
-        id: 'drug_004',
-        name: 'Promag',
-        category: 'Antasida',
+        id: "drug_004",
+        name: "Promag",
+        category: "Antasida",
         price: 12000,
         stock: 8,
-        description: 'Obat maag dan asam lambung',
-        image: '/images/products/promag.jpg',
-        prescriptionRequired: false
+        description: "Obat maag dan asam lambung",
+        image: "/images/products/promag.jpg",
+        prescriptionRequired: false,
       },
       {
-        id: 'drug_005',
-        name: 'Oralit',
-        category: 'Elektrolit',
+        id: "drug_005",
+        name: "Oralit",
+        category: "Elektrolit",
         price: 8000,
         stock: 40,
-        description: 'Larutan elektrolit untuk dehidrasi',
-        image: '/images/products/oralit.jpeg',
-        prescriptionRequired: false
-      }
+        description: "Larutan elektrolit untuk dehidrasi",
+        image: "/images/products/oralit.jpeg",
+        prescriptionRequired: false,
+      },
     ];
   };
 
@@ -337,8 +437,12 @@ const DrugManagement = () => {
       <header className="bg-white shadow-sm border-b mb-6">
         <div className="px-6 py-4 flex justify-between items-center">
           <div>
-            <h2 className="text-2xl font-semibold text-gray-800">Manajemen Obat</h2>
-            <p className="text-gray-600">Kelola data obat dan inventory apotek</p>
+            <h2 className="text-2xl font-semibold text-gray-800">
+              Manajemen Obat
+            </h2>
+            <p className="text-gray-600">
+              Kelola data obat dan inventory apotek
+            </p>
           </div>
           <button
             onClick={openAddModal}
@@ -419,7 +523,10 @@ const DrugManagement = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredDrugs.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
+                  <td
+                    colSpan="6"
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
                     Tidak ada data obat
                   </td>
                 </tr>
@@ -431,13 +538,17 @@ const DrugManagement = () => {
                         <div className="flex-shrink-0 h-10 w-10">
                           <img
                             className="h-10 w-10 rounded-full object-cover"
-                            src={drug.image || 'https://via.placeholder.com/40'}
+                            src={drug.image || "https://via.placeholder.com/40"}
                             alt={drug.name}
-                            onError={(e) => e.target.src = 'https://via.placeholder.com/40'}
+                            onError={(e) =>
+                              (e.target.src = "https://via.placeholder.com/40")
+                            }
                           />
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{drug.name}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {drug.name}
+                          </div>
                           <div className="text-sm text-gray-500">
                             {drug.description?.substring(0, 50)}...
                           </div>
@@ -453,7 +564,9 @@ const DrugManagement = () => {
                       {formatCurrency(drug.price)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900">{drug.stock}</span>
+                      <span className="text-sm text-gray-900">
+                        {drug.stock}
+                      </span>
                       {drug.stock < 10 && (
                         <span className="ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
                           Stok Rendah
@@ -463,12 +576,14 @@ const DrugManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          (drug.prescriptionRequired || drug.requiresPrescription)
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-green-100 text-green-800'
+                          drug.prescriptionRequired || drug.requiresPrescription
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-green-100 text-green-800"
                         }`}
                       >
-                        {(drug.prescriptionRequired || drug.requiresPrescription) ? 'Resep Dokter' : 'Obat Bebas'}
+                        {drug.prescriptionRequired || drug.requiresPrescription
+                          ? "Resep Dokter"
+                          : "Obat Bebas"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -500,7 +615,7 @@ const DrugManagement = () => {
             <div className="mt-3">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-gray-900">
-                  {currentDrug ? 'Edit Obat' : 'Tambah Obat Baru'}
+                  {currentDrug ? "Edit Obat" : "Tambah Obat Baru"}
                 </h3>
                 <button
                   onClick={() => setShowModal(false)}
@@ -510,10 +625,15 @@ const DrugManagement = () => {
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+              <form
+                onSubmit={handleSubmit}
+                className="space-y-6 max-h-[70vh] overflow-y-auto pr-2"
+              >
                 {/* Basic Information Section */}
                 <div className="border-b pb-4">
-                  <h4 className="text-md font-semibold text-gray-800 mb-3">Informasi Dasar</h4>
+                  <h4 className="text-md font-semibold text-gray-800 mb-3">
+                    Informasi Dasar
+                  </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -522,7 +642,9 @@ const DrugManagement = () => {
                       <input
                         type="text"
                         value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, name: e.target.value })
+                        }
                         required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       />
@@ -533,7 +655,9 @@ const DrugManagement = () => {
                       </label>
                       <select
                         value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, category: e.target.value })
+                        }
                         required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       >
@@ -549,100 +673,117 @@ const DrugManagement = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Harga *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Harga *
+                      </label>
                       <input
                         type="number"
                         value={formData.price}
-                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, price: e.target.value })
+                        }
                         required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Stok *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Stok *
+                      </label>
                       <input
                         type="number"
                         value={formData.stock}
-                        onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, stock: e.target.value })
+                        }
                         required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       />
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Foto Obat
-                  </label>
-                  
-                  {/* Image Preview */}
-                  {imagePreview && (
-                    <div className="mb-3 relative inline-block">
-                      <img
-                        src={imagePreview}
-                        alt="Preview"
-                        className="w-32 h-32 object-cover rounded-lg border-2 border-gray-300"
-                      />
-                      <button
-                        type="button"
-                        onClick={removeImage}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
-                      >
-                        <i className="fas fa-times text-xs"></i>
-                      </button>
                     </div>
-                  )}
+                  </div>
 
-                  {/* Upload Button */}
-                  <div className="flex items-center gap-3">
-                    <label className="cursor-pointer bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded-lg border-2 border-dashed border-blue-300 flex items-center gap-2 transition-colors">
-                      <i className="fas fa-cloud-upload-alt"></i>
-                      <span className="text-sm font-medium">
-                        {imagePreview ? 'Ganti Foto' : 'Upload Foto'}
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        className="hidden"
-                      />
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Foto Obat
                     </label>
-                    <span className="text-xs text-gray-500">
-                      JPG, PNG, GIF, WEBP (Max 5MB)
-                    </span>
+
+                    {/* Image Preview */}
+                    {imagePreview && (
+                      <div className="mb-3 relative inline-block">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-32 h-32 object-cover rounded-lg border-2 border-gray-300"
+                        />
+                        <button
+                          type="button"
+                          onClick={removeImage}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                        >
+                          <i className="fas fa-times text-xs"></i>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Upload Button */}
+                    <div className="flex items-center gap-3">
+                      <label className="cursor-pointer bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded-lg border-2 border-dashed border-blue-300 flex items-center gap-2 transition-colors">
+                        <i className="fas fa-cloud-upload-alt"></i>
+                        <span className="text-sm font-medium">
+                          {imagePreview ? "Ganti Foto" : "Upload Foto"}
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className="hidden"
+                        />
+                      </label>
+                      <span className="text-xs text-gray-500">
+                        JPG, PNG, GIF, WEBP (Max 5MB)
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center mt-4">
+                    <input
+                      type="checkbox"
+                      checked={formData.prescriptionRequired}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          prescriptionRequired: e.target.checked,
+                        })
+                      }
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label className="ml-2 block text-sm text-gray-900">
+                      Memerlukan Resep Dokter
+                    </label>
                   </div>
                 </div>
-
-                <div className="flex items-center mt-4">
-                  <input
-                    type="checkbox"
-                    checked={formData.prescriptionRequired}
-                    onChange={(e) =>
-                      setFormData({ ...formData, prescriptionRequired: e.target.checked })
-                    }
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label className="ml-2 block text-sm text-gray-900">
-                    Memerlukan Resep Dokter
-                  </label>
-                </div>
-              </div>
-
-              {/* Brand Information */}
-              <div className="border-b pb-4">
-                <h4 className="text-md font-semibold text-gray-800 mb-3">Nama Brand</h4>
-                <div>
-                  <input
-                    type="text"
-                    value={formData.brand}
-                    onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                    placeholder="Contoh: Bodrex, Panadol, dll"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>                {/* Generic Selection */}
+                {/* Brand Information */}
                 <div className="border-b pb-4">
-                  <h4 className="text-md font-semibold text-gray-800 mb-3">Nama Generik</h4>
+                  <h4 className="text-md font-semibold text-gray-800 mb-3">
+                    Nama Brand
+                  </h4>
+                  <div>
+                    <input
+                      type="text"
+                      value={formData.brand}
+                      onChange={(e) =>
+                        setFormData({ ...formData, brand: e.target.value })
+                      }
+                      placeholder="Contoh: Bodrex, Panadol, dll"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>{" "}
+                {/* Generic Selection */}
+                <div className="border-b pb-4">
+                  <h4 className="text-md font-semibold text-gray-800 mb-3">
+                    Nama Generik
+                  </h4>
                   <div className="space-y-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -650,12 +791,19 @@ const DrugManagement = () => {
                       </label>
                       <select
                         value={formData.genericName}
-                        onChange={(e) => setFormData({ ...formData, genericName: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            genericName: e.target.value,
+                          })
+                        }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       >
                         <option value="">Pilih Generik</option>
                         {availableGenerics.map((gen, idx) => (
-                          <option key={idx} value={gen}>{gen}</option>
+                          <option key={idx} value={gen}>
+                            {gen}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -687,7 +835,7 @@ const DrugManagement = () => {
                           type="button"
                           onClick={() => {
                             setShowAddGeneric(false);
-                            setNewGeneric('');
+                            setNewGeneric("");
                           }}
                           className="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
                         >
@@ -697,49 +845,66 @@ const DrugManagement = () => {
                     )}
                   </div>
                 </div>
-
-              {/* Uses Section */}
-              <div className="border-b pb-4">
-                <h4 className="text-md font-semibold text-gray-800 mb-3">Kegunaan</h4>
-                <div>
-                  <textarea
-                    value={formData.uses}
-                    onChange={(e) => setFormData({ ...formData, uses: e.target.value })}
-                    rows="4"
-                    placeholder="Jelaskan kegunaan obat ini..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* How It Works Section */}
-              <div className="border-b pb-4">
-                <h4 className="text-md font-semibold text-gray-800 mb-3">Cara Kerja</h4>
-                <div>
-                  <textarea
-                    value={formData.howItWorks}
-                    onChange={(e) => setFormData({ ...formData, howItWorks: e.target.value })}
-                    rows="4"
-                    placeholder="Jelaskan cara kerja obat ini..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>                {/* Ingredients Section */}
+                {/* Uses Section */}
                 <div className="border-b pb-4">
-                  <h4 className="text-md font-semibold text-gray-800 mb-3">Kandungan</h4>
+                  <h4 className="text-md font-semibold text-gray-800 mb-3">
+                    Kegunaan
+                  </h4>
+                  <div>
+                    <textarea
+                      value={formData.uses}
+                      onChange={(e) =>
+                        setFormData({ ...formData, uses: e.target.value })
+                      }
+                      rows="4"
+                      placeholder="Jelaskan kegunaan obat ini..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+                {/* How It Works Section */}
+                <div className="border-b pb-4">
+                  <h4 className="text-md font-semibold text-gray-800 mb-3">
+                    Cara Kerja
+                  </h4>
+                  <div>
+                    <textarea
+                      value={formData.howItWorks}
+                      onChange={(e) =>
+                        setFormData({ ...formData, howItWorks: e.target.value })
+                      }
+                      rows="4"
+                      placeholder="Jelaskan cara kerja obat ini..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>{" "}
+                {/* Ingredients Section */}
+                <div className="border-b pb-4">
+                  <h4 className="text-md font-semibold text-gray-800 mb-3">
+                    Kandungan
+                  </h4>
                   <div className="space-y-2">
                     <div className="flex gap-2">
                       <input
                         type="text"
                         value={tempInputs.ingredients}
-                        onChange={(e) => setTempInputs({ ...tempInputs, ingredients: e.target.value })}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addArrayItem('ingredients'))}
+                        onChange={(e) =>
+                          setTempInputs({
+                            ...tempInputs,
+                            ingredients: e.target.value,
+                          })
+                        }
+                        onKeyPress={(e) =>
+                          e.key === "Enter" &&
+                          (e.preventDefault(), addArrayItem("ingredients"))
+                        }
                         placeholder="Tambah kandungan"
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       />
                       <button
                         type="button"
-                        onClick={() => addArrayItem('ingredients')}
+                        onClick={() => addArrayItem("ingredients")}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                       >
                         Tambah
@@ -747,11 +912,14 @@ const DrugManagement = () => {
                     </div>
                     <ul className="space-y-1">
                       {formData.ingredients.map((item, idx) => (
-                        <li key={idx} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
+                        <li
+                          key={idx}
+                          className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded"
+                        >
                           <span className="text-sm">• {item}</span>
                           <button
                             type="button"
-                            onClick={() => removeArrayItem('ingredients', idx)}
+                            onClick={() => removeArrayItem("ingredients", idx)}
                             className="text-red-600 hover:text-red-800"
                           >
                             <i className="fas fa-times"></i>
@@ -761,23 +929,32 @@ const DrugManagement = () => {
                     </ul>
                   </div>
                 </div>
-
                 {/* Important Info Section */}
                 <div className="border-b pb-4">
-                  <h4 className="text-md font-semibold text-gray-800 mb-3">Informasi Penting</h4>
+                  <h4 className="text-md font-semibold text-gray-800 mb-3">
+                    Informasi Penting
+                  </h4>
                   <div className="space-y-2">
                     <div className="flex gap-2">
                       <input
                         type="text"
                         value={tempInputs.importantInfo}
-                        onChange={(e) => setTempInputs({ ...tempInputs, importantInfo: e.target.value })}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addArrayItem('importantInfo'))}
+                        onChange={(e) =>
+                          setTempInputs({
+                            ...tempInputs,
+                            importantInfo: e.target.value,
+                          })
+                        }
+                        onKeyPress={(e) =>
+                          e.key === "Enter" &&
+                          (e.preventDefault(), addArrayItem("importantInfo"))
+                        }
                         placeholder="Tambah informasi penting"
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       />
                       <button
                         type="button"
-                        onClick={() => addArrayItem('importantInfo')}
+                        onClick={() => addArrayItem("importantInfo")}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                       >
                         Tambah
@@ -785,11 +962,16 @@ const DrugManagement = () => {
                     </div>
                     <ul className="space-y-1">
                       {formData.importantInfo.map((item, idx) => (
-                        <li key={idx} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
+                        <li
+                          key={idx}
+                          className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded"
+                        >
                           <span className="text-sm">• {item}</span>
                           <button
                             type="button"
-                            onClick={() => removeArrayItem('importantInfo', idx)}
+                            onClick={() =>
+                              removeArrayItem("importantInfo", idx)
+                            }
                             className="text-red-600 hover:text-red-800"
                           >
                             <i className="fas fa-times"></i>
@@ -799,23 +981,32 @@ const DrugManagement = () => {
                     </ul>
                   </div>
                 </div>
-
                 {/* Precaution Section */}
                 <div className="border-b pb-4">
-                  <h4 className="text-md font-semibold text-gray-800 mb-3">Peringatan</h4>
+                  <h4 className="text-md font-semibold text-gray-800 mb-3">
+                    Peringatan
+                  </h4>
                   <div className="space-y-2">
                     <div className="flex gap-2">
                       <input
                         type="text"
                         value={tempInputs.precaution}
-                        onChange={(e) => setTempInputs({ ...tempInputs, precaution: e.target.value })}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addArrayItem('precaution'))}
+                        onChange={(e) =>
+                          setTempInputs({
+                            ...tempInputs,
+                            precaution: e.target.value,
+                          })
+                        }
+                        onKeyPress={(e) =>
+                          e.key === "Enter" &&
+                          (e.preventDefault(), addArrayItem("precaution"))
+                        }
                         placeholder="Tambah peringatan"
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       />
                       <button
                         type="button"
-                        onClick={() => addArrayItem('precaution')}
+                        onClick={() => addArrayItem("precaution")}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                       >
                         Tambah
@@ -823,11 +1014,14 @@ const DrugManagement = () => {
                     </div>
                     <ul className="space-y-1">
                       {formData.precaution.map((item, idx) => (
-                        <li key={idx} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
+                        <li
+                          key={idx}
+                          className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded"
+                        >
                           <span className="text-sm">• {item}</span>
                           <button
                             type="button"
-                            onClick={() => removeArrayItem('precaution', idx)}
+                            onClick={() => removeArrayItem("precaution", idx)}
                             className="text-red-600 hover:text-red-800"
                           >
                             <i className="fas fa-times"></i>
@@ -837,23 +1031,32 @@ const DrugManagement = () => {
                     </ul>
                   </div>
                 </div>
-
                 {/* Side Effects Section */}
                 <div className="border-b pb-4">
-                  <h4 className="text-md font-semibold text-gray-800 mb-3">Efek Samping</h4>
+                  <h4 className="text-md font-semibold text-gray-800 mb-3">
+                    Efek Samping
+                  </h4>
                   <div className="space-y-2">
                     <div className="flex gap-2">
                       <input
                         type="text"
                         value={tempInputs.sideEffects}
-                        onChange={(e) => setTempInputs({ ...tempInputs, sideEffects: e.target.value })}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addArrayItem('sideEffects'))}
+                        onChange={(e) =>
+                          setTempInputs({
+                            ...tempInputs,
+                            sideEffects: e.target.value,
+                          })
+                        }
+                        onKeyPress={(e) =>
+                          e.key === "Enter" &&
+                          (e.preventDefault(), addArrayItem("sideEffects"))
+                        }
                         placeholder="Tambah efek samping"
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       />
                       <button
                         type="button"
-                        onClick={() => addArrayItem('sideEffects')}
+                        onClick={() => addArrayItem("sideEffects")}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                       >
                         Tambah
@@ -861,11 +1064,14 @@ const DrugManagement = () => {
                     </div>
                     <ul className="space-y-1">
                       {formData.sideEffects.map((item, idx) => (
-                        <li key={idx} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
+                        <li
+                          key={idx}
+                          className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded"
+                        >
                           <span className="text-sm">• {item}</span>
                           <button
                             type="button"
-                            onClick={() => removeArrayItem('sideEffects', idx)}
+                            onClick={() => removeArrayItem("sideEffects", idx)}
                             className="text-red-600 hover:text-red-800"
                           >
                             <i className="fas fa-times"></i>
@@ -875,23 +1081,32 @@ const DrugManagement = () => {
                     </ul>
                   </div>
                 </div>
-
                 {/* Interactions Section */}
                 <div className="border-b pb-4">
-                  <h4 className="text-md font-semibold text-gray-800 mb-3">Interaksi Obat</h4>
+                  <h4 className="text-md font-semibold text-gray-800 mb-3">
+                    Interaksi Obat
+                  </h4>
                   <div className="space-y-2">
                     <div className="flex gap-2">
                       <input
                         type="text"
                         value={tempInputs.interactions}
-                        onChange={(e) => setTempInputs({ ...tempInputs, interactions: e.target.value })}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addArrayItem('interactions'))}
+                        onChange={(e) =>
+                          setTempInputs({
+                            ...tempInputs,
+                            interactions: e.target.value,
+                          })
+                        }
+                        onKeyPress={(e) =>
+                          e.key === "Enter" &&
+                          (e.preventDefault(), addArrayItem("interactions"))
+                        }
                         placeholder="Tambah interaksi obat"
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       />
                       <button
                         type="button"
-                        onClick={() => addArrayItem('interactions')}
+                        onClick={() => addArrayItem("interactions")}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                       >
                         Tambah
@@ -899,11 +1114,14 @@ const DrugManagement = () => {
                     </div>
                     <ul className="space-y-1">
                       {formData.interactions.map((item, idx) => (
-                        <li key={idx} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
+                        <li
+                          key={idx}
+                          className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded"
+                        >
                           <span className="text-sm">• {item}</span>
                           <button
                             type="button"
-                            onClick={() => removeArrayItem('interactions', idx)}
+                            onClick={() => removeArrayItem("interactions", idx)}
                             className="text-red-600 hover:text-red-800"
                           >
                             <i className="fas fa-times"></i>
@@ -913,23 +1131,32 @@ const DrugManagement = () => {
                     </ul>
                   </div>
                 </div>
-
                 {/* Indication Section */}
                 <div className="pb-4">
-                  <h4 className="text-md font-semibold text-gray-800 mb-3">Indikasi</h4>
+                  <h4 className="text-md font-semibold text-gray-800 mb-3">
+                    Indikasi
+                  </h4>
                   <div className="space-y-2">
                     <div className="flex gap-2">
                       <input
                         type="text"
                         value={tempInputs.indication}
-                        onChange={(e) => setTempInputs({ ...tempInputs, indication: e.target.value })}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addArrayItem('indication'))}
+                        onChange={(e) =>
+                          setTempInputs({
+                            ...tempInputs,
+                            indication: e.target.value,
+                          })
+                        }
+                        onKeyPress={(e) =>
+                          e.key === "Enter" &&
+                          (e.preventDefault(), addArrayItem("indication"))
+                        }
                         placeholder="Tambah indikasi"
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       />
                       <button
                         type="button"
-                        onClick={() => addArrayItem('indication')}
+                        onClick={() => addArrayItem("indication")}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                       >
                         Tambah
@@ -937,11 +1164,14 @@ const DrugManagement = () => {
                     </div>
                     <ul className="space-y-1">
                       {formData.indication.map((item, idx) => (
-                        <li key={idx} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
+                        <li
+                          key={idx}
+                          className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded"
+                        >
                           <span className="text-sm">• {item}</span>
                           <button
                             type="button"
-                            onClick={() => removeArrayItem('indication', idx)}
+                            onClick={() => removeArrayItem("indication", idx)}
                             className="text-red-600 hover:text-red-800"
                           >
                             <i className="fas fa-times"></i>
@@ -951,7 +1181,6 @@ const DrugManagement = () => {
                     </ul>
                   </div>
                 </div>
-
                 <div className="flex justify-end space-x-3 pt-4 border-t sticky bottom-0 bg-white">
                   <button
                     type="button"
@@ -962,9 +1191,21 @@ const DrugManagement = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    disabled={isUploading}
+                    className={`px-4 py-2 text-white rounded-md ${
+                      isUploading
+                        ? "bg-blue-400 cursor-not-allowed"
+                        : "bg-blue-600 hover:bg-blue-700"
+                    }`}
                   >
-                    Simpan
+                    {isUploading ? (
+                      <>
+                        <i className="fas fa-spinner fa-spin mr-2"></i>
+                        Uploading...
+                      </>
+                    ) : (
+                      "Simpan"
+                    )}
                   </button>
                 </div>
               </form>
@@ -981,10 +1222,13 @@ const DrugManagement = () => {
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
                 <i className="fas fa-exclamation-triangle text-red-600 text-xl"></i>
               </div>
-              <h3 className="text-lg leading-6 font-medium text-gray-900">Hapus Obat</h3>
+              <h3 className="text-lg leading-6 font-medium text-gray-900">
+                Hapus Obat
+              </h3>
               <div className="mt-2 px-7 py-3">
                 <p className="text-sm text-gray-500">
-                  Apakah Anda yakin ingin menghapus obat ini? Tindakan ini tidak dapat dibatalkan.
+                  Apakah Anda yakin ingin menghapus obat ini? Tindakan ini tidak
+                  dapat dibatalkan.
                 </p>
               </div>
               <div className="items-center px-4 py-3">
