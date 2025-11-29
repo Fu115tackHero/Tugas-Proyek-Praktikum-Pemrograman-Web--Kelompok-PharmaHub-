@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import PaymentService from "../services/payment.service";
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -391,20 +392,8 @@ const Checkout = () => {
 
         console.log("📤 Mengirim request ke /api/create-transaction", payload);
 
-        // 2. Call backend API
-        const response = await fetch("/api/create-transaction", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP Error: ${response.status}`);
-        }
-
-        const result = await response.json();
+        // 2. Call backend API via PaymentService
+        const result = await PaymentService.createTransaction(payload);
 
         if (!result.success) {
           throw new Error(result.message || "Gagal membuat transaksi");
