@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 const Notifications = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [notifications, setNotifications] = useState([]);
+  const [selectedNotif, setSelectedNotif] = useState(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   useEffect(() => {
     try {
@@ -50,6 +52,17 @@ const Notifications = () => {
   const handleClearAll = () => {
     setNotifications([]);
     localStorage.removeItem("notifications");
+  };
+
+  const handleViewDetail = (notif) => {
+    setSelectedNotif(notif);
+    setShowPreviewModal(true);
+    // Mark as read
+    const updated = notifications.map((n) =>
+      n.id === notif.id ? { ...n, read: true } : n
+    );
+    setNotifications(updated);
+    localStorage.setItem("notifications", JSON.stringify(updated));
   };
 
   const filteredNotifications = normalizedNotifications.filter((n) => {
@@ -235,9 +248,10 @@ const Notifications = () => {
               filteredNotifications.map((notif) => (
                 <div
                   key={notif.id}
-                  className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between"
+                  onClick={() => handleViewDetail(notif)}
+                  className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:bg-blue-50 cursor-pointer transition"
                 >
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-800 mb-1">
                       {notif.title ||
                         (notif._tabType === "orders"
@@ -268,6 +282,9 @@ const Notifications = () => {
                         Baru
                       </span>
                     )}
+                    <button className="text-blue-600 hover:text-blue-800 font-semibold text-sm">
+                      <i className="fas fa-chevron-right"></i>
+                    </button>
                   </div>
                 </div>
               ))
@@ -275,6 +292,204 @@ const Notifications = () => {
           </div>
         )}
       </div>
+
+      {/* ===== ORDER DETAIL PREVIEW MODAL ===== */}
+      {showPreviewModal && selectedNotif && selectedNotif.orderDetails && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold">Detail Pesanan</h2>
+                <p className="text-blue-100 text-sm">Pesanan #{selectedNotif.orderId}</p>
+              </div>
+              <button
+                onClick={() => setShowPreviewModal(false)}
+                className="text-white hover:bg-blue-800 p-2 rounded-full transition"
+              >
+                <i className="fas fa-times text-xl"></i>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-6">
+              {/* Order Time & Status */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-600 font-medium">Waktu Pemesanan</p>
+                    <p className="text-sm font-semibold text-gray-800">
+                      {new Date(selectedNotif.createdAt).toLocaleString("id-ID", {
+                        day: "2-digit",
+                        month: "long",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600 font-medium">Status</p>
+                    <p className="text-sm font-semibold text-blue-600">
+                      {selectedNotif.status}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Customer Info */}
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-3">
+                  <i className="fas fa-user-circle text-blue-600 mr-2"></i>
+                  Informasi Pemesan
+                </h3>
+                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium text-gray-700">Nama:</span> {selectedNotif.orderDetails.customerName}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium text-gray-700">Telepon:</span> {selectedNotif.orderDetails.customerPhone}
+                  </p>
+                </div>
+              </div>
+
+              {/* Products */}
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-3">
+                  <i className="fas fa-shopping-bag text-blue-600 mr-2"></i>
+                  Produk Pesanan
+                </h3>
+                <div className="space-y-3">
+                  {selectedNotif.orderDetails.items.map((item, idx) => {
+                    // Generate image URL dengan fallback chain
+                    const getImageUrl = () => {
+                      // Jika tidak ada image, return placeholder
+                      if (!item.image) {
+                        return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23eee" width="100" height="100"/%3E%3C/svg%3E';
+                      }
+
+                      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
+                      
+                      // 1. Jika image starts with /, coba API endpoint dulu, jika gagal gunakan path relatif
+                      if (item.image.startsWith("/")) {
+                        // First try: API endpoint
+                        // Second try: relative path (fallback jika server down)
+                        // Kita return keduanya dalam image tag melalui srcSet atau langsung relative
+                        return item.image;
+                      }
+                      
+                      // 2. Jika sudah URL lengkap
+                      if (item.image.startsWith("http")) {
+                        return item.image;
+                      }
+                      
+                      // 3. Jika hanya nama file, coba lokasi relatif
+                      return `/images/allproducts/${item.image}`;
+                    };
+
+                    return (
+                    <div key={idx} className="flex gap-4 bg-gray-50 p-3 rounded-lg">
+                      <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden flex items-center justify-center">
+                        <img
+                          src={getImageUrl()}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            e.target.parentElement.innerHTML = '<i class="fas fa-image text-gray-400 text-2xl"></i>';
+                          }}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-800">{item.name}</p>
+                        <div className="flex justify-between items-end mt-2">
+                          <div>
+                            <p className="text-xs text-gray-600">Jumlah</p>
+                            <p className="font-semibold text-gray-800">{item.quantity}x</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-600">Harga Satuan</p>
+                            <p className="font-semibold text-gray-800">
+                              Rp {(item.price || 0).toLocaleString("id-ID")}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Order Notes */}
+              {selectedNotif.orderDetails.notes && (
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-3">
+                    <i className="fas fa-sticky-note text-blue-600 mr-2"></i>
+                    Catatan Pesanan
+                  </h3>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <p className="text-sm text-gray-700">{selectedNotif.orderDetails.notes}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Admin Notes */}
+              {selectedNotif.orderDetails.adminNotes && (
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-3">
+                    <i className="fas fa-comment-dots text-orange-600 mr-2"></i>
+                    Pesan dari Admin
+                  </h3>
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                    <p className="text-sm text-gray-700">{selectedNotif.orderDetails.adminNotes}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Price Summary */}
+              <div className="border-t pt-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Subtotal</span>
+                    <span className="font-medium text-gray-800">
+                      Rp {(Number(selectedNotif.orderDetails.subtotal) || 0).toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                  {Number(selectedNotif.orderDetails.discount) > 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Diskon</span>
+                      <span className="font-medium">
+                        -Rp {(Number(selectedNotif.orderDetails.discount) || 0).toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Pajak (PPN 10%)</span>
+                    <span className="font-medium text-gray-800">
+                      Rp {(Number(selectedNotif.orderDetails.tax) || 0).toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-lg font-bold border-t pt-2">
+                    <span>Total</span>
+                    <span className="text-blue-600">
+                      Rp {(Number(selectedNotif.orderDetails.total) || 0).toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Close Button */}
+              <button
+                onClick={() => setShowPreviewModal(false)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition"
+              >
+                <i className="fas fa-check mr-2"></i>Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };

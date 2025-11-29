@@ -64,11 +64,28 @@ const Checkout = () => {
     }));
   };
 
-  const addOrderNotification = (orderId, statusText) => {
+  const addOrderNotification = (orderId, statusText, orderDetails = null) => {
     try {
       const existingNotifications = JSON.parse(
         localStorage.getItem("notifications") || "[]"
       );
+
+      // Hitung ulang values untuk memastikan akurat
+      const calculatedSubtotal = subtotal;
+      const calculatedTax = tax;
+      const calculatedDiscount = discount;
+      const calculatedTotal = total;
+
+      // DEBUG: Log calculated values
+      console.log("🔍 [Notification] Calculated prices:", {
+        subtotal: calculatedSubtotal,
+        tax: calculatedTax,
+        discount: calculatedDiscount,
+        total: calculatedTotal,
+        cartLength: cart.length,
+        getCartTotal: getCartTotal(),
+        getDiscountAmount: getDiscountAmount(),
+      });
 
       const newNotification = {
         id: `NOTIF-${Date.now()}`,
@@ -79,6 +96,24 @@ const Checkout = () => {
         message: `Pesanan ${orderId} ${statusText}.`,
         createdAt: new Date().toISOString(),
         read: false,
+        // Detail lengkap pesanan untuk preview
+        orderDetails: orderDetails || {
+          items: cart.map((item) => ({
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            image: item.image,
+          })),
+          subtotal: calculatedSubtotal,
+          tax: calculatedTax,
+          discount: calculatedDiscount,
+          total: calculatedTotal,
+          customerName: formData.name,
+          customerPhone: formData.phone,
+          notes: formData.notes || "",
+          adminNotes: "", // Akan diisi admin kemudian
+        },
       };
 
       localStorage.setItem(
@@ -179,6 +214,7 @@ const Checkout = () => {
         name: item.name,
         quantity: item.quantity,
         price: item.price,
+        image: item.image,
       })),
       total: total,
       subtotal: subtotal,
@@ -191,6 +227,17 @@ const Checkout = () => {
       couponCode: appliedCoupon || null,
       paymentDetails: paymentDetails,
     };
+
+    // DEBUG: Log order being saved
+    console.log("💾 [Order] Saving order to history:", {
+      orderId,
+      total,
+      subtotal,
+      tax,
+      discount,
+      itemCount: cart.length,
+    });
+
     localStorage.setItem(
       "order_history",
       JSON.stringify([...orderHistory, newOrder])
@@ -269,8 +316,25 @@ const Checkout = () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const orderStatus = "Menunggu Pengambilan (Bayar di Tempat)";
+      const orderDetails = {
+        items: cart.map((item) => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          image: item.image,
+        })),
+        subtotal: subtotal,
+        tax: tax,
+        discount: discount,
+        total: total,
+        customerName: formData.name,
+        customerPhone: formData.phone,
+        notes: formData.notes || "",
+        adminNotes: "",
+      };
       saveOrder(orderId, orderStatus);
-      addOrderNotification(orderId, orderStatus);
+      addOrderNotification(orderId, orderStatus, orderDetails);
 
       setLoading(false);
       showModal(
@@ -365,8 +429,25 @@ const Checkout = () => {
             setPaymentProcessing(false);
 
             const status = "Lunas (Menunggu Pengambilan)";
+            const orderDetails = {
+              items: cart.map((item) => ({
+                id: item.id,
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                image: item.image,
+              })),
+              subtotal: subtotal,
+              tax: tax,
+              discount: discount,
+              total: total,
+              customerName: formData.name,
+              customerPhone: formData.phone,
+              notes: formData.notes || "",
+              adminNotes: "",
+            };
             saveOrder(orderId, status, transaction);
-            addOrderNotification(orderId, status);
+            addOrderNotification(orderId, status, orderDetails);
 
             showModal(
               "✅ Pembayaran Berhasil!",
@@ -394,8 +475,25 @@ const Checkout = () => {
               cancelText: "Biarkan Pending",
               onConfirm: () => {
                 const demoStatus = "Lunas";
+                const orderDetails = {
+                  items: cart.map((item) => ({
+                    id: item.id,
+                    name: item.name,
+                    quantity: item.quantity,
+                    price: item.price,
+                    image: item.image,
+                  })),
+                  subtotal: subtotal,
+                  tax: tax,
+                  discount: discount,
+                  total: total,
+                  customerName: formData.name,
+                  customerPhone: formData.phone,
+                  notes: formData.notes || "",
+                  adminNotes: "",
+                };
                 saveOrder(orderId, demoStatus, transaction);
-                addOrderNotification(orderId, demoStatus);
+                addOrderNotification(orderId, demoStatus, orderDetails);
                 showModal(
                   "✅ Pembayaran Berhasil!",
                   `Pesanan #${orderId} telah dibayar!\n\nSilakan menunggu pesanan disiapkan di apotek.`,
@@ -405,8 +503,25 @@ const Checkout = () => {
               },
               onCancel: () => {
                 const pendingStatus = "Menunggu Pembayaran";
+                const orderDetails = {
+                  items: cart.map((item) => ({
+                    id: item.id,
+                    name: item.name,
+                    quantity: item.quantity,
+                    price: item.price,
+                    image: item.image,
+                  })),
+                  subtotal: subtotal,
+                  tax: tax,
+                  discount: discount,
+                  total: total,
+                  customerName: formData.name,
+                  customerPhone: formData.phone,
+                  notes: formData.notes || "",
+                  adminNotes: "",
+                };
                 saveOrder(orderId, pendingStatus, transaction);
-                addOrderNotification(orderId, pendingStatus);
+                addOrderNotification(orderId, pendingStatus, orderDetails);
                 showModal(
                   "⏳ Pembayaran Pending",
                   `Pesanan #${orderId} dibuat dan menunggu pembayaran.\n\nSilakan selesaikan pembayaran untuk melanjutkan.`,
@@ -440,8 +555,25 @@ const Checkout = () => {
               cancelText: "Biarkan Pending",
               onConfirm: () => {
                 const demoStatus = "Lunas";
+                const orderDetails = {
+                  items: cart.map((item) => ({
+                    id: item.id,
+                    name: item.name,
+                    quantity: item.quantity,
+                    price: item.price,
+                    image: item.image,
+                  })),
+                  subtotal: subtotal,
+                  tax: tax,
+                  discount: discount,
+                  total: total,
+                  customerName: formData.name,
+                  customerPhone: formData.phone,
+                  notes: formData.notes || "",
+                  adminNotes: "",
+                };
                 saveOrder(orderId, demoStatus);
-                addOrderNotification(orderId, demoStatus);
+                addOrderNotification(orderId, demoStatus, orderDetails);
                 showModal(
                   "✅ Pembayaran Berhasil!",
                   `Pesanan #${orderId} telah dibayar!\n\nSilakan menunggu pesanan disiapkan di apotek.`,
@@ -451,8 +583,25 @@ const Checkout = () => {
               },
               onCancel: () => {
                 const pendingStatus = "Menunggu Pembayaran";
+                const orderDetails = {
+                  items: cart.map((item) => ({
+                    id: item.id,
+                    name: item.name,
+                    quantity: item.quantity,
+                    price: item.price,
+                    image: item.image,
+                  })),
+                  subtotal: subtotal,
+                  tax: tax,
+                  discount: discount,
+                  total: total,
+                  customerName: formData.name,
+                  customerPhone: formData.phone,
+                  notes: formData.notes || "",
+                  adminNotes: "",
+                };
                 saveOrder(orderId, pendingStatus);
-                addOrderNotification(orderId, pendingStatus);
+                addOrderNotification(orderId, pendingStatus, orderDetails);
                 showModal(
                   "⏳ Pembayaran Pending",
                   `Pesanan #${orderId} dibuat dan menunggu pembayaran.\n\nSilakan selesaikan pembayaran untuk melanjutkan.`,
