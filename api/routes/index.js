@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 // Import route modules
+const authRoutes = require("./authRoutes");
 const paymentRoutes = require("./paymentRoutes");
 const productRoutes = require("./productRoutes");
 
@@ -19,6 +20,7 @@ router.get("/", (req, res) => {
 /**
  * Mount route modules
  */
+router.use("/auth", authRoutes);
 router.use(paymentRoutes);
 router.use(productRoutes);
 

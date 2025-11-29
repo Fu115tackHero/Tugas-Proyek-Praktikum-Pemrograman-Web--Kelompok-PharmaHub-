@@ -1,11 +1,12 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from "react";
+import AuthService from "../services/auth.service";
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
+    throw new Error("useAuth must be used within AuthProvider");
   }
   return context;
 };
@@ -13,143 +14,122 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  // Initialize demo accounts on first load
-  useEffect(() => {
-    const users = JSON.parse(localStorage.getItem('pharmahub_users') || '[]');
-    
-    // Create demo accounts if they don't exist
-    if (users.length === 0) {
-      const demoAccounts = [
-        {
-          id: 1,
-          name: 'Demo Customer',
-          email: 'customer@pharmahub.com',
-          password: 'customer123',
-          phone: '081234567890',
-          address: 'Jl. Demo Customer No. 123, Jakarta',
-          role: 'customer',
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 2,
-          name: 'Demo Admin',
-          email: 'admin@pharmahub.com',
-          password: 'admin123',
-          phone: '081234567891',
-          address: 'Jl. Demo Admin No. 456, Jakarta',
-          role: 'admin',
-          createdAt: new Date().toISOString(),
-        }
-      ];
-      localStorage.setItem('pharmahub_users', JSON.stringify(demoAccounts));
-      console.log('Demo accounts created successfully!');
-    }
-  }, []);
+  const [loading, setLoading] = useState(true);
 
   // Load user from localStorage on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem('pharmahub_user');
-    if (savedUser) {
-      try {
-        const userData = JSON.parse(savedUser);
-        setUser(userData);
+    const initAuth = async () => {
+      const storedUser = AuthService.getStoredUser();
+      const isAuth = AuthService.isAuthenticated();
+
+      if (storedUser && isAuth) {
+        setUser(storedUser);
         setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Error loading user from localStorage:', error);
+
+        // Optionally verify token with backend
+        try {
+          await AuthService.getProfile();
+        } catch (error) {
+          // Token invalid, logout
+          console.error("Token verification failed:", error);
+          logout();
+        }
       }
-    }
+
+      setLoading(false);
+    };
+
+    initAuth();
   }, []);
 
   // Login function
-  const login = (email, password) => {
-    // Get users from localStorage
-    const users = JSON.parse(localStorage.getItem('pharmahub_users') || '[]');
-    const foundUser = users.find(u => u.email === email && u.password === password);
+  const login = async (email, password) => {
+    try {
+      const response = await AuthService.login(email, password);
 
-    if (foundUser) {
-      const userData = {
-        id: foundUser.id,
-        name: foundUser.name,
-        email: foundUser.email,
-        phone: foundUser.phone,
-        address: foundUser.address,
-        location: foundUser.location || null,
+      if (response.success) {
+        setUser(response.user);
+        setIsAuthenticated(true);
+        return { success: true };
+      }
+
+      return { success: false, message: response.message || "Login gagal" };
+    } catch (error) {
+      console.error("Login error:", error);
+      return {
+        success: false,
+        message: error.message || "Email atau password salah",
       };
-      
-      setUser(userData);
-      setIsAuthenticated(true);
-      localStorage.setItem('pharmahub_user', JSON.stringify(userData));
-      return { success: true };
     }
-
-    return { success: false, message: 'Email atau password salah' };
   };
 
   // Register function
-  const register = (userData) => {
-    // Get existing users
-    const users = JSON.parse(localStorage.getItem('pharmahub_users') || '[]');
-    
-    // Check if email already exists
-    if (users.find(u => u.email === userData.email)) {
-      return { success: false, message: 'Email sudah terdaftar' };
+  const register = async (userData) => {
+    try {
+      const response = await AuthService.register(userData);
+
+      if (response.success) {
+        setUser(response.user);
+        setIsAuthenticated(true);
+        return { success: true };
+      }
+
+      return {
+        success: false,
+        message: response.message || "Registrasi gagal",
+      };
+    } catch (error) {
+      console.error("Registration error:", error);
+      return {
+        success: false,
+        message: error.message || "Registrasi gagal. Silakan coba lagi.",
+      };
     }
-
-    // Create new user
-    const newUser = {
-      id: Date.now(),
-      ...userData,
-      createdAt: new Date().toISOString(),
-    };
-
-    // Save to users array
-    users.push(newUser);
-    localStorage.setItem('pharmahub_users', JSON.stringify(users));
-
-    // Auto login after registration
-    const userDataToSave = {
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      phone: newUser.phone,
-      address: newUser.address,
-      location: newUser.location || null,
-    };
-
-    setUser(userDataToSave);
-    setIsAuthenticated(true);
-    localStorage.setItem('pharmahub_user', JSON.stringify(userDataToSave));
-
-    return { success: true };
   };
 
   // Logout function
   const logout = () => {
+    AuthService.logout();
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('pharmahub_user');
   };
 
   // Update user profile
-  const updateProfile = (updatedData) => {
-    const updatedUser = { ...user, ...updatedData };
-    setUser(updatedUser);
-    localStorage.setItem('pharmahub_user', JSON.stringify(updatedUser));
+  const updateProfile = async (updatedData) => {
+    try {
+      if (!user || !user.id) {
+        return { success: false, message: "User not logged in" };
+      }
 
-    // Also update in users array
-    const users = JSON.parse(localStorage.getItem('pharmahub_users') || '[]');
-    const updatedUsers = users.map(u => 
-      u.id === user.id ? { ...u, ...updatedData } : u
-    );
-    localStorage.setItem('pharmahub_users', JSON.stringify(updatedUsers));
+      console.log("🔄 Updating profile for user:", user.id);
 
-    return { success: true };
+      // Call backend API to update profile
+      const response = await AuthService.updateProfile(user.id, updatedData);
+
+      if (response.success && response.user) {
+        // Update local state with fresh data from server
+        setUser(response.user);
+        console.log("✅ Profile updated successfully");
+        return { success: true, user: response.user };
+      }
+
+      return {
+        success: false,
+        message: response.message || "Gagal update profil",
+      };
+    } catch (error) {
+      console.error("Update profile error:", error);
+      return {
+        success: false,
+        message: error.message || "Gagal update profil. Silakan coba lagi.",
+      };
+    }
   };
 
   const value = {
     user,
     isAuthenticated,
+    loading,
     login,
     register,
     logout,

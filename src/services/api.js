@@ -21,14 +21,28 @@ async function handleResponse(response) {
 }
 
 /**
+ * Get authorization headers
+ */
+function getAuthHeaders() {
+  const token = localStorage.getItem("pharmahub_token");
+  const headers = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  return headers;
+}
+
+/**
  * Generic GET request
  */
 export async function get(endpoint) {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
   });
 
   return handleResponse(response);
@@ -40,9 +54,7 @@ export async function get(endpoint) {
 export async function post(endpoint, data) {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
 
@@ -55,9 +67,7 @@ export async function post(endpoint, data) {
 export async function put(endpoint, data) {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
 
@@ -70,9 +80,7 @@ export async function put(endpoint, data) {
 export async function del(endpoint) {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
   });
 
   return handleResponse(response);
