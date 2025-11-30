@@ -334,7 +334,7 @@ async function getOrderById(userId, orderId) {
 
     const order = orderResult.rows[0];
 
-    // Get order items
+    // Get order items with product images
     const itemsQuery = `
       SELECT 
         oi.order_item_id,
@@ -342,8 +342,10 @@ async function getOrderById(userId, orderId) {
         oi.product_name,
         oi.product_price,
         oi.quantity,
-        oi.subtotal
+        oi.subtotal,
+        p.main_image_url as product_image
       FROM order_items oi
+      LEFT JOIN products p ON oi.product_id = p.product_id
       WHERE oi.order_id = $1
       ORDER BY oi.order_item_id
     `;
@@ -355,6 +357,7 @@ async function getOrderById(userId, orderId) {
     console.log(
       `[OrderService] Order ${orderId} found with ${itemsResult.rows.length} items`
     );
+    console.log("[OrderService] Sample item:", JSON.stringify(itemsResult.rows[0], null, 2));
 
     return order;
   } catch (error) {

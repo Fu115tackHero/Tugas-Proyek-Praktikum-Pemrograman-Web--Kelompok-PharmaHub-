@@ -39,7 +39,25 @@ const History = () => {
       const result = await OrderService.getOrders(token);
 
       if (result.success) {
-        setOrders(result.orders || []);
+        // Fetch items for each order
+        const ordersWithItems = await Promise.all(
+          (result.orders || []).map(async (order) => {
+            try {
+              const detailResult = await OrderService.getOrderById(order.order_id, token);
+              if (detailResult.success && detailResult.order) {
+                return {
+                  ...order,
+                  items: detailResult.order.items || [],
+                };
+              }
+              return { ...order, items: [] };
+            } catch (err) {
+              console.error(`Error fetching items for order ${order.order_id}:`, err);
+              return { ...order, items: [] };
+            }
+          })
+        );
+        setOrders(ordersWithItems);
       } else {
         setError(result.message || "Failed to load orders");
       }
@@ -711,12 +729,17 @@ const History = () => {
                   Produk Pesanan
                 </h3>
                 <div className="space-y-3">
-                  {selectedOrder.items &&
+                  {selectedOrder.items && selectedOrder.items.length > 0 ? (
                     selectedOrder.items.map((item, idx) => {
-                      // Generate image URL dengan fallback chain
+                      // Generate image URL - backend sudah return full URL dari Supabase
                       const getImageUrl = () => {
-                        // Order items tidak menyimpan gambar, gunakan placeholder
-                        return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23eee" width="100" height="100"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-size="14"%3EProduk%3C/text%3E%3C/svg%3E';
+                        // product_image dari backend sudah berisi main_image_url lengkap
+                        if (item.product_image && item.product_image.startsWith("http")) {
+                          return item.product_image;
+                        }
+
+                        // Fallback placeholder jika tidak ada gambar
+                        return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23999"%3ENo Image%3C/text%3E%3C/svg%3E';
                       };
 
                       return (
@@ -729,6 +752,10 @@ const History = () => {
                               src={getImageUrl()}
                               alt={item.product_name}
                               className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.style.display = "none";
+                                e.target.parentElement.innerHTML = '<i class="fas fa-image text-gray-400 text-2xl"></i>';
+                              }}
                             />
                           </div>
                           <div className="flex-1">
@@ -757,7 +784,13 @@ const History = () => {
                           </div>
                         </div>
                       );
-                    })}
+                    })
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <i className="fas fa-box-open text-4xl mb-3"></i>
+                      <p>Tidak ada produk dalam pesanan ini</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
