@@ -166,7 +166,9 @@ const couponController = {
 
       const coupon = await couponService.getCouponByCode(coupon_code);
       if (!coupon) {
-        return res.status(404).json({ success: false, message: "Coupon not found" });
+        return res
+          .status(404)
+          .json({ success: false, message: "Coupon not found" });
       }
 
       const usage = await couponService.recordCouponUsage(
@@ -178,8 +180,13 @@ const couponController = {
 
       res.status(201).json({ success: true, data: usage });
     } catch (error) {
-      console.error("❌ [CouponController] Error recording usage:", error.message);
-      res.status(500).json({ success: false, message: "Failed to record coupon usage" });
+      console.error(
+        "❌ [CouponController] Error recording usage:",
+        error.message
+      );
+      res
+        .status(500)
+        .json({ success: false, message: "Failed to record coupon usage" });
     }
   },
 };

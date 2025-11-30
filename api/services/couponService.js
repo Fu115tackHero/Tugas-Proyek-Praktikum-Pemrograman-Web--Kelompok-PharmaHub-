@@ -331,7 +331,10 @@ const couponService = {
       );
       return res.rows[0] || null;
     } catch (error) {
-      console.error("❌ [CouponService] Error fetching coupon by code:", error.message);
+      console.error(
+        "❌ [CouponService] Error fetching coupon by code:",
+        error.message
+      );
       throw error;
     }
   },

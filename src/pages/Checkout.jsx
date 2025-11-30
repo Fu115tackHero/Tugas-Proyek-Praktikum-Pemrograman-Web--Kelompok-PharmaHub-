@@ -441,7 +441,11 @@ const Checkout = () => {
             // Record coupon usage in backend if applied
             try {
               if (appliedCoupon && discount > 0) {
-                console.log("📝 Recording coupon usage:", appliedCoupon, discount);
+                console.log(
+                  "📝 Recording coupon usage:",
+                  appliedCoupon,
+                  discount
+                );
                 await CouponService.recordUsage({
                   couponCode: appliedCoupon,
                   orderId,
