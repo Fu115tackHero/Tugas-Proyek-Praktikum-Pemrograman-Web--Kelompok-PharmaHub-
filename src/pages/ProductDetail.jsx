@@ -68,21 +68,43 @@ const ProductDetail = () => {
     }
   };
 
-  const handleAddToCart = () => {
-    addToCart(product, quantity);
-    setQuantity(1);
-    setSuccessMessage("Produk berhasil dimasukkan ke keranjang!");
-    setTimeout(() => {
-      setSuccessMessage("");
-    }, 3000);
+  const handleAddToCart = async () => {
+    console.log("🛒 Adding to cart:", product.id, "quantity:", quantity);
+
+    const result = await addToCart(product, quantity);
+
+    if (result && result.success) {
+      setQuantity(1);
+      setSuccessMessage("✅ Produk berhasil dimasukkan ke keranjang!");
+      setTimeout(() => {
+        setSuccessMessage("");
+      }, 3000);
+    } else {
+      const errorMsg =
+        result?.message || "Gagal menambahkan produk ke keranjang";
+      console.error("❌ Add to cart failed:", errorMsg);
+      setSuccessMessage(`❌ ${errorMsg}`);
+      setTimeout(() => {
+        setSuccessMessage("");
+      }, 5000);
+    }
   };
 
   // --- PERUBAHAN LOGIKA BELI SEKARANG ---
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
+    console.log("🛒 Buy now - adding to cart:", product.id);
+
     // 1. Masukkan produk ke keranjang
-    addToCart(product, quantity);
-    // 2. Arahkan ke halaman KERANJANG (Cart) agar bisa input diskon
-    navigate("/cart");
+    const result = await addToCart(product, quantity);
+
+    if (result && result.success) {
+      // 2. Arahkan ke halaman KERANJANG (Cart) agar bisa input diskon
+      navigate("/cart");
+    } else {
+      const errorMsg = result?.message || "Gagal menambahkan produk";
+      console.error("❌ Buy now failed:", errorMsg);
+      alert(`❌ ${errorMsg}`);
+    }
   };
 
   const tabs = [
@@ -161,7 +183,10 @@ const ProductDetail = () => {
             <div className="flex justify-center items-center">
               <div className="bg-gray-100 rounded-lg p-8 w-full max-w-md">
                 <img
-                  src={product.image || "https://via.placeholder.com/400x400?text=No+Image"}
+                  src={
+                    product.image ||
+                    "https://via.placeholder.com/400x400?text=No+Image"
+                  }
                   alt={product.name}
                   className="w-full h-auto max-w-md object-contain rounded-lg transition-transform duration-300 hover:scale-105"
                   onError={(e) => {

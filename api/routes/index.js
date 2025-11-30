@@ -6,6 +6,8 @@ const authRoutes = require("./authRoutes");
 const paymentRoutes = require("./paymentRoutes");
 const productRoutes = require("./productRoutes");
 const categoryRoutes = require("./categoryRoutes");
+const cartRoutes = require("./cartRoutes");
+const couponRoutes = require("./couponRoutes");
 
 /**
  * Health check endpoint
@@ -25,5 +27,7 @@ router.use("/auth", authRoutes);
 router.use(paymentRoutes);
 router.use(productRoutes);
 router.use(categoryRoutes);
+router.use("/cart", cartRoutes);
+router.use("/coupons", couponRoutes);
 
 module.exports = router;

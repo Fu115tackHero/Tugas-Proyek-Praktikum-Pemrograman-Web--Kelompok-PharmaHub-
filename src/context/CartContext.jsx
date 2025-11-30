@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { useAuth } from "./AuthContext";
 
 const CartContext = createContext();
 
@@ -10,227 +11,406 @@ export const useCart = () => {
   return context;
 };
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+
 export const CartProvider = ({ children }) => {
+  const { user, getToken } = useAuth();
+  const token =
+    typeof getToken === "function"
+      ? getToken()
+      : localStorage.getItem("pharmahub_token");
   const [cart, setCart] = useState([]);
   const [savedForLater, setSavedForLater] = useState([]);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [availableCoupons, setAvailableCoupons] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Daftar kupon yang tersedia
-  const availableCoupons = {
-    SEHAT10: { discount: 10, type: "percentage", description: "Diskon 10%" },
-    SEHAT50K: {
-      discount: 50000,
-      type: "fixed",
-      description: "Diskon Rp 50.000",
-    },
-    NEWUSER: {
-      discount: 15,
-      type: "percentage",
-      description: "Diskon 15% untuk pengguna baru",
-    },
-    GRATIS20K: {
-      discount: 20000,
-      type: "fixed",
-      description: "Gratis Rp 20.000",
-    },
+  // Helper function untuk API calls
+  const apiCall = async (endpoint, options = {}) => {
+    try {
+      const headers = {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...options.headers,
+      };
+
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        ...options,
+        headers,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || `HTTP error! status: ${response.status}`
+        );
+      }
+
+      return data;
+    } catch (error) {
+      console.error(`[CartContext] API Error (${endpoint}):`, error.message);
+      throw error;
+    }
   };
 
-  // Load cart from localStorage on mount
+  // Fetch cart from API when user logs in
   useEffect(() => {
-    const savedCart = localStorage.getItem("pharmahub_cart");
-    if (savedCart) {
-      try {
-        setCart(JSON.parse(savedCart));
-      } catch (error) {
-        console.error("Error loading cart from localStorage:", error);
-      }
-    }
-
-    const savedItems = localStorage.getItem("pharmahub_saved_for_later");
-    if (savedItems) {
-      try {
-        setSavedForLater(JSON.parse(savedItems));
-      } catch (error) {
-        console.error("Error loading saved items from localStorage:", error);
-      }
-    }
-
-    const savedCoupon = localStorage.getItem("pharmahub_applied_coupon");
-    if (savedCoupon) {
-      try {
-        setAppliedCoupon(JSON.parse(savedCoupon));
-      } catch (error) {
-        console.error("Error loading coupon from localStorage:", error);
-      }
-    }
-  }, []);
-
-  // Save cart to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("pharmahub_cart", JSON.stringify(cart));
-  }, [cart]);
-
-  // Save "saved for later" to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem(
-      "pharmahub_saved_for_later",
-      JSON.stringify(savedForLater)
-    );
-  }, [savedForLater]);
-
-  // Save applied coupon to localStorage whenever it changes
-  useEffect(() => {
-    if (appliedCoupon) {
-      localStorage.setItem(
-        "pharmahub_applied_coupon",
-        JSON.stringify(appliedCoupon)
-      );
+    if (user && token) {
+      fetchCart();
+      fetchSavedForLater();
+      fetchAvailableCoupons();
     } else {
-      localStorage.removeItem("pharmahub_applied_coupon");
+      // Clear cart when user logs out
+      setCart([]);
+      setSavedForLater([]);
+      setAppliedCoupon(null);
+      setAvailableCoupons([]);
     }
-  }, [appliedCoupon]);
+  }, [user, token]);
+
+  // Fetch cart
+  const fetchCart = async () => {
+    if (!token) return;
+
+    try {
+      console.log("[CartContext] Fetching cart...");
+      setLoading(true);
+      setError(null);
+
+      const response = await apiCall("/cart");
+
+      if (response.success && response.data) {
+        setCart(response.data.items || []);
+        console.log(
+          `[CartContext] ✅ Cart loaded: ${
+            response.data.items?.length || 0
+          } items`
+        );
+      }
+    } catch (err) {
+      console.error("[CartContext] Failed to fetch cart:", err.message);
+      setError(err.message);
+      // Fallback to empty cart on error
+      setCart([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch saved for later
+  const fetchSavedForLater = async () => {
+    if (!token) return;
+
+    try {
+      const response = await apiCall("/cart/saved");
+
+      if (response.success && response.data) {
+        setSavedForLater(response.data.items || []);
+        console.log(
+          `[CartContext] ✅ Saved items loaded: ${
+            response.data.items?.length || 0
+          }`
+        );
+      }
+    } catch (err) {
+      console.error("[CartContext] Failed to fetch saved items:", err.message);
+      setSavedForLater([]);
+    }
+  };
+
+  // Fetch available coupons
+  const fetchAvailableCoupons = async () => {
+    if (!token) return;
+
+    try {
+      const response = await apiCall("/coupons");
+
+      if (response.success && response.data) {
+        setAvailableCoupons(response.data.coupons || []);
+        console.log(
+          `[CartContext] ✅ Coupons loaded: ${
+            response.data.coupons?.length || 0
+          }`
+        );
+      }
+    } catch (err) {
+      console.error("[CartContext] Failed to fetch coupons:", err.message);
+      setAvailableCoupons([]);
+    }
+  };
 
   // Add item to cart
-  const addToCart = (product, quantity = 1) => {
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.id === product.id);
+  const addToCart = async (product, quantity = 1) => {
+    if (!token) {
+      setError("Please login to add items to cart");
+      return { success: false, message: "Please login to add items to cart" };
+    }
 
-      if (existingItem) {
-        // Update quantity if item already exists
-        return prevCart.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
-      } else {
-        // Add new item to cart
-        return [...prevCart, { ...product, quantity }];
+    try {
+      console.log(
+        `[CartContext] Adding product ${product.id} to cart (qty: ${quantity})`
+      );
+      setLoading(true);
+      setError(null);
+
+      const response = await apiCall("/cart", {
+        method: "POST",
+        body: JSON.stringify({
+          product_id: product.id || product.product_id,
+          quantity,
+        }),
+      });
+
+      if (response.success && response.data) {
+        setCart(response.data.cart || []);
+        console.log("[CartContext] ✅ Product added to cart");
+        return { success: true, message: "Product added to cart" };
       }
-    });
+    } catch (err) {
+      console.error("[CartContext] Failed to add to cart:", err.message);
+      setError(err.message);
+      return { success: false, message: err.message };
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Remove item from cart
-  const removeFromCart = (productId) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
+  const removeFromCart = async (productId) => {
+    if (!token) return { success: false, message: "Please login" };
+
+    try {
+      console.log(`[CartContext] Removing product ${productId} from cart`);
+      setLoading(true);
+
+      const response = await apiCall(`/cart/${productId}`, {
+        method: "DELETE",
+      });
+
+      if (response.success && response.data) {
+        setCart(response.data.cart || []);
+        console.log("[CartContext] ✅ Product removed from cart");
+        return { success: true };
+      }
+    } catch (err) {
+      console.error("[CartContext] Failed to remove from cart:", err.message);
+      setError(err.message);
+      return { success: false, message: err.message };
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Update item quantity
-  const updateQuantity = (productId, quantity) => {
-    if (quantity <= 0) {
-      removeFromCart(productId);
-      return;
-    }
+  const updateQuantity = async (productId, quantity) => {
+    if (!token) return { success: false, message: "Please login" };
 
-    setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.id === productId ? { ...item, quantity } : item
-      )
-    );
+    try {
+      console.log(
+        `[CartContext] Updating product ${productId} quantity to ${quantity}`
+      );
+      setLoading(true);
+
+      const response = await apiCall(`/cart/${productId}`, {
+        method: "PUT",
+        body: JSON.stringify({ quantity }),
+      });
+
+      if (response.success && response.data) {
+        setCart(response.data.cart || []);
+        console.log("[CartContext] ✅ Quantity updated");
+        return { success: true };
+      }
+    } catch (err) {
+      console.error("[CartContext] Failed to update quantity:", err.message);
+      setError(err.message);
+      return { success: false, message: err.message };
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Clear entire cart
-  const clearCart = () => {
-    setCart([]);
-    setAppliedCoupon(null);
+  const clearCart = async () => {
+    if (!token) return { success: false, message: "Please login" };
+
+    try {
+      console.log("[CartContext] Clearing cart");
+      setLoading(true);
+
+      const response = await apiCall("/cart", {
+        method: "DELETE",
+      });
+
+      if (response.success) {
+        setCart([]);
+        setAppliedCoupon(null);
+        console.log("[CartContext] ✅ Cart cleared");
+        return { success: true };
+      }
+    } catch (err) {
+      console.error("[CartContext] Failed to clear cart:", err.message);
+      setError(err.message);
+      return { success: false, message: err.message };
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Get cart totals
-  const getCartTotal = () => {
-    return cart.reduce((total, item) => total + item.price * item.quantity, 0);
+  // Save item for later
+  const saveForLater = async (productId) => {
+    if (!token) return { success: false, message: "Please login" };
+
+    try {
+      console.log(`[CartContext] Saving product ${productId} for later`);
+      setLoading(true);
+
+      const response = await apiCall("/cart/save-for-later", {
+        method: "POST",
+        body: JSON.stringify({ product_id: productId }),
+      });
+
+      if (response.success && response.data) {
+        setCart(response.data.cart || []);
+        setSavedForLater(response.data.savedItems || []);
+        console.log("[CartContext] ✅ Product saved for later");
+        return { success: true };
+      }
+    } catch (err) {
+      console.error("[CartContext] Failed to save for later:", err.message);
+      setError(err.message);
+      return { success: false, message: err.message };
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Calculate discount amount
-  const getDiscountAmount = () => {
-    if (!appliedCoupon) return 0;
+  // Move item back to cart
+  const moveToCart = async (productId, quantity = 1) => {
+    if (!token) return { success: false, message: "Please login" };
 
-    const subtotal = getCartTotal();
-    const couponData = availableCoupons[appliedCoupon];
+    try {
+      console.log(`[CartContext] Moving product ${productId} to cart`);
+      setLoading(true);
 
-    if (!couponData) return 0;
+      const response = await apiCall("/cart/move-to-cart", {
+        method: "POST",
+        body: JSON.stringify({ product_id: productId, quantity }),
+      });
 
-    if (couponData.type === "percentage") {
-      return Math.round(subtotal * (couponData.discount / 100));
-    } else {
-      // Fixed discount, tapi tidak boleh lebih dari subtotal
-      return Math.min(couponData.discount, subtotal);
+      if (response.success && response.data) {
+        setCart(response.data.cart || []);
+        setSavedForLater(response.data.savedItems || []);
+        console.log("[CartContext] ✅ Product moved to cart");
+        return { success: true };
+      }
+    } catch (err) {
+      console.error("[CartContext] Failed to move to cart:", err.message);
+      setError(err.message);
+      return { success: false, message: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Remove from saved for later
+  const removeFromSaved = async (productId) => {
+    if (!token) return { success: false, message: "Please login" };
+
+    try {
+      console.log(`[CartContext] Removing product ${productId} from saved`);
+      setLoading(true);
+
+      const response = await apiCall(`/cart/saved/${productId}`, {
+        method: "DELETE",
+      });
+
+      if (response.success && response.data) {
+        setSavedForLater(response.data.savedItems || []);
+        console.log("[CartContext] ✅ Product removed from saved");
+        return { success: true };
+      }
+    } catch (err) {
+      console.error("[CartContext] Failed to remove from saved:", err.message);
+      setError(err.message);
+      return { success: false, message: err.message };
+    } finally {
+      setLoading(false);
     }
   };
 
   // Apply coupon
-  const applyCoupon = (couponCode) => {
-    const upperCouponCode = couponCode.toUpperCase().trim();
-
-    if (!upperCouponCode) {
-      return { success: false, message: "Masukkan kode kupon" };
+  const applyCoupon = async (couponCode) => {
+    if (!token) {
+      return { success: false, message: "Please login to use coupons" };
     }
 
-    if (!availableCoupons[upperCouponCode]) {
-      return { success: false, message: "Kode kupon tidak valid" };
+    if (!couponCode || !couponCode.trim()) {
+      return { success: false, message: "Please enter a coupon code" };
     }
 
-    if (appliedCoupon === upperCouponCode) {
-      return { success: false, message: "Kupon sudah diterapkan" };
-    }
+    try {
+      console.log(`[CartContext] Validating coupon: ${couponCode}`);
+      setLoading(true);
 
-    const subtotal = getCartTotal();
-    if (subtotal === 0) {
-      return { success: false, message: "Keranjang kosong" };
-    }
+      const cartTotal = getCartTotal();
 
-    setAppliedCoupon(upperCouponCode);
-    return {
-      success: true,
-      message: `Kupon ${upperCouponCode} berhasil diterapkan!`,
-      couponData: availableCoupons[upperCouponCode],
-    };
+      const response = await apiCall("/coupons/validate", {
+        method: "POST",
+        body: JSON.stringify({
+          coupon_code: couponCode.trim().toUpperCase(),
+          cart_total: cartTotal,
+        }),
+      });
+
+      if (response.success && response.data) {
+        setAppliedCoupon({
+          code: response.data.coupon.code,
+          discountAmount: response.data.discountAmount,
+          ...response.data.coupon,
+        });
+        console.log(
+          `[CartContext] ✅ Coupon applied: ${response.data.coupon.code}`
+        );
+        return {
+          success: true,
+          message: `Coupon ${response.data.coupon.code} applied!`,
+          couponData: response.data.coupon,
+        };
+      }
+    } catch (err) {
+      console.error("[CartContext] Coupon validation failed:", err.message);
+      setError(err.message);
+      return { success: false, message: err.message };
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Remove coupon
   const removeCoupon = () => {
     setAppliedCoupon(null);
+    console.log("[CartContext] ✅ Coupon removed");
   };
 
+  // Get cart total
+  const getCartTotal = () => {
+    return cart.reduce((total, item) => {
+      return total + item.price * item.quantity;
+    }, 0);
+  };
+
+  // Get cart items count
   const getCartItemsCount = () => {
     return cart.reduce((count, item) => count + item.quantity, 0);
   };
 
-  // Move item to "Saved for Later"
-  const saveForLater = (productId) => {
-    const item = cart.find((item) => item.id === productId);
-    if (item) {
-      setSavedForLater((prev) => {
-        const existingItem = prev.find((i) => i.id === productId);
-        if (existingItem) {
-          return prev;
-        }
-        return [...prev, item];
-      });
-      removeFromCart(productId);
-    }
-  };
-
-  // Move item back to cart
-  const moveToCart = (productId) => {
-    const item = savedForLater.find((item) => item.id === productId);
-    if (item) {
-      setCart((prev) => {
-        const existingItem = prev.find((i) => i.id === productId);
-        if (existingItem) {
-          return prev.map((i) =>
-            i.id === productId
-              ? { ...i, quantity: i.quantity + item.quantity }
-              : i
-          );
-        }
-        return [...prev, item];
-      });
-      setSavedForLater((prev) => prev.filter((i) => i.id !== productId));
-    }
-  };
-
-  // Remove item from saved for later
-  const removeFromSaved = (productId) => {
-    setSavedForLater((prev) => prev.filter((item) => item.id !== productId));
+  // Get discount amount
+  const getDiscountAmount = () => {
+    if (!appliedCoupon) return 0;
+    return appliedCoupon.discountAmount || 0;
   };
 
   const value = {
@@ -238,18 +418,23 @@ export const CartProvider = ({ children }) => {
     savedForLater,
     appliedCoupon,
     availableCoupons,
+    loading,
+    error,
     addToCart,
     removeFromCart,
     updateQuantity,
     clearCart,
-    getCartTotal,
-    getCartItemsCount,
-    getDiscountAmount,
-    applyCoupon,
-    removeCoupon,
     saveForLater,
     moveToCart,
     removeFromSaved,
+    applyCoupon,
+    removeCoupon,
+    getCartTotal,
+    getCartItemsCount,
+    getDiscountAmount,
+    fetchCart,
+    fetchSavedForLater,
+    fetchAvailableCoupons,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

@@ -126,6 +126,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Get authentication token
+  const getToken = () => {
+    return localStorage.getItem("pharmahub_token");
+  };
+
   const value = {
     user,
     isAuthenticated,
@@ -134,6 +139,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateProfile,
+    getToken,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
