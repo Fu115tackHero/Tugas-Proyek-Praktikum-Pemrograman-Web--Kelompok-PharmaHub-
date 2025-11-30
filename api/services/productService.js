@@ -40,6 +40,20 @@ async function createProduct(data) {
       indication,
     } = data;
 
+    // Validation
+    if (!name || name.trim() === "") {
+      throw new Error("Product name is required");
+    }
+    if (typeof price !== "number" || price <= 0) {
+      throw new Error("Price must be a positive number");
+    }
+    if (typeof stock !== "number" || stock < 0) {
+      throw new Error("Stock must be a non-negative number");
+    }
+    if (!category_id) {
+      throw new Error("Category is required");
+    }
+
     // Insert into products table
     const insertProductQuery = `
       INSERT INTO products (name, brand, price, stock, description, category_id, prescription_required, min_stock, main_image_url)
@@ -61,7 +75,16 @@ async function createProduct(data) {
     const product = productResult.rows[0];
 
     // Insert into product_details table if any detail is provided
-    if (generic_name || uses || how_it_works || ingredients || side_effects || precaution || interactions || indication) {
+    if (
+      generic_name ||
+      uses ||
+      how_it_works ||
+      ingredients ||
+      side_effects ||
+      precaution ||
+      interactions ||
+      indication
+    ) {
       const insertDetailsQuery = `
         INSERT INTO product_details (
           product_id,
@@ -76,7 +99,7 @@ async function createProduct(data) {
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING detail_id;
       `;
-      
+
       await client.query(insertDetailsQuery, [
         product.product_id,
         generic_name || null,
@@ -94,6 +117,19 @@ async function createProduct(data) {
     return product;
   } catch (err) {
     await client.query("ROLLBACK");
+    // Provide meaningful error messages
+    if (err.code === "23503") {
+      // Foreign key violation
+      throw new Error("Invalid category ID");
+    }
+    if (err.code === "22003") {
+      // Numeric field overflow
+      throw new Error("Price or stock value is too large");
+    }
+    if (err.code === "23505") {
+      // Unique violation
+      throw new Error("Product with this name already exists");
+    }
     throw err;
   } finally {
     client.release();
@@ -135,9 +171,9 @@ async function getAllProducts() {
     ORDER BY p.created_at DESC
   `;
   const { rows } = await pool.query(query);
-  
+
   // Map main_image_url to image for frontend compatibility
-  return rows.map(row => ({
+  return rows.map((row) => ({
     ...row,
     id: row.product_id, // Also add 'id' field for frontend
     image: row.main_image_url,
@@ -145,7 +181,7 @@ async function getAllProducts() {
     // Map detail fields to match formData field names
     genericName: row.generic_name,
     sideEffects: row.side_effects,
-    howItWorks: row.how_it_works
+    howItWorks: row.how_it_works,
   }));
 }
 
@@ -185,7 +221,7 @@ async function getProductById(id) {
   `;
   const { rows } = await pool.query(query, [id]);
   const product = rows[0] || null;
-  
+
   // Map fields for frontend compatibility
   if (product) {
     return {
@@ -196,10 +232,10 @@ async function getProductById(id) {
       // Map detail fields to match formData field names
       genericName: product.generic_name,
       sideEffects: product.side_effects,
-      howItWorks: product.how_it_works
+      howItWorks: product.how_it_works,
     };
   }
-  
+
   return null;
 }
 
@@ -271,11 +307,17 @@ async function updateProduct(id, data) {
     const updatedProduct = result.rows[0] || null;
 
     // Update or insert product_details if any detail field is provided
-    if (updatedProduct && (generic_name !== undefined || uses !== undefined || 
-        how_it_works !== undefined || ingredients !== undefined || 
-        side_effects !== undefined || precaution !== undefined || 
-        interactions !== undefined || indication !== undefined)) {
-      
+    if (
+      updatedProduct &&
+      (generic_name !== undefined ||
+        uses !== undefined ||
+        how_it_works !== undefined ||
+        ingredients !== undefined ||
+        side_effects !== undefined ||
+        precaution !== undefined ||
+        interactions !== undefined ||
+        indication !== undefined)
+    ) {
       // Check if details exist
       const checkDetailsQuery = `SELECT detail_id FROM product_details WHERE product_id = $1;`;
       const detailsCheck = await client.query(checkDetailsQuery, [id]);
@@ -355,10 +397,9 @@ async function deleteProduct(id) {
     await client.query("BEGIN");
 
     // Delete from product_details first (if exists)
-    await client.query(
-      `DELETE FROM product_details WHERE product_id = $1`,
-      [id]
-    );
+    await client.query(`DELETE FROM product_details WHERE product_id = $1`, [
+      id,
+    ]);
 
     // Delete from products
     const query = `

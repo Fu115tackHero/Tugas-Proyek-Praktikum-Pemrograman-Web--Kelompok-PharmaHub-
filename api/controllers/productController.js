@@ -55,18 +55,30 @@ const getProductById = async (req, res) => {
 module.exports = {
   getAllProducts,
   getProductById,
-  
+
   /** Create product handler */
   async createProduct(req, res) {
     try {
       const payload = req.body;
+      console.log("📝 Creating product:", payload.name);
       const created = await productService.createProduct(payload);
       res.status(201).json({ success: true, data: created });
     } catch (error) {
       console.error("❌ Error creating product:", error.message);
-      res
-        .status(500)
-        .json({ success: false, message: "Failed to create product" });
+
+      // Send detailed error message to frontend
+      const statusCode =
+        error.message.includes("required") ||
+        error.message.includes("must be") ||
+        error.message.includes("Invalid")
+          ? 400
+          : 500;
+
+      res.status(statusCode).json({
+        success: false,
+        message: error.message || "Failed to create product",
+        error: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      });
     }
   },
 
@@ -75,16 +87,31 @@ module.exports = {
     try {
       const { id } = req.params;
       const payload = req.body;
+      console.log(`🔄 Updating product ID:`, id);
       const updated = await productService.updateProduct(id, payload);
-      
+
       if (!updated) {
-        return res.status(404).json({ success: false, message: "Product not found" });
+        return res
+          .status(404)
+          .json({ success: false, message: "Product not found" });
       }
-      
+
       res.status(200).json({ success: true, data: updated });
     } catch (error) {
       console.error("❌ Error updating product:", error.message);
-      res.status(500).json({ success: false, message: "Failed to update product" });
+
+      const statusCode = error.message.includes("not found")
+        ? 404
+        : error.message.includes("required") ||
+          error.message.includes("Invalid")
+        ? 400
+        : 500;
+
+      res.status(statusCode).json({
+        success: false,
+        message: error.message || "Failed to update product",
+        error: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      });
     }
   },
 
@@ -92,16 +119,28 @@ module.exports = {
   async deleteProduct(req, res) {
     try {
       const { id } = req.params;
+      console.log(`🗑️  Deleting product ID:`, id);
       const deleted = await productService.deleteProduct(id);
-      
+
       if (!deleted) {
-        return res.status(404).json({ success: false, message: "Product not found" });
+        return res
+          .status(404)
+          .json({ success: false, message: "Product not found" });
       }
-      
-      res.status(200).json({ success: true, message: "Product deleted successfully" });
+
+      res
+        .status(200)
+        .json({ success: true, message: "Product deleted successfully" });
     } catch (error) {
       console.error("❌ Error deleting product:", error.message);
-      res.status(500).json({ success: false, message: "Failed to delete product" });
+
+      const statusCode = error.message.includes("not found") ? 404 : 500;
+
+      res.status(statusCode).json({
+        success: false,
+        message: error.message || "Failed to delete product",
+        error: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      });
     }
   },
 };

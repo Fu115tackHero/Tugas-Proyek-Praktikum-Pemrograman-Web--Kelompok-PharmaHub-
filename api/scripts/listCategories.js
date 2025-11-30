@@ -1,7 +1,6 @@
 /**
- * Check existing categories in database
+ * List categories from product_categories table with IDs.
  */
-
 const { Pool } = require("pg");
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, "../.env") });
@@ -14,23 +13,23 @@ const pool = new Pool({
   database: process.env.DB_NAME,
 });
 
-async function checkCategories() {
+async function main() {
   const client = await pool.connect();
   try {
-    const query = `SELECT category_id, category_name, description FROM product_categories ORDER BY category_id;`;
-    const result = await client.query(query);
-    
-    console.log("\n📋 Current categories in database:\n");
-    result.rows.forEach(cat => {
-      console.log(`ID: ${cat.category_id} | Name: ${cat.category_name} | Desc: ${cat.description || 'N/A'}`);
+    const res = await client.query(
+      "SELECT category_id, category_name FROM product_categories ORDER BY category_id"
+    );
+    console.log("\n📋 Categories (ID -> Name)\n");
+    res.rows.forEach((r) => {
+      console.log(`${r.category_id} -> ${r.category_name}`);
     });
-    console.log(`\n✅ Total: ${result.rows.length} categories\n`);
-  } catch (error) {
-    console.error("❌ Error:", error);
+    console.log(`\nTotal: ${res.rows.length}`);
+  } catch (e) {
+    console.error("❌ Error listing categories:", e.message);
   } finally {
     client.release();
     await pool.end();
   }
 }
 
-checkCategories();
+main();

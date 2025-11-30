@@ -651,16 +651,17 @@ const products = [
   },
 ];
 
-// Category mapping - using actual database IDs
+// Category mapping - corrected to match current database IDs (see listCategories.js output)
+// If categories change, update here or refactor to query dynamically.
 const categoryMap = {
   "Obat Nyeri & Demam": 1,
-  "Obat Pencernaan": 4,
-  "Obat Alergi": 8,
-  "Obat Pernapasan": 10,
-  "Antiseptik": 22,
+  "Obat Pencernaan": 2,
+  "Obat Alergi": 3,
+  "Obat Pernapasan": 4,
+  Antiseptik: 5,
   "Vitamin & Suplemen": 6,
-  "Antibiotik": 5,
-  "Obat Jantung & Hipertensi": 23,
+  Antibiotik: 7,
+  "Obat Jantung & Hipertensi": 8,
 };
 
 async function updateProductDetails() {

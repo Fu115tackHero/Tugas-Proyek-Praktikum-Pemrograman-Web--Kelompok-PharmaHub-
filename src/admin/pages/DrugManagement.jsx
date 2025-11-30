@@ -250,7 +250,9 @@ const DrugManagement = () => {
     setImageFile(null);
     try {
       // Prefer fetching fresh full detail object from backend
-      const resp = await ProductService.getProductById(drug.id || drug.product_id);
+      const resp = await ProductService.getProductById(
+        drug.id || drug.product_id
+      );
       const full = resp?.data || drug;
       setImagePreview(full.image || full.main_image_url || null);
       setFormData({
@@ -279,10 +281,7 @@ const DrugManagement = () => {
         uses: full.uses || "",
         howItWorks: full.howItWorks || full.how_it_works || "",
         genericName:
-          full.genericName ||
-          full.generic_name ||
-          full.generic ||
-          "",
+          full.genericName || full.generic_name || full.generic || "",
         importantInfo: full.importantInfo || [],
         ingredients: full.ingredients || [],
         precaution: full.precaution || full.warnings || [],
@@ -476,21 +475,39 @@ const DrugManagement = () => {
         }
       }
 
+      // Validate and parse numbers safely
+      const parsedPrice = parseFloat(formData.price);
+      const parsedStock = parseInt(formData.stock, 10);
+      const parsedCategoryId = parseInt(formData.category, 10);
+
+      // Validation
+      if (!formData.name || formData.name.trim() === "") {
+        throw new Error("Nama produk wajib diisi");
+      }
+      if (isNaN(parsedPrice) || parsedPrice <= 0) {
+        throw new Error("Harga harus berupa angka positif");
+      }
+      if (isNaN(parsedStock) || parsedStock < 0) {
+        throw new Error("Stok harus berupa angka non-negatif");
+      }
+      if (isNaN(parsedCategoryId)) {
+        throw new Error("Kategori harus dipilih");
+      }
+
       // Build backend payload
       const payload = {
-        name: formData.name,
-        brand: formData.brand || null,
-        price: parseInt(formData.price),
-        stock: parseInt(formData.stock),
-        description: formData.description,
+        name: formData.name.trim(),
+        brand: formData.brand ? formData.brand.trim() : null,
+        price: parsedPrice,
+        stock: parsedStock,
+        description: formData.description ? formData.description.trim() : null,
         main_image_url: imageUrl,
         prescription_required: !!formData.prescriptionRequired,
-        category_id:
-          typeof formData.category === "number" ? formData.category : null,
+        category_id: parsedCategoryId,
         // Product details
-        generic_name: formData.genericName || null,
-        uses: formData.uses || null,
-        how_it_works: formData.howItWorks || null,
+        generic_name: formData.genericName ? formData.genericName.trim() : null,
+        uses: formData.uses ? formData.uses.trim() : null,
+        how_it_works: formData.howItWorks ? formData.howItWorks.trim() : null,
         ingredients: formData.ingredients || [],
         side_effects: formData.sideEffects || [],
         precaution: formData.precaution || [],
@@ -502,7 +519,10 @@ const DrugManagement = () => {
       let resp;
       if (currentDrug) {
         // Update existing product
-        resp = await ProductService.updateProduct(currentDrug.id || currentDrug.product_id, payload);
+        resp = await ProductService.updateProduct(
+          currentDrug.id || currentDrug.product_id,
+          payload
+        );
         if (resp.success) {
           setShowModal(false);
           setIsUploading(false);
@@ -536,7 +556,7 @@ const DrugManagement = () => {
     try {
       // Call backend API to delete product (soft delete)
       const response = await ProductService.deleteProduct(deleteId);
-      
+
       if (response.success) {
         // Refresh the product list
         await loadDrugs();
@@ -736,9 +756,16 @@ const DrugManagement = () => {
                           </div>
                           <div className="text-sm text-gray-500">
                             {(() => {
-                              const hw = drug.howItWorks || drug.how_it_works || drug.description || "";
+                              const hw =
+                                drug.howItWorks ||
+                                drug.how_it_works ||
+                                drug.description ||
+                                "";
                               if (!hw) return "";
-                              const snippet = hw.length > 50 ? hw.substring(0, 50) + "..." : hw;
+                              const snippet =
+                                hw.length > 50
+                                  ? hw.substring(0, 50) + "..."
+                                  : hw;
                               return snippet;
                             })()}
                           </div>
@@ -747,7 +774,9 @@ const DrugManagement = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {drug.category_name || drug.category || "Tidak ada kategori"}
+                        {drug.category_name ||
+                          drug.category ||
+                          "Tidak ada kategori"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -839,9 +868,7 @@ const DrugManagement = () => {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
-                    <div>
-                        {renderCategorySelect()}
-                    </div>
+                    <div>{renderCategorySelect()}</div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">

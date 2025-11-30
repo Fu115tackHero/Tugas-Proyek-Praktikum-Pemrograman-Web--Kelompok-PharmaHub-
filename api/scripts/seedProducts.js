@@ -81,7 +81,7 @@ const products = [
     name: "Vitamin C 1000mg",
     brand: "Wellness",
     price: 45000,
-    image: "/images/allproducts/vitamin-c-1000mg.jpg",
+    image: "/images/allproducts/vitamin-c-500mg.jpg",
     description:
       "Suplemen vitamin C untuk meningkatkan daya tahan tubuh dan kesehatan kulit.",
     uses: "Meningkatkan imunitas, antioksidan, membantu penyerapan zat besi.",
@@ -109,8 +109,9 @@ const products = [
     name: "Cetirizine 10mg",
     brand: "Hexpharm",
     price: 18000,
-    image: "/images/allproducts/cetirizine-10mg.jpg",
-    description: "Antihistamin untuk mengatasi alergi seperti gatal, bersin, dan mata berair.",
+    image: "/images/allproducts/cetirizine.jpg",
+    description:
+      "Antihistamin untuk mengatasi alergi seperti gatal, bersin, dan mata berair.",
     uses: "Meredakan gejala alergi: rhinitis alergi, urtikaria.",
     genericName: "Cetirizine",
     prescriptionRequired: false,
@@ -123,7 +124,8 @@ const products = [
     brand: "Pharos",
     price: 20000,
     image: "/images/allproducts/metformin-500mg.jpg",
-    description: "Obat untuk menurunkan kadar gula darah pada penderita diabetes tipe 2.",
+    description:
+      "Obat untuk menurunkan kadar gula darah pada penderita diabetes tipe 2.",
     uses: "Mengontrol kadar gula darah pada diabetes melitus tipe 2.",
     genericName: "Metformin",
     prescriptionRequired: true,
@@ -148,7 +150,7 @@ const products = [
     name: "Betadine Solution 30ml",
     brand: "Mundipharma",
     price: 22000,
-    image: "/images/allproducts/betadine-solution.jpg",
+    image: "/images/allproducts/betadine.jpg",
     description: "Antiseptik untuk luka, mencegah infeksi pada luka ringan.",
     uses: "Desinfeksi luka, luka bakar ringan, luka lecet.",
     genericName: "Povidone Iodine",
@@ -160,7 +162,7 @@ const products = [
 
 async function seedProducts() {
   let client;
-  
+
   try {
     console.log("🌱 Seeding products...\n");
 

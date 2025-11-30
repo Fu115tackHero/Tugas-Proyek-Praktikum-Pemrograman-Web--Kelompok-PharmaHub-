@@ -11,7 +11,7 @@ import apiClient, { get, post, put, del } from "./api";
  */
 export async function getAllProducts() {
   try {
-    const response = await get("/api/products");
+    const response = await get("/products");
     return response;
   } catch (error) {
     console.error("Product service error:", error);
@@ -26,7 +26,7 @@ export async function getAllProducts() {
  */
 export async function getProductById(id) {
   try {
-    const response = await get(`/api/products/${id}`);
+    const response = await get(`/products/${id}`);
     return response;
   } catch (error) {
     console.error("Product service error:", error);
@@ -37,7 +37,7 @@ export async function getProductById(id) {
 /** Get categories */
 export async function getCategories() {
   try {
-    const response = await get(`/api/categories`);
+    const response = await get(`/categories`);
     return response;
   } catch (error) {
     console.error("Product service error:", error);
@@ -48,7 +48,7 @@ export async function getCategories() {
 /** Create category */
 export async function createCategory(data) {
   try {
-    const response = await post(`/api/categories`, data);
+    const response = await post(`/categories`, data);
     return response;
   } catch (error) {
     console.error("Category creation error:", error);
@@ -59,7 +59,7 @@ export async function createCategory(data) {
 /** Update category */
 export async function updateCategory(id, data) {
   try {
-    const response = await put(`/api/categories/${id}`, data);
+    const response = await put(`/categories/${id}`, data);
     return response;
   } catch (error) {
     console.error("Category update error:", error);
@@ -70,7 +70,7 @@ export async function updateCategory(id, data) {
 /** Delete category */
 export async function deleteCategory(id) {
   try {
-    const response = await del(`/api/categories/${id}`);
+    const response = await del(`/categories/${id}`);
     return response;
   } catch (error) {
     console.error("Category delete error:", error);
@@ -81,7 +81,7 @@ export async function deleteCategory(id) {
 /** Create product */
 export async function createProduct(data) {
   try {
-    const response = await post(`/api/products`, data);
+    const response = await post(`/products`, data);
     return response;
   } catch (error) {
     console.error("Product creation error:", error);
@@ -92,7 +92,7 @@ export async function createProduct(data) {
 /** Update product */
 export async function updateProduct(id, data) {
   try {
-    const response = await put(`/api/products/${id}`, data);
+    const response = await put(`/products/${id}`, data);
     return response;
   } catch (error) {
     console.error("Product update error:", error);
@@ -103,7 +103,7 @@ export async function updateProduct(id, data) {
 /** Delete product */
 export async function deleteProduct(id) {
   try {
-    const response = await del(`/api/products/${id}`);
+    const response = await del(`/products/${id}`);
     return response;
   } catch (error) {
     console.error("Product delete error:", error);
