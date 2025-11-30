@@ -1,14 +1,7 @@
-const { Pool } = require("pg");
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
-const pool = new Pool({
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  host: process.env.DB_HOST || "localhost",
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME,
-});
+const pool = require("../config/database");
 
 /**
  * Create a new product
@@ -79,6 +72,7 @@ async function createProduct(data) {
       generic_name ||
       uses ||
       how_it_works ||
+      important_info ||
       ingredients ||
       side_effects ||
       precaution ||
@@ -91,12 +85,13 @@ async function createProduct(data) {
           generic_name,
           uses,
           how_it_works,
+          important_info,
           ingredients,
           side_effects,
           precaution,
           interactions,
           indication
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING detail_id;
       `;
 
@@ -105,6 +100,7 @@ async function createProduct(data) {
         generic_name || null,
         uses || null,
         how_it_works || null,
+        important_info || [],
         ingredients || [],
         side_effects || [],
         precaution || [],
@@ -159,6 +155,7 @@ async function getAllProducts() {
       pd.generic_name,
       pd.uses,
       pd.how_it_works,
+      pd.important_info,
       pd.ingredients,
       pd.side_effects,
       pd.precaution,
@@ -182,6 +179,7 @@ async function getAllProducts() {
     genericName: row.generic_name,
     sideEffects: row.side_effects,
     howItWorks: row.how_it_works,
+    importantInfo: row.important_info,
   }));
 }
 
@@ -208,6 +206,7 @@ async function getProductById(id) {
       pd.generic_name,
       pd.uses,
       pd.how_it_works,
+      pd.important_info,
       pd.ingredients,
       pd.side_effects,
       pd.precaution,
@@ -233,6 +232,7 @@ async function getProductById(id) {
       genericName: product.generic_name,
       sideEffects: product.side_effects,
       howItWorks: product.how_it_works,
+      importantInfo: product.important_info,
     };
   }
 
@@ -261,6 +261,7 @@ async function updateProduct(id, data) {
       generic_name,
       uses,
       how_it_works,
+      important_info,
       ingredients,
       side_effects,
       precaution,
@@ -312,6 +313,7 @@ async function updateProduct(id, data) {
       (generic_name !== undefined ||
         uses !== undefined ||
         how_it_works !== undefined ||
+        important_info !== undefined ||
         ingredients !== undefined ||
         side_effects !== undefined ||
         precaution !== undefined ||
@@ -330,19 +332,21 @@ async function updateProduct(id, data) {
             generic_name = COALESCE($1, generic_name),
             uses = COALESCE($2, uses),
             how_it_works = COALESCE($3, how_it_works),
-            ingredients = COALESCE($4, ingredients),
-            side_effects = COALESCE($5, side_effects),
-            precaution = COALESCE($6, precaution),
-            interactions = COALESCE($7, interactions),
-            indication = COALESCE($8, indication),
+            important_info = COALESCE($4, important_info),
+            ingredients = COALESCE($5, ingredients),
+            side_effects = COALESCE($6, side_effects),
+            precaution = COALESCE($7, precaution),
+            interactions = COALESCE($8, interactions),
+            indication = COALESCE($9, indication),
             updated_at = CURRENT_TIMESTAMP
-          WHERE product_id = $9;
+          WHERE product_id = $10;
         `;
 
         await client.query(updateDetailsQuery, [
           generic_name,
           uses,
           how_it_works,
+          important_info,
           ingredients,
           side_effects,
           precaution,
@@ -358,12 +362,13 @@ async function updateProduct(id, data) {
             generic_name,
             uses,
             how_it_works,
+            important_info,
             ingredients,
             side_effects,
             precaution,
             interactions,
             indication
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
         `;
 
         await client.query(insertDetailsQuery, [
@@ -371,6 +376,7 @@ async function updateProduct(id, data) {
           generic_name || null,
           uses || null,
           how_it_works || null,
+          important_info || [],
           ingredients || [],
           side_effects || [],
           precaution || [],

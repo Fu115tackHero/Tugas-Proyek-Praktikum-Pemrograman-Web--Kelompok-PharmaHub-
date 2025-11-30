@@ -40,6 +40,7 @@ const ProductDetail = () => {
           sideEffects: p.sideEffects || p.side_effects || [],
           interactions: p.interactions || [],
           indication: p.indication || [],
+          importantInfo: p.importantInfo || p.important_info || [],
         };
         setProduct(normalized);
       } catch (e) {
@@ -294,17 +295,22 @@ const ProductDetail = () => {
                 </div>
               </div>
 
-              {/* Additional Info */}
+              {/* Additional Info - Dynamic from Database */}
               <div className="bg-blue-50 p-4 rounded-lg">
                 <h4 className="font-semibold text-gray-800 mb-2">
                   Informasi Penting:
                 </h4>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Pastikan membaca aturan pakai sebelum mengonsumsi</li>
-                  <li>• Simpan di tempat sejuk dan kering</li>
-                  <li>• Jauhkan dari jangkauan anak-anak</li>
-                  <li>• Konsultasikan dengan apoteker jika diperlukan</li>
-                </ul>
+                {product.importantInfo && product.importantInfo.length > 0 ? (
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    {product.importantInfo.map((info, index) => (
+                      <li key={index}>• {info}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">
+                    Belum ada informasi penting untuk produk ini.
+                  </p>
+                )}
               </div>
             </div>
           </div>

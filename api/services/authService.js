@@ -5,18 +5,11 @@
 
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { Pool } = require("pg");
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
 // Database configuration
-const pool = new Pool({
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  host: process.env.DB_HOST || "localhost",
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME,
-});
+const pool = require("../config/database");
 
 // JWT configuration
 const JWT_SECRET =
