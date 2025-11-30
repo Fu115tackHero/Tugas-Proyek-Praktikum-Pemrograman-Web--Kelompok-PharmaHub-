@@ -554,7 +554,10 @@ const Checkout = () => {
                     true
                   );
                 } catch (error) {
-                  console.error("[Checkout] Error saving pending order:", error);
+                  console.error(
+                    "[Checkout] Error saving pending order:",
+                    error
+                  );
                   showModal(
                     "❌ Gagal Menyimpan Pesanan",
                     "Terjadi kesalahan saat menyimpan pesanan.",
@@ -616,7 +619,10 @@ const Checkout = () => {
                     true
                   );
                 } catch (error) {
-                  console.error("[Checkout] Error saving lunas order (error callback):", error);
+                  console.error(
+                    "[Checkout] Error saving lunas order (error callback):",
+                    error
+                  );
                   showModal(
                     "❌ Gagal Menyimpan Pesanan",
                     "Terjadi kesalahan saat menyimpan pesanan.",
@@ -654,7 +660,10 @@ const Checkout = () => {
                     true
                   );
                 } catch (error) {
-                  console.error("[Checkout] Error saving pending order (error callback):", error);
+                  console.error(
+                    "[Checkout] Error saving pending order (error callback):",
+                    error
+                  );
                   showModal(
                     "❌ Gagal Menyimpan Pesanan",
                     "Terjadi kesalahan saat menyimpan pesanan.",

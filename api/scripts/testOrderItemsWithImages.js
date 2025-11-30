@@ -62,18 +62,24 @@ async function testOrderItemsWithImages() {
       console.log(`   Subtotal: Rp ${item.subtotal.toLocaleString("id-ID")}`);
       console.log(`   Image: ${item.product_image || "❌ No image"}`);
       console.log(
-        `   Current Product Name: ${item.current_product_name || "❌ Product deleted/not found"}`
+        `   Current Product Name: ${
+          item.current_product_name || "❌ Product deleted/not found"
+        }`
       );
       console.log("");
     });
 
     // Verify that images are present
-    const itemsWithImages = itemsResult.rows.filter((item) => item.product_image);
+    const itemsWithImages = itemsResult.rows.filter(
+      (item) => item.product_image
+    );
     console.log(`\n📊 Summary:`);
     console.log(`   Total items: ${itemsResult.rows.length}`);
     console.log(`   Items with images: ${itemsWithImages.length}`);
     console.log(
-      `   Items without images: ${itemsResult.rows.length - itemsWithImages.length}`
+      `   Items without images: ${
+        itemsResult.rows.length - itemsWithImages.length
+      }`
     );
 
     if (itemsWithImages.length === itemsResult.rows.length) {

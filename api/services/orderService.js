@@ -357,7 +357,10 @@ async function getOrderById(userId, orderId) {
     console.log(
       `[OrderService] Order ${orderId} found with ${itemsResult.rows.length} items`
     );
-    console.log("[OrderService] Sample item:", JSON.stringify(itemsResult.rows[0], null, 2));
+    console.log(
+      "[OrderService] Sample item:",
+      JSON.stringify(itemsResult.rows[0], null, 2)
+    );
 
     return order;
   } catch (error) {

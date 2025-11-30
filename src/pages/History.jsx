@@ -43,7 +43,10 @@ const History = () => {
         const ordersWithItems = await Promise.all(
           (result.orders || []).map(async (order) => {
             try {
-              const detailResult = await OrderService.getOrderById(order.order_id, token);
+              const detailResult = await OrderService.getOrderById(
+                order.order_id,
+                token
+              );
               if (detailResult.success && detailResult.order) {
                 return {
                   ...order,
@@ -52,7 +55,10 @@ const History = () => {
               }
               return { ...order, items: [] };
             } catch (err) {
-              console.error(`Error fetching items for order ${order.order_id}:`, err);
+              console.error(
+                `Error fetching items for order ${order.order_id}:`,
+                err
+              );
               return { ...order, items: [] };
             }
           })
@@ -734,7 +740,10 @@ const History = () => {
                       // Generate image URL - backend sudah return full URL dari Supabase
                       const getImageUrl = () => {
                         // product_image dari backend sudah berisi main_image_url lengkap
-                        if (item.product_image && item.product_image.startsWith("http")) {
+                        if (
+                          item.product_image &&
+                          item.product_image.startsWith("http")
+                        ) {
                           return item.product_image;
                         }
 
@@ -754,7 +763,8 @@ const History = () => {
                               className="w-full h-full object-cover"
                               onError={(e) => {
                                 e.target.style.display = "none";
-                                e.target.parentElement.innerHTML = '<i class="fas fa-image text-gray-400 text-2xl"></i>';
+                                e.target.parentElement.innerHTML =
+                                  '<i class="fas fa-image text-gray-400 text-2xl"></i>';
                               }}
                             />
                           </div>

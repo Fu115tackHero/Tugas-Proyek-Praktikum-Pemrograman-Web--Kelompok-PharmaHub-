@@ -38,7 +38,11 @@ async function testOrderDetailAPI() {
     const firstOrder = orders[0];
     console.log(`📦 Testing with order: ${firstOrder.order_number}`);
     console.log(`   Order ID: ${firstOrder.order_id}`);
-    console.log(`   Total: Rp ${parseFloat(firstOrder.total_amount).toLocaleString("id-ID")}\n`);
+    console.log(
+      `   Total: Rp ${parseFloat(firstOrder.total_amount).toLocaleString(
+        "id-ID"
+      )}\n`
+    );
 
     // Get order detail
     console.log("🔍 Getting order detail with items...");
@@ -84,20 +88,32 @@ async function testOrderDetailAPI() {
     // Display totals
     console.log("💰 Order Totals:");
     console.log(
-      `   Subtotal: Rp ${parseFloat(orderDetail.subtotal).toLocaleString("id-ID")}`
+      `   Subtotal: Rp ${parseFloat(orderDetail.subtotal).toLocaleString(
+        "id-ID"
+      )}`
     );
     console.log(
-      `   Discount: Rp ${parseFloat(orderDetail.discount_amount).toLocaleString("id-ID")}`
+      `   Discount: Rp ${parseFloat(orderDetail.discount_amount).toLocaleString(
+        "id-ID"
+      )}`
     );
-    console.log(`   Tax: Rp ${parseFloat(orderDetail.tax_amount).toLocaleString("id-ID")}`);
     console.log(
-      `   Total: Rp ${parseFloat(orderDetail.total_amount).toLocaleString("id-ID")}\n`
+      `   Tax: Rp ${parseFloat(orderDetail.tax_amount).toLocaleString("id-ID")}`
+    );
+    console.log(
+      `   Total: Rp ${parseFloat(orderDetail.total_amount).toLocaleString(
+        "id-ID"
+      )}\n`
     );
 
     // Validate
-    const itemsWithImages = orderDetail.items.filter((item) => item.product_image);
+    const itemsWithImages = orderDetail.items.filter(
+      (item) => item.product_image
+    );
     console.log("✅ Validation:");
-    console.log(`   Items with images: ${itemsWithImages.length}/${orderDetail.items.length}`);
+    console.log(
+      `   Items with images: ${itemsWithImages.length}/${orderDetail.items.length}`
+    );
 
     if (itemsWithImages.length === orderDetail.items.length) {
       console.log("   🎉 All items have product images!");

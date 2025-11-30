@@ -27,7 +27,9 @@ async function checkProductsTable() {
     console.log("Columns in 'products' table:\n");
     result.rows.forEach((col) => {
       console.log(
-        `  ${col.column_name} (${col.data_type}) ${col.is_nullable === "NO" ? "NOT NULL" : "NULL"}`
+        `  ${col.column_name} (${col.data_type}) ${
+          col.is_nullable === "NO" ? "NOT NULL" : "NULL"
+        }`
       );
     });
 
