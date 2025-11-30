@@ -283,6 +283,128 @@ async function cancelOrder(req, res) {
   }
 }
 
+/**
+ * PUT /api/orders/:id/archive
+ * Archive order (soft delete)
+ * Admin only
+ */
+async function archiveOrder(req, res) {
+  console.log("🗄️ [OrderController] Archive order");
+  console.log("   Order ID:", req.params.id);
+  console.log("   User role:", req.user?.role);
+
+  try {
+    // Verify admin access
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can archive orders",
+      });
+    }
+
+    const orderId = parseInt(req.params.id);
+
+    const order = await orderService.archiveOrder(orderId);
+
+    res.status(200).json({
+      success: true,
+      message: "Order archived successfully",
+      data: order,
+    });
+  } catch (error) {
+    console.error("❌ [OrderController] Error archiving order:", error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+/**
+ * PUT /api/orders/:id/unarchive
+ * Unarchive order (restore)
+ * Admin only
+ */
+async function unarchiveOrder(req, res) {
+  console.log("📂 [OrderController] Unarchive order");
+  console.log("   Order ID:", req.params.id);
+
+  try {
+    // Verify admin access
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can unarchive orders",
+      });
+    }
+
+    const orderId = parseInt(req.params.id);
+
+    const order = await orderService.unarchiveOrder(orderId);
+
+    res.status(200).json({
+      success: true,
+      message: "Order unarchived successfully",
+      data: order,
+    });
+  } catch (error) {
+    console.error(
+      "❌ [OrderController] Error unarchiving order:",
+      error.message
+    );
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+/**
+ * POST /api/orders/bulk-archive
+ * Archive multiple orders
+ * Admin only
+ */
+async function bulkArchiveOrders(req, res) {
+  console.log("🗄️ [OrderController] Bulk archive orders");
+  console.log("   Order IDs:", req.body.orderIds);
+
+  try {
+    // Verify admin access
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can archive orders",
+      });
+    }
+
+    const { orderIds } = req.body;
+
+    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "orderIds array is required",
+      });
+    }
+
+    const result = await orderService.bulkArchiveOrders(orderIds);
+
+    res.status(200).json({
+      success: true,
+      message: `${result.archived_count} orders archived successfully`,
+      data: result,
+    });
+  } catch (error) {
+    console.error(
+      "❌ [OrderController] Error bulk archiving orders:",
+      error.message
+    );
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
 module.exports = {
   createOrder,
   getOrders,
@@ -290,4 +412,7 @@ module.exports = {
   getOrderById,
   updateOrderStatus,
   cancelOrder,
+  archiveOrder,
+  unarchiveOrder,
+  bulkArchiveOrders,
 };

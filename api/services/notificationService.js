@@ -28,10 +28,12 @@ async function getNotificationsByUserId(userId) {
         n.action_url,
         n.created_at,
         n.expires_at,
+        n.is_archived,
         o.order_number
       FROM notifications n
       LEFT JOIN orders o ON n.related_order_id = o.order_id
       WHERE n.user_id = $1
+        AND n.is_archived = FALSE
         AND (n.expires_at IS NULL OR n.expires_at > NOW())
       ORDER BY n.created_at DESC
     `;
@@ -65,6 +67,7 @@ async function getUnreadCount(userId) {
       FROM notifications
       WHERE user_id = $1 
         AND is_read = false
+        AND is_archived = FALSE
         AND (expires_at IS NULL OR expires_at > NOW())
     `;
 
@@ -263,6 +266,119 @@ async function deleteNotification(userId, notificationId) {
   }
 }
 
+/**
+ * Archive notification (soft delete for user)
+ * @param {number} userId - User ID
+ * @param {number} notificationId - Notification ID to archive
+ * @returns {object} - Updated notification
+ */
+async function archiveNotification(userId, notificationId) {
+  try {
+    console.log(
+      "[NotificationService] Archiving notification:",
+      notificationId
+    );
+
+    const query = `
+      UPDATE notifications
+      SET is_archived = TRUE
+      WHERE notification_id = $1 AND user_id = $2
+      RETURNING *
+    `;
+
+    const result = await pool.query(query, [notificationId, userId]);
+
+    if (result.rows.length === 0) {
+      throw new Error("Notification not found or you don't have permission");
+    }
+
+    console.log("[NotificationService] Notification archived:", notificationId);
+    return result.rows[0];
+  } catch (error) {
+    console.error(
+      "[NotificationService] Error archiving notification:",
+      error.message
+    );
+    throw error;
+  }
+}
+
+/**
+ * Archive all notifications for a user (bulk soft delete)
+ * @param {number} userId - User ID
+ * @returns {object} - Archive result
+ */
+async function archiveAllNotifications(userId) {
+  try {
+    console.log(
+      "[NotificationService] Archiving all notifications for user:",
+      userId
+    );
+
+    const query = `
+      UPDATE notifications
+      SET is_archived = TRUE
+      WHERE user_id = $1 AND is_archived = FALSE
+      RETURNING notification_id
+    `;
+
+    const result = await pool.query(query, [userId]);
+
+    console.log(
+      `[NotificationService] Archived ${result.rows.length} notifications`
+    );
+    return {
+      archived_count: result.rows.length,
+      archived_notification_ids: result.rows.map((r) => r.notification_id),
+    };
+  } catch (error) {
+    console.error(
+      "[NotificationService] Error archiving all notifications:",
+      error.message
+    );
+    throw error;
+  }
+}
+
+/**
+ * Archive read notifications for a user
+ * @param {number} userId - User ID
+ * @returns {object} - Archive result
+ */
+async function archiveReadNotifications(userId) {
+  try {
+    console.log(
+      "[NotificationService] Archiving read notifications for user:",
+      userId
+    );
+
+    const query = `
+      UPDATE notifications
+      SET is_archived = TRUE
+      WHERE user_id = $1 
+        AND is_read = TRUE 
+        AND is_archived = FALSE
+      RETURNING notification_id
+    `;
+
+    const result = await pool.query(query, [userId]);
+
+    console.log(
+      `[NotificationService] Archived ${result.rows.length} read notifications`
+    );
+    return {
+      archived_count: result.rows.length,
+      archived_notification_ids: result.rows.map((r) => r.notification_id),
+    };
+  } catch (error) {
+    console.error(
+      "[NotificationService] Error archiving read notifications:",
+      error.message
+    );
+    throw error;
+  }
+}
+
 module.exports = {
   getNotificationsByUserId,
   getUnreadCount,
@@ -270,4 +386,7 @@ module.exports = {
   markAllAsRead,
   createNotification,
   deleteNotification,
+  archiveNotification,
+  archiveAllNotifications,
+  archiveReadNotifications,
 };

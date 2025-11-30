@@ -223,11 +223,12 @@ async function getOrdersByUserId(userId) {
         o.completed_at,
         o.cancelled_at,
         o.cancellation_reason,
+        o.is_archived,
         COUNT(oi.order_item_id) as total_items,
         SUM(oi.quantity) as total_quantity
       FROM orders o
       LEFT JOIN order_items oi ON o.order_id = oi.order_id
-      WHERE o.user_id = $1
+      WHERE o.user_id = $1 AND o.is_archived = FALSE
       GROUP BY o.order_id
       ORDER BY o.created_at DESC
     `;
@@ -251,8 +252,9 @@ async function getOrdersByUserId(userId) {
 
 /**
  * Get all orders (for admin)
+ * Option to include archived orders
  */
-async function getAllOrders() {
+async function getAllOrders(includeArchived = false) {
   try {
     console.log("[OrderService] Fetching all orders for admin");
 
@@ -280,17 +282,21 @@ async function getAllOrders() {
         o.completed_at,
         o.cancelled_at,
         o.cancellation_reason,
+        o.is_archived,
         COUNT(oi.order_item_id) as total_items,
         SUM(oi.quantity) as total_quantity
       FROM orders o
       LEFT JOIN order_items oi ON o.order_id = oi.order_id
+      ${!includeArchived ? "WHERE o.is_archived = FALSE" : ""}
       GROUP BY o.order_id
       ORDER BY o.created_at DESC
     `;
 
     const result = await pool.query(query);
 
-    console.log(`[OrderService] Found ${result.rows.length} total orders`);
+    console.log(
+      `[OrderService] Found ${result.rows.length} total orders (includeArchived: ${includeArchived})`
+    );
 
     return result.rows;
   } catch (error) {
@@ -488,6 +494,98 @@ async function cancelOrder(userId, orderId, cancellationReason) {
   }
 }
 
+/**
+ * Archive order (soft delete for admin)
+ * @param {number} orderId - Order ID to archive
+ * @returns {object} - Updated order
+ */
+async function archiveOrder(orderId) {
+  try {
+    console.log("[OrderService] Archiving order:", orderId);
+
+    const query = `
+      UPDATE orders
+      SET is_archived = TRUE,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE order_id = $1
+      RETURNING *
+    `;
+
+    const result = await pool.query(query, [orderId]);
+
+    if (result.rows.length === 0) {
+      throw new Error("Order not found");
+    }
+
+    console.log("[OrderService] Order archived successfully:", orderId);
+    return result.rows[0];
+  } catch (error) {
+    console.error("[OrderService] Error archiving order:", error.message);
+    throw error;
+  }
+}
+
+/**
+ * Unarchive order (restore from archive)
+ * @param {number} orderId - Order ID to unarchive
+ * @returns {object} - Updated order
+ */
+async function unarchiveOrder(orderId) {
+  try {
+    console.log("[OrderService] Unarchiving order:", orderId);
+
+    const query = `
+      UPDATE orders
+      SET is_archived = FALSE,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE order_id = $1
+      RETURNING *
+    `;
+
+    const result = await pool.query(query, [orderId]);
+
+    if (result.rows.length === 0) {
+      throw new Error("Order not found");
+    }
+
+    console.log("[OrderService] Order unarchived successfully:", orderId);
+    return result.rows[0];
+  } catch (error) {
+    console.error("[OrderService] Error unarchiving order:", error.message);
+    throw error;
+  }
+}
+
+/**
+ * Archive multiple orders in bulk
+ * @param {number[]} orderIds - Array of order IDs to archive
+ * @returns {object} - Archive result
+ */
+async function bulkArchiveOrders(orderIds) {
+  try {
+    console.log("[OrderService] Bulk archiving orders:", orderIds);
+
+    const query = `
+      UPDATE orders
+      SET is_archived = TRUE,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE order_id = ANY($1::int[])
+      RETURNING order_id
+    `;
+
+    const result = await pool.query(query, [orderIds]);
+
+    console.log(`[OrderService] Archived ${result.rows.length} orders`);
+    return {
+      archived_count: result.rows.length,
+      archived_order_ids: result.rows.map((r) => r.order_id),
+    };
+  } catch (error) {
+    console.error("[OrderService] Error bulk archiving orders:", error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   createOrder,
   getOrdersByUserId,
@@ -495,4 +593,7 @@ module.exports = {
   getOrderById,
   updateOrderStatus,
   cancelOrder,
+  archiveOrder,
+  unarchiveOrder,
+  bulkArchiveOrders,
 };

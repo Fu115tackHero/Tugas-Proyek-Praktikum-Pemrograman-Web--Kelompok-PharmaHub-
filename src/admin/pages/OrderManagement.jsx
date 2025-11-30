@@ -180,6 +180,40 @@ const OrderManagement = () => {
     }
   };
 
+  const archiveOrder = async (orderId) => {
+    if (
+      !confirm(
+        "Arsipkan pesanan ini? Pesanan akan disembunyikan dari daftar tapi tetap ada di database."
+      )
+    )
+      return;
+
+    try {
+      setLoading(true);
+      const token = getToken();
+
+      if (!token) {
+        alert("Sesi login telah berakhir. Silakan login kembali.");
+        return;
+      }
+
+      const result = await OrderService.archiveOrder(orderId, token);
+
+      if (result.success) {
+        // Reload orders to get fresh data (archived orders will be excluded)
+        await loadOrders();
+        alert("Pesanan berhasil diarsipkan");
+      } else {
+        alert("Gagal mengarsipkan pesanan");
+      }
+    } catch (err) {
+      console.error("Error archiving order:", err);
+      alert(err.message || "Gagal mengarsipkan pesanan");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusClass = (status) => {
     const classes = {
       pending: "bg-yellow-100 text-yellow-800",
@@ -495,6 +529,17 @@ const OrderManagement = () => {
                       >
                         <i className="fas fa-times mr-1"></i>
                         Batalkan
+                      </button>
+                    )}
+                    {(order.order_status === "completed" ||
+                      order.order_status === "cancelled") && (
+                      <button
+                        onClick={() => archiveOrder(order.order_id)}
+                        className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm"
+                        title="Arsipkan pesanan (sembunyikan dari daftar)"
+                      >
+                        <i className="fas fa-archive mr-1"></i>
+                        Arsipkan
                       </button>
                     )}
                   </div>

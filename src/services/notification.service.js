@@ -126,12 +126,97 @@ export async function deleteNotification(notificationId, token) {
   }
 }
 
+/**
+ * Archive a single notification (soft delete)
+ * @param {number} notificationId - Notification ID
+ * @param {string} token - JWT authentication token
+ * @returns {Promise<Object>} - Success response
+ */
+export async function archiveNotification(notificationId, token) {
+  try {
+    const response = await axios.put(
+      `${API_URL}/notifications/${notificationId}/archive`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      `[NotificationService] Error archiving notification ${notificationId}:`,
+      error
+    );
+    throw error.response?.data || error.message;
+  }
+}
+
+/**
+ * Archive all notifications for current user
+ * @param {string} token - JWT authentication token
+ * @returns {Promise<Object>} - Response with count of archived notifications
+ */
+export async function archiveAllNotifications(token) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/notifications/archive-all`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      "[NotificationService] Error archiving all notifications:",
+      error
+    );
+    throw error.response?.data || error.message;
+  }
+}
+
+/**
+ * Archive only read notifications for current user
+ * @param {string} token - JWT authentication token
+ * @returns {Promise<Object>} - Response with count of archived notifications
+ */
+export async function archiveReadNotifications(token) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/notifications/archive-read`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      "[NotificationService] Error archiving read notifications:",
+      error
+    );
+    throw error.response?.data || error.message;
+  }
+}
+
 const NotificationService = {
   getNotifications,
   getUnreadCount,
   markAsRead,
   markAllAsRead,
   deleteNotification,
+  archiveNotification,
+  archiveAllNotifications,
+  archiveReadNotifications,
 };
 
 export default NotificationService;

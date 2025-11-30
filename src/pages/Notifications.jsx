@@ -105,6 +105,66 @@ const Notifications = () => {
     }
   };
 
+  const handleArchiveNotification = async (notificationId) => {
+    try {
+      const token = getToken();
+      if (!token) return;
+      await NotificationService.archiveNotification(notificationId, token);
+      setNotifications((prev) =>
+        prev.filter((n) => n.notification_id !== notificationId)
+      );
+    } catch (err) {
+      console.error("Error archiving notification:", err);
+      alert("Gagal mengarsipkan notifikasi");
+    }
+  };
+
+  const handleArchiveAll = async () => {
+    if (
+      !confirm(
+        "Arsipkan semua notifikasi? Notifikasi akan disembunyikan tapi tetap ada di database."
+      )
+    )
+      return;
+    try {
+      const token = getToken();
+      if (!token) return;
+      const result = await NotificationService.archiveAllNotifications(token);
+      if (result.success) {
+        setNotifications([]);
+        alert(
+          `Berhasil mengarsipkan ${result.data?.archivedCount || 0} notifikasi`
+        );
+      }
+    } catch (err) {
+      console.error("Error archiving all notifications:", err);
+      alert("Gagal mengarsipkan notifikasi");
+    }
+  };
+
+  const handleArchiveRead = async () => {
+    if (
+      !confirm(
+        "Arsipkan semua notifikasi yang sudah dibaca? Notifikasi akan disembunyikan tapi tetap ada di database."
+      )
+    )
+      return;
+    try {
+      const token = getToken();
+      if (!token) return;
+      const result = await NotificationService.archiveReadNotifications(token);
+      if (result.success) {
+        setNotifications((prev) => prev.filter((n) => !n.is_read));
+        alert(
+          `Berhasil mengarsipkan ${result.data?.archivedCount || 0} notifikasi`
+        );
+      }
+    } catch (err) {
+      console.error("Error archiving read notifications:", err);
+      alert("Gagal mengarsipkan notifikasi");
+    }
+  };
+
   const handleViewDetail = async (notif) => {
     setSelectedNotif(notif);
     setShowPreviewModal(true);
@@ -142,20 +202,36 @@ const Notifications = () => {
               Lihat semua notifikasi terbaru dari PharmaHub
             </p>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 flex-wrap">
             <button
-              className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 transition disabled:text-gray-400 disabled:cursor-not-allowed"
+              className="px-3 py-2 text-sm text-blue-600 hover:text-blue-800 transition disabled:text-gray-400 disabled:cursor-not-allowed"
               disabled={notifications.length === 0}
               onClick={handleMarkAllRead}
             >
-              <i className="fas fa-check-double mr-2"></i>Tandai Semua Dibaca
+              <i className="fas fa-check-double mr-1"></i>Tandai Dibaca
             </button>
             <button
-              className="px-4 py-2 text-sm text-red-600 hover:text-red-800 transition disabled:text-gray-400 disabled:cursor-not-allowed"
+              className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 transition disabled:text-gray-400 disabled:cursor-not-allowed"
+              disabled={notifications.length === 0}
+              onClick={handleArchiveAll}
+              title="Arsipkan semua notifikasi"
+            >
+              <i className="fas fa-archive mr-1"></i>Arsipkan Semua
+            </button>
+            <button
+              className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 transition disabled:text-gray-400 disabled:cursor-not-allowed"
+              disabled={notifications.filter((n) => n.is_read).length === 0}
+              onClick={handleArchiveRead}
+              title="Arsipkan notifikasi yang sudah dibaca"
+            >
+              <i className="fas fa-archive mr-1"></i>Arsipkan Dibaca
+            </button>
+            <button
+              className="px-3 py-2 text-sm text-red-600 hover:text-red-800 transition disabled:text-gray-400 disabled:cursor-not-allowed"
               disabled={notifications.length === 0}
               onClick={handleClearAll}
             >
-              <i className="fas fa-trash mr-2"></i>Hapus Semua
+              <i className="fas fa-trash mr-1"></i>Hapus Semua
             </button>
           </div>
         </div>
@@ -282,10 +358,12 @@ const Notifications = () => {
                   filteredNotifications.map((notif) => (
                     <div
                       key={notif.notification_id}
-                      onClick={() => handleViewDetail(notif)}
-                      className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:bg-blue-50 cursor-pointer transition"
+                      className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:bg-blue-50 transition"
                     >
-                      <div className="flex-1">
+                      <div
+                        className="flex-1 cursor-pointer"
+                        onClick={() => handleViewDetail(notif)}
+                      >
                         <p className="text-sm font-semibold text-gray-800 mb-1">
                           {notif.title ||
                             (notif._tabType === "orders"
@@ -316,7 +394,20 @@ const Notifications = () => {
                             Baru
                           </span>
                         )}
-                        <button className="text-blue-600 hover:text-blue-800 font-semibold text-sm">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleArchiveNotification(notif.notification_id);
+                          }}
+                          className="px-2 py-1 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition text-sm"
+                          title="Arsipkan notifikasi ini"
+                        >
+                          <i className="fas fa-archive"></i>
+                        </button>
+                        <button
+                          onClick={() => handleViewDetail(notif)}
+                          className="text-blue-600 hover:text-blue-800 font-semibold text-sm"
+                        >
                           <i className="fas fa-chevron-right"></i>
                         </button>
                       </div>

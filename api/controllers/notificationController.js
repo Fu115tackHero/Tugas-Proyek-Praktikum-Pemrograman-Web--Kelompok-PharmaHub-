@@ -190,10 +190,99 @@ async function deleteNotification(req, res) {
   }
 }
 
+/**
+ * PUT /api/notifications/:id/archive
+ * Archive notification (soft delete)
+ */
+async function archiveNotification(req, res) {
+  console.log("🗄️ [NotificationController] Archive notification");
+  console.log("   Notification ID:", req.params.id);
+  console.log("   User ID:", req.user.userId);
+
+  try {
+    const notificationId = parseInt(req.params.id);
+    const userId = req.user.userId;
+
+    const notification = await notificationService.archiveNotification(
+      userId,
+      notificationId
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Notification archived successfully",
+      data: notification,
+    });
+  } catch (error) {
+    console.error("❌ [NotificationController] Error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+/**
+ * POST /api/notifications/archive-all
+ * Archive all notifications for user
+ */
+async function archiveAllNotifications(req, res) {
+  console.log("🗄️ [NotificationController] Archive all notifications");
+  console.log("   User ID:", req.user.userId);
+
+  try {
+    const userId = req.user.userId;
+
+    const result = await notificationService.archiveAllNotifications(userId);
+
+    res.status(200).json({
+      success: true,
+      message: `${result.archived_count} notifications archived successfully`,
+      data: result,
+    });
+  } catch (error) {
+    console.error("❌ [NotificationController] Error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+/**
+ * POST /api/notifications/archive-read
+ * Archive all read notifications for user
+ */
+async function archiveReadNotifications(req, res) {
+  console.log("🗄️ [NotificationController] Archive read notifications");
+  console.log("   User ID:", req.user.userId);
+
+  try {
+    const userId = req.user.userId;
+
+    const result = await notificationService.archiveReadNotifications(userId);
+
+    res.status(200).json({
+      success: true,
+      message: `${result.archived_count} read notifications archived successfully`,
+      data: result,
+    });
+  } catch (error) {
+    console.error("❌ [NotificationController] Error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
 module.exports = {
   getNotifications,
   getUnreadCount,
   markAsRead,
   markAllAsRead,
   deleteNotification,
+  archiveNotification,
+  archiveAllNotifications,
+  archiveReadNotifications,
 };

@@ -147,6 +147,82 @@ export async function cancelOrder(orderId, cancellationReason, token) {
   }
 }
 
+/**
+ * Archive an order (soft delete for admin)
+ * @param {number} orderId - Order ID
+ * @param {string} token - JWT authentication token
+ * @returns {Promise<Object>} - Archived order
+ */
+export async function archiveOrder(orderId, token) {
+  try {
+    const response = await axios.put(
+      `${API_URL}/orders/${orderId}/archive`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error(`[OrderService] Error archiving order ${orderId}:`, error);
+    throw error.response?.data || error.message;
+  }
+}
+
+/**
+ * Unarchive an order (restore from archive)
+ * @param {number} orderId - Order ID
+ * @param {string} token - JWT authentication token
+ * @returns {Promise<Object>} - Unarchived order
+ */
+export async function unarchiveOrder(orderId, token) {
+  try {
+    const response = await axios.put(
+      `${API_URL}/orders/${orderId}/unarchive`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error(`[OrderService] Error unarchiving order ${orderId}:`, error);
+    throw error.response?.data || error.message;
+  }
+}
+
+/**
+ * Bulk archive orders (admin only)
+ * @param {Array<number>} orderIds - Array of order IDs to archive
+ * @param {string} token - JWT authentication token
+ * @returns {Promise<Object>} - Archive result
+ */
+export async function bulkArchiveOrders(orderIds, token) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/orders/bulk-archive`,
+      { orderIds },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error(`[OrderService] Error bulk archiving orders:`, error);
+    throw error.response?.data || error.message;
+  }
+}
+
 const OrderService = {
   createOrder,
   getOrders,
@@ -154,6 +230,9 @@ const OrderService = {
   getOrderById,
   updateOrderStatus,
   cancelOrder,
+  archiveOrder,
+  unarchiveOrder,
+  bulkArchiveOrders,
 };
 
 export default OrderService;

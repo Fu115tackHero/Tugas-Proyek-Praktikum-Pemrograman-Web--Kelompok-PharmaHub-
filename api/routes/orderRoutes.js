@@ -12,6 +12,9 @@ router.post("/", orderController.createOrder);
 // GET /api/orders/admin/all - Get all orders (admin only)
 router.get("/admin/all", orderController.getAllOrders);
 
+// POST /api/orders/bulk-archive - Bulk archive orders (admin only)
+router.post("/bulk-archive", orderController.bulkArchiveOrders);
+
 // GET /api/orders - Get all orders for current user
 router.get("/", orderController.getOrders);
 
@@ -20,6 +23,12 @@ router.post("/:id/cancel", orderController.cancelOrder);
 
 // PUT /api/orders/:id/status - Update order status (must come before /:id)
 router.put("/:id/status", orderController.updateOrderStatus);
+
+// PUT /api/orders/:id/archive - Archive order (admin only)
+router.put("/:id/archive", orderController.archiveOrder);
+
+// PUT /api/orders/:id/unarchive - Unarchive order (admin only)
+router.put("/:id/unarchive", orderController.unarchiveOrder);
 
 // GET /api/orders/:id - Get specific order by ID
 router.get("/:id", orderController.getOrderById);
