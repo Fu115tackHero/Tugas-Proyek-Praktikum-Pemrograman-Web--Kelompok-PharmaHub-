@@ -50,6 +50,26 @@ export async function getOrders(token) {
 }
 
 /**
+ * Get all orders (admin only)
+ * @param {string} token - JWT authentication token
+ * @returns {Promise<Array>} - Array of all orders
+ */
+export async function getAllOrders(token) {
+  try {
+    const response = await axios.get(`${API_URL}/orders/admin/all`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("[OrderService] Error fetching all orders:", error);
+    throw error.response?.data || error.message;
+  }
+}
+
+/**
  * Get specific order by ID
  * @param {number} orderId - Order ID
  * @param {string} token - JWT authentication token
@@ -130,6 +150,7 @@ export async function cancelOrder(orderId, cancellationReason, token) {
 const OrderService = {
   createOrder,
   getOrders,
+  getAllOrders,
   getOrderById,
   updateOrderStatus,
   cancelOrder,

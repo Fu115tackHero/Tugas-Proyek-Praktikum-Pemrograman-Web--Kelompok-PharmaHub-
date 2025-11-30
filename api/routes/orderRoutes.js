@@ -9,6 +9,9 @@ router.use(authMiddleware);
 // POST /api/orders - Create new order
 router.post("/", orderController.createOrder);
 
+// GET /api/orders/admin/all - Get all orders (admin only)
+router.get("/admin/all", orderController.getAllOrders);
+
 // GET /api/orders - Get all orders for current user
 router.get("/", orderController.getOrders);
 

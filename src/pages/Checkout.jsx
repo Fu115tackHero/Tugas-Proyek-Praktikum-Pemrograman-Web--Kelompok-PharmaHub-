@@ -487,35 +487,45 @@ const Checkout = () => {
               }\nPesanan #${orderId} telah dibuat.\n\nKlik \"Tandai Lunas\" untuk mengkonfirmasi pembayaran berhasil, atau \"Biarkan Pending\" untuk tetap menunggu pembayaran.`,
               confirmText: "Tandai Lunas",
               cancelText: "Biarkan Pending",
-              onConfirm: () => {
-                const demoStatus = "Lunas";
-                const orderDetails = {
-                  items: cart.map((item) => ({
-                    id: item.id,
-                    name: item.name,
-                    quantity: item.quantity,
-                    price: item.price,
-                    image: item.image,
-                  })),
-                  subtotal: subtotal,
-                  tax: tax,
-                  discount: discount,
-                  total: total,
-                  customerName: formData.name,
-                  customerPhone: formData.phone,
-                  notes: formData.notes || "",
-                  adminNotes: "",
-                };
-                saveOrder(orderId, demoStatus, transaction);
-                addOrderNotification(orderId, demoStatus, orderDetails);
-                showModal(
-                  "✅ Pembayaran Berhasil!",
-                  `Pesanan #${orderId} telah dibayar!\n\nSilakan menunggu pesanan disiapkan di apotek.`,
-                  "success",
-                  true
-                );
+              onConfirm: async () => {
+                try {
+                  const demoStatus = "Lunas";
+                  const orderDetails = {
+                    items: cart.map((item) => ({
+                      id: item.id,
+                      name: item.name,
+                      quantity: item.quantity,
+                      price: item.price,
+                      image: item.image,
+                    })),
+                    subtotal: subtotal,
+                    tax: tax,
+                    discount: discount,
+                    total: total,
+                    customerName: formData.name,
+                    customerPhone: formData.phone,
+                    notes: formData.notes || "",
+                    adminNotes: "",
+                  };
+                  saveOrder(orderId, demoStatus, transaction);
+                  addOrderNotification(orderId, demoStatus, orderDetails);
+                  showModal(
+                    "✅ Pembayaran Berhasil!",
+                    `Pesanan #${orderId} telah dibayar!\n\nSilakan menunggu pesanan disiapkan di apotek.`,
+                    "success",
+                    true
+                  );
+                } catch (error) {
+                  console.error("[Checkout] Error saving lunas order:", error);
+                  showModal(
+                    "❌ Gagal Menyimpan Pesanan",
+                    "Terjadi kesalahan saat menyimpan pesanan.",
+                    "error",
+                    false
+                  );
+                }
               },
-              onCancel: () => {
+              onCancel: async () => {
                 const pendingStatus = "Menunggu Pembayaran";
                 const orderDetails = {
                   items: cart.map((item) => ({
@@ -534,14 +544,27 @@ const Checkout = () => {
                   notes: formData.notes || "",
                   adminNotes: "",
                 };
-                saveOrder(orderId, pendingStatus, transaction);
-                addOrderNotification(orderId, pendingStatus, orderDetails);
-                showModal(
-                  "⏳ Pembayaran Pending",
-                  `Pesanan #${orderId} dibuat dan menunggu pembayaran.\n\nSilakan selesaikan pembayaran untuk melanjutkan.`,
-                  "info",
-                  true
-                );
+                try {
+                  await saveOrder(orderId, pendingStatus, transaction);
+                  addOrderNotification(orderId, pendingStatus, orderDetails);
+                  showModal(
+                    "⏳ Pembayaran Pending",
+                    `Pesanan #${orderId} dibuat dan menunggu pembayaran.\n\nSilakan selesaikan pembayaran untuk melanjutkan.`,
+                    "info",
+                    true
+                  );
+                } catch (error) {
+                  console.error(
+                    "[Checkout] Error saving pending order:",
+                    error
+                  );
+                  showModal(
+                    "❌ Gagal Menyimpan Pesanan",
+                    "Terjadi kesalahan saat menyimpan pesanan.",
+                    "error",
+                    false
+                  );
+                }
               },
             });
           },
@@ -567,7 +590,7 @@ const Checkout = () => {
               message: `Anda menutup pop-up pembayaran.\n\nKlik \"Tandai Lunas\" untuk mengkonfirmasi pembayaran berhasil, atau \"Biarkan Pending\" untuk menunggu pembayaran.`,
               confirmText: "Tandai Lunas",
               cancelText: "Biarkan Pending",
-              onConfirm: () => {
+              onConfirm: async () => {
                 const demoStatus = "Lunas";
                 const orderDetails = {
                   items: cart.map((item) => ({
@@ -586,16 +609,29 @@ const Checkout = () => {
                   notes: formData.notes || "",
                   adminNotes: "",
                 };
-                saveOrder(orderId, demoStatus);
-                addOrderNotification(orderId, demoStatus, orderDetails);
-                showModal(
-                  "✅ Pembayaran Berhasil!",
-                  `Pesanan #${orderId} telah dibayar!\n\nSilakan menunggu pesanan disiapkan di apotek.`,
-                  "success",
-                  true
-                );
+                try {
+                  await saveOrder(orderId, demoStatus);
+                  addOrderNotification(orderId, demoStatus, orderDetails);
+                  showModal(
+                    "✅ Pembayaran Berhasil!",
+                    `Pesanan #${orderId} telah dibayar!\n\nSilakan menunggu pesanan disiapkan di apotek.`,
+                    "success",
+                    true
+                  );
+                } catch (error) {
+                  console.error(
+                    "[Checkout] Error saving lunas order (error callback):",
+                    error
+                  );
+                  showModal(
+                    "❌ Gagal Menyimpan Pesanan",
+                    "Terjadi kesalahan saat menyimpan pesanan.",
+                    "error",
+                    false
+                  );
+                }
               },
-              onCancel: () => {
+              onCancel: async () => {
                 const pendingStatus = "Menunggu Pembayaran";
                 const orderDetails = {
                   items: cart.map((item) => ({
@@ -614,14 +650,27 @@ const Checkout = () => {
                   notes: formData.notes || "",
                   adminNotes: "",
                 };
-                saveOrder(orderId, pendingStatus);
-                addOrderNotification(orderId, pendingStatus, orderDetails);
-                showModal(
-                  "⏳ Pembayaran Pending",
-                  `Pesanan #${orderId} dibuat dan menunggu pembayaran.\n\nSilakan selesaikan pembayaran untuk melanjutkan.`,
-                  "info",
-                  true
-                );
+                try {
+                  await saveOrder(orderId, pendingStatus);
+                  addOrderNotification(orderId, pendingStatus, orderDetails);
+                  showModal(
+                    "⏳ Pembayaran Pending",
+                    `Pesanan #${orderId} dibuat dan menunggu pembayaran.\n\nSilakan selesaikan pembayaran untuk melanjutkan.`,
+                    "info",
+                    true
+                  );
+                } catch (error) {
+                  console.error(
+                    "[Checkout] Error saving pending order (error callback):",
+                    error
+                  );
+                  showModal(
+                    "❌ Gagal Menyimpan Pesanan",
+                    "Terjadi kesalahan saat menyimpan pesanan.",
+                    "error",
+                    false
+                  );
+                }
               },
             });
           },

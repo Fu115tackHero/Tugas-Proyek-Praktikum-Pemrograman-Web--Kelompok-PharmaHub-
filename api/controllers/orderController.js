@@ -84,6 +84,33 @@ async function getOrders(req, res) {
 }
 
 /**
+ * GET /api/orders/admin/all - Get all orders (admin only)
+ */
+async function getAllOrders(req, res) {
+  try {
+    console.log("[OrderController] Fetching all orders for admin");
+
+    const orders = await orderService.getAllOrders();
+
+    res.status(200).json({
+      success: true,
+      orders,
+      count: orders.length,
+    });
+  } catch (error) {
+    console.error(
+      "[OrderController] Error fetching all orders:",
+      error.message
+    );
+    res.status(500).json({
+      success: false,
+      message: "Gagal mengambil semua pesanan",
+      error: error.message,
+    });
+  }
+}
+
+/**
  * GET /api/orders/:id - Get specific order by ID
  */
 async function getOrderById(req, res) {
@@ -259,6 +286,7 @@ async function cancelOrder(req, res) {
 module.exports = {
   createOrder,
   getOrders,
+  getAllOrders,
   getOrderById,
   updateOrderStatus,
   cancelOrder,

@@ -258,6 +258,56 @@ async function getOrdersByUserId(userId) {
 }
 
 /**
+ * Get all orders (for admin)
+ */
+async function getAllOrders() {
+  try {
+    console.log("[OrderService] Fetching all orders for admin");
+
+    const query = `
+      SELECT 
+        o.order_id,
+        o.order_number,
+        o.user_id,
+        o.customer_name,
+        o.customer_email,
+        o.customer_phone,
+        o.customer_address,
+        o.subtotal,
+        o.tax_amount,
+        o.discount_amount,
+        o.total_amount,
+        o.coupon_code,
+        o.payment_method,
+        o.payment_status,
+        o.order_status,
+        o.prescription_image,
+        o.prescription_verified,
+        o.notes,
+        o.created_at,
+        o.completed_at,
+        o.cancelled_at,
+        o.cancellation_reason,
+        COUNT(oi.order_item_id) as total_items,
+        SUM(oi.quantity) as total_quantity
+      FROM orders o
+      LEFT JOIN order_items oi ON o.order_id = oi.order_id
+      GROUP BY o.order_id
+      ORDER BY o.created_at DESC
+    `;
+
+    const result = await pool.query(query);
+
+    console.log(`[OrderService] Found ${result.rows.length} total orders`);
+
+    return result.rows;
+  } catch (error) {
+    console.error("[OrderService] Error fetching all orders:", error.message);
+    throw error;
+  }
+}
+
+/**
  * Get specific order by ID with all items
  */
 async function getOrderById(userId, orderId) {
@@ -443,6 +493,7 @@ async function cancelOrder(userId, orderId, cancellationReason) {
 module.exports = {
   createOrder,
   getOrdersByUserId,
+  getAllOrders,
   getOrderById,
   updateOrderStatus,
   cancelOrder,
