@@ -36,7 +36,7 @@ export function waitForGoogleMaps(timeout = 15000, pollInterval = 200) {
       }
       script.src = `https://maps.googleapis.com/maps/api/js?key=${
         key || ""
-      }&libraries=places&loading=async`;
+      }&libraries=places,marker&loading=async`;
       script.async = true;
       script.defer = true;
       script.onerror = () =>
@@ -50,4 +50,8 @@ export function waitForGoogleMaps(timeout = 15000, pollInterval = 200) {
 
 export function isGoogleMapsReady() {
   return !!(window.google && window.google.maps);
+}
+
+export function getEnvMapsKey() {
+  return import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
 }
