@@ -1,5 +1,15 @@
 // Coupon Service - Database operations for coupons
-const pool = require("../config/supabase");
+const { Pool } = require("pg");
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, "../.env") });
+
+const pool = new Pool({
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  host: process.env.DB_HOST || "localhost",
+  port: process.env.DB_PORT || 5432,
+  database: process.env.DB_NAME,
+});
 
 const couponService = {
   /**
@@ -12,24 +22,28 @@ const couponService = {
 
       const query = `
         SELECT 
-          coupon_id,
-          code,
-          description,
-          discount_type,
-          discount_value,
-          min_purchase,
-          max_discount,
-          usage_limit,
-          usage_per_user,
-          start_date,
-          end_date,
-          is_active,
-          (SELECT COUNT(*) FROM coupon_usage WHERE coupon_id = coupons.coupon_id) as total_usage
-        FROM coupons
-        WHERE is_active = TRUE
-          AND start_date <= CURRENT_TIMESTAMP
-          AND end_date >= CURRENT_TIMESTAMP
-        ORDER BY code
+          c.coupon_id,
+          c.code,
+          c.description,
+          c.discount_type,
+          c.discount_value,
+          c.min_purchase,
+          c.max_discount,
+          c.usage_limit,
+          c.usage_per_user,
+          c.start_date,
+          c.end_date,
+          c.is_active,
+          (
+            SELECT COUNT(*) 
+            FROM coupon_usage cu 
+            WHERE cu.coupon_id = c.coupon_id
+          ) as total_usage
+        FROM coupons c
+        WHERE c.is_active = TRUE
+          AND c.start_date <= CURRENT_TIMESTAMP
+          AND c.end_date >= CURRENT_TIMESTAMP
+        ORDER BY c.code
       `;
 
       const result = await pool.query(query);
@@ -300,6 +314,24 @@ const couponService = {
         "❌ [CouponService] Error fetching coupon history:",
         error.message
       );
+      throw error;
+    }
+  },
+
+  /**
+   * Get coupon by code
+   * @param {string} code - Coupon code
+   * @returns {Promise<Object|null>} Coupon row or null
+   */
+  async getCouponByCode(code) {
+    try {
+      const res = await pool.query(
+        `SELECT * FROM coupons WHERE UPPER(code) = UPPER($1)`,
+        [code]
+      );
+      return res.rows[0] || null;
+    } catch (error) {
+      console.error("❌ [CouponService] Error fetching coupon by code:", error.message);
       throw error;
     }
   },

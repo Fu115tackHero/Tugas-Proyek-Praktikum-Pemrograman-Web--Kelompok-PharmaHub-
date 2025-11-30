@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import PaymentService from "../services/payment.service";
+import CouponService from "../services/coupon.service";
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -413,7 +414,7 @@ const Checkout = () => {
 
         // 4. Tampilkan Payment Pop-up dengan callback yang terpisah
         window.snap.pay(result.token, {
-          onSuccess: function (transaction) {
+          onSuccess: async function (transaction) {
             console.log("✅ PAYMENT SUCCESS!", transaction);
             setPaymentProcessing(false);
 
@@ -436,6 +437,21 @@ const Checkout = () => {
               adminNotes: "",
             };
             saveOrder(orderId, status, transaction);
+
+            // Record coupon usage in backend if applied
+            try {
+              if (appliedCoupon && discount > 0) {
+                console.log("📝 Recording coupon usage:", appliedCoupon, discount);
+                await CouponService.recordUsage({
+                  couponCode: appliedCoupon,
+                  orderId,
+                  discountAmount: discount,
+                });
+                console.log("✅ Coupon usage recorded");
+              }
+            } catch (e) {
+              console.error("⚠️ Failed to record coupon usage:", e.message);
+            }
             addOrderNotification(orderId, status, orderDetails);
 
             showModal(

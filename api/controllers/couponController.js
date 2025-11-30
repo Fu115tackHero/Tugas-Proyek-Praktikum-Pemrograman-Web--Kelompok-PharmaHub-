@@ -143,6 +143,45 @@ const couponController = {
       });
     }
   },
+
+  /**
+   * POST /api/coupons/record-usage - Record coupon usage after successful order
+   * Body: { coupon_code, order_id, discount_amount }
+   */
+  async recordUsage(req, res) {
+    try {
+      const userId = req.user.userId;
+      const { coupon_code, order_id, discount_amount } = req.body;
+
+      console.log(
+        `📝 [CouponController] POST record usage - User: ${userId}, Code: ${coupon_code}, Order: ${order_id}, Discount: ${discount_amount}`
+      );
+
+      if (!coupon_code || !order_id || discount_amount == null) {
+        return res.status(400).json({
+          success: false,
+          message: "coupon_code, order_id, and discount_amount are required",
+        });
+      }
+
+      const coupon = await couponService.getCouponByCode(coupon_code);
+      if (!coupon) {
+        return res.status(404).json({ success: false, message: "Coupon not found" });
+      }
+
+      const usage = await couponService.recordCouponUsage(
+        coupon.coupon_id,
+        userId,
+        order_id,
+        Math.round(Number(discount_amount))
+      );
+
+      res.status(201).json({ success: true, data: usage });
+    } catch (error) {
+      console.error("❌ [CouponController] Error recording usage:", error.message);
+      res.status(500).json({ success: false, message: "Failed to record coupon usage" });
+    }
+  },
 };
 
 module.exports = couponController;

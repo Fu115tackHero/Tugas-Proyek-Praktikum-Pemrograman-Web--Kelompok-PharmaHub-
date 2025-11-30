@@ -382,7 +382,7 @@ export const CartProvider = ({ children }) => {
       }
     } catch (err) {
       console.error("[CartContext] Coupon validation failed:", err.message);
-      setError(err.message);
+      // Do NOT set global error for coupon failures; return message for UI toast
       return { success: false, message: err.message };
     } finally {
       setLoading(false);
