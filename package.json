@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:api": "node api/server.js",
+    "dev:api": "node api/index.js", 
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:api\"",
     "build": "vite build",
     "lint": "eslint .",
@@ -19,7 +19,14 @@
     "midtrans-client": "^1.4.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-router-dom": "^7.9.5"
+    "react-router-dom": "^7.9.5",
+    "axios": "^1.13.2",
+    "bcrypt": "^5.1.1",
+    "form-data": "^4.0.5",
+    "jsonwebtoken": "^9.0.2",
+    "node-fetch": "^2.7.0",
+    "pg": "^8.16.3",
+    "nodemon": "^3.1.11"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

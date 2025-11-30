@@ -9,7 +9,6 @@ const pool = new Pool({
   port: process.env.DB_PORT || 5432,
   database: process.env.DB_NAME,
 });
-
 /**
  * Create a new product
  * @param {Object} data - Product data
