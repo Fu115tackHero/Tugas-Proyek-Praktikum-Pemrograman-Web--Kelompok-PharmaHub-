@@ -405,6 +405,72 @@ async function bulkArchiveOrders(req, res) {
   }
 }
 
+/**
+ * PUT /api/orders/:id/hide-from-user
+ * Hide order from user's history view (USER-SIDE deletion)
+ * User can only hide their own orders
+ */
+async function archiveOrderForUser(req, res) {
+  console.log("👤 [OrderController] User hiding order from history");
+  console.log("   Order ID:", req.params.id);
+  console.log("   User ID:", req.user?.userId);
+
+  try {
+    const orderId = parseInt(req.params.id);
+    const userId = req.user.userId; // FIX: Changed from user_id to userId
+
+    const result = await orderService.archiveOrderForUser(orderId, userId);
+
+    res.status(200).json({
+      success: true,
+      message: "Pesanan berhasil dihapus dari riwayat",
+      data: result,
+    });
+  } catch (error) {
+    console.error(
+      "❌ [OrderController] Error hiding order for user:",
+      error.message
+    );
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+/**
+ * PUT /api/orders/:id/restore-to-user
+ * Restore order to user's history view
+ * User can only restore their own orders
+ */
+async function unarchiveOrderForUser(req, res) {
+  console.log("👤 [OrderController] User restoring order to history");
+  console.log("   Order ID:", req.params.id);
+  console.log("   User ID:", req.user?.userId);
+
+  try {
+    const orderId = parseInt(req.params.id);
+    const userId = req.user.userId; // FIX: Changed from user_id to userId
+
+    const result = await orderService.unarchiveOrderForUser(orderId, userId);
+
+    res.status(200).json({
+      success: true,
+      message: "Pesanan berhasil dikembalikan ke riwayat",
+      data: result,
+    });
+  } catch (error) {
+    console.error(
+      "❌ [OrderController] Error restoring order for user:",
+      error.message
+    );
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
 module.exports = {
   createOrder,
   getOrders,
@@ -412,7 +478,9 @@ module.exports = {
   getOrderById,
   updateOrderStatus,
   cancelOrder,
-  archiveOrder,
-  unarchiveOrder,
-  bulkArchiveOrders,
+  archiveOrder, // Admin archive
+  unarchiveOrder, // Admin unarchive
+  bulkArchiveOrders, // Admin bulk archive
+  archiveOrderForUser, // User hide from history
+  unarchiveOrderForUser, // User restore to history
 };

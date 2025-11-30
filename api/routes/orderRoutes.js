@@ -30,6 +30,12 @@ router.put("/:id/archive", orderController.archiveOrder);
 // PUT /api/orders/:id/unarchive - Unarchive order (admin only)
 router.put("/:id/unarchive", orderController.unarchiveOrder);
 
+// PUT /api/orders/:id/hide-from-user - Hide order from user's history
+router.put("/:id/hide-from-user", orderController.archiveOrderForUser);
+
+// PUT /api/orders/:id/restore-to-user - Restore order to user's history
+router.put("/:id/restore-to-user", orderController.unarchiveOrderForUser);
+
 // GET /api/orders/:id - Get specific order by ID
 router.get("/:id", orderController.getOrderById);
 

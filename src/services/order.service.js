@@ -148,7 +148,8 @@ export async function cancelOrder(orderId, cancellationReason, token) {
 }
 
 /**
- * Archive an order (soft delete for admin)
+ * Archive an order (soft delete for ADMIN only)
+ * This hides order from admin OrderManagement panel
  * @param {number} orderId - Order ID
  * @param {string} token - JWT authentication token
  * @returns {Promise<Object>} - Archived order
@@ -168,6 +169,64 @@ export async function archiveOrder(orderId, token) {
     return response.data;
   } catch (error) {
     console.error(`[OrderService] Error archiving order ${orderId}:`, error);
+    throw error.response?.data || error.message;
+  }
+}
+
+/**
+ * Hide order from user's history view (USER-SIDE deletion)
+ * This marks order as hidden in order_status_history
+ * Does NOT affect admin's OrderManagement view
+ * @param {number} orderId - Order ID
+ * @param {string} token - JWT authentication token
+ * @returns {Promise<Object>} - Result status
+ */
+export async function hideOrderFromUser(orderId, token) {
+  try {
+    const response = await axios.put(
+      `${API_URL}/orders/${orderId}/hide-from-user`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      `[OrderService] Error hiding order from user ${orderId}:`,
+      error
+    );
+    throw error.response?.data || error.message;
+  }
+}
+
+/**
+ * Restore order to user's history view
+ * @param {number} orderId - Order ID
+ * @param {string} token - JWT authentication token
+ * @returns {Promise<Object>} - Result status
+ */
+export async function restoreOrderToUser(orderId, token) {
+  try {
+    const response = await axios.put(
+      `${API_URL}/orders/${orderId}/restore-to-user`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      `[OrderService] Error restoring order to user ${orderId}:`,
+      error
+    );
     throw error.response?.data || error.message;
   }
 }
@@ -230,9 +289,11 @@ const OrderService = {
   getOrderById,
   updateOrderStatus,
   cancelOrder,
-  archiveOrder,
-  unarchiveOrder,
-  bulkArchiveOrders,
+  archiveOrder, // Admin archive
+  unarchiveOrder, // Admin unarchive
+  bulkArchiveOrders, // Admin bulk archive
+  hideOrderFromUser, // User hide from history
+  restoreOrderToUser, // User restore to history
 };
 
 export default OrderService;

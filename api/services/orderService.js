@@ -201,6 +201,9 @@ async function getOrdersByUserId(userId) {
   try {
     console.log("[OrderService] Fetching orders for user:", userId);
 
+    // Query modified to filter by order_status_history.is_hidden_from_user
+    // This ensures user sees orders EVEN IF admin has archived them
+    // User-side deletion is independent from admin-side archiving
     const query = `
       SELECT 
         o.order_id,
@@ -228,7 +231,12 @@ async function getOrdersByUserId(userId) {
         SUM(oi.quantity) as total_quantity
       FROM orders o
       LEFT JOIN order_items oi ON o.order_id = oi.order_id
-      WHERE o.user_id = $1 AND o.is_archived = FALSE
+      WHERE o.user_id = $1 
+        AND NOT EXISTS (
+          SELECT 1 FROM order_status_history osh 
+          WHERE osh.order_id = o.order_id 
+          AND osh.is_hidden_from_user = TRUE
+        )
       GROUP BY o.order_id
       ORDER BY o.created_at DESC
     `;
@@ -495,13 +503,15 @@ async function cancelOrder(userId, orderId, cancellationReason) {
 }
 
 /**
- * Archive order (soft delete for admin)
+ * Archive order (soft delete for ADMIN ONLY)
+ * This hides the order from admin panel OrderManagement
+ * Does NOT affect user's History view
  * @param {number} orderId - Order ID to archive
  * @returns {object} - Updated order
  */
 async function archiveOrder(orderId) {
   try {
-    console.log("[OrderService] Archiving order:", orderId);
+    console.log("[OrderService] Admin archiving order:", orderId);
 
     const query = `
       UPDATE orders
@@ -517,10 +527,138 @@ async function archiveOrder(orderId) {
       throw new Error("Order not found");
     }
 
-    console.log("[OrderService] Order archived successfully:", orderId);
+    console.log(
+      "[OrderService] Order archived by admin successfully:",
+      orderId
+    );
     return result.rows[0];
   } catch (error) {
     console.error("[OrderService] Error archiving order:", error.message);
+    throw error;
+  }
+}
+
+/**
+ * Hide order from user's history view (USER-SIDE deletion)
+ * This marks order as hidden in order_status_history table
+ * Does NOT affect admin's OrderManagement view
+ * @param {number} orderId - Order ID to hide
+ * @param {number} userId - User ID (for verification)
+ * @returns {object} - Result status
+ */
+async function archiveOrderForUser(orderId, userId) {
+  try {
+    console.log(
+      `[OrderService] User ${userId} hiding order ${orderId} from history`
+    );
+
+    // First verify the order belongs to the user
+    const verifyQuery = `
+      SELECT order_id, order_status FROM orders WHERE order_id = $1 AND user_id = $2
+    `;
+    const verifyResult = await pool.query(verifyQuery, [orderId, userId]);
+
+    if (verifyResult.rows.length === 0) {
+      throw new Error("Order not found or does not belong to user");
+    }
+
+    const orderStatus = verifyResult.rows[0].order_status;
+
+    // Check if already hidden
+    const checkQuery = `
+      SELECT history_id, is_hidden_from_user 
+      FROM order_status_history 
+      WHERE order_id = $1 
+      ORDER BY changed_at DESC 
+      LIMIT 1
+    `;
+    const checkResult = await pool.query(checkQuery, [orderId]);
+
+    if (
+      checkResult.rows.length > 0 &&
+      checkResult.rows[0].is_hidden_from_user
+    ) {
+      return {
+        success: true,
+        message: "Order already hidden from history",
+        orderId: orderId,
+      };
+    }
+
+    // Insert new history entry to mark as hidden
+    const hideQuery = `
+      INSERT INTO order_status_history (
+        order_id, 
+        old_status, 
+        new_status, 
+        notes, 
+        is_hidden_from_user
+      )
+      VALUES ($1, $2, $2, 'Hidden from user history view', TRUE)
+      RETURNING *
+    `;
+
+    const result = await pool.query(hideQuery, [orderId, orderStatus]);
+
+    console.log(
+      `[OrderService] Order ${orderId} hidden from user ${userId} successfully`
+    );
+    return {
+      success: true,
+      message: "Order hidden from history",
+      orderId: orderId,
+    };
+  } catch (error) {
+    console.error("[OrderService] Error hiding order for user:", error.message);
+    throw error;
+  }
+}
+
+/**
+ * Unhide order from user's history view (restore to user history)
+ * @param {number} orderId - Order ID to unhide
+ * @param {number} userId - User ID (for verification)
+ * @returns {object} - Result status
+ */
+async function unarchiveOrderForUser(orderId, userId) {
+  try {
+    console.log(
+      `[OrderService] User ${userId} restoring order ${orderId} to history`
+    );
+
+    // Verify order belongs to user
+    const verifyQuery = `
+      SELECT order_id FROM orders WHERE order_id = $1 AND user_id = $2
+    `;
+    const verifyResult = await pool.query(verifyQuery, [orderId, userId]);
+
+    if (verifyResult.rows.length === 0) {
+      throw new Error("Order not found or does not belong to user");
+    }
+
+    // Update order_status_history to unhide
+    const unhideQuery = `
+      UPDATE order_status_history
+      SET is_hidden_from_user = FALSE
+      WHERE order_id = $1
+      RETURNING *
+    `;
+
+    const result = await pool.query(unhideQuery, [orderId]);
+
+    console.log(
+      `[OrderService] Order ${orderId} restored to user ${userId} history`
+    );
+    return {
+      success: true,
+      message: "Order restored to history",
+      orderId: orderId,
+    };
+  } catch (error) {
+    console.error(
+      "[OrderService] Error restoring order for user:",
+      error.message
+    );
     throw error;
   }
 }
@@ -593,7 +731,9 @@ module.exports = {
   getOrderById,
   updateOrderStatus,
   cancelOrder,
-  archiveOrder,
-  unarchiveOrder,
+  archiveOrder, // Admin-side archive
+  unarchiveOrder, // Admin-side unarchive
+  archiveOrderForUser, // User-side hide from history
+  unarchiveOrderForUser, // User-side restore to history
   bulkArchiveOrders,
 };

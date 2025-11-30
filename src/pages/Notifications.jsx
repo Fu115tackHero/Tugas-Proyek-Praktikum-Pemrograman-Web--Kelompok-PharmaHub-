@@ -105,7 +105,7 @@ const Notifications = () => {
     }
   };
 
-  const handleArchiveNotification = async (notificationId) => {
+  const handleDeleteNotification = async (notificationId) => {
     try {
       const token = getToken();
       if (!token) return;
@@ -114,15 +114,15 @@ const Notifications = () => {
         prev.filter((n) => n.notification_id !== notificationId)
       );
     } catch (err) {
-      console.error("Error archiving notification:", err);
-      alert("Gagal mengarsipkan notifikasi");
+      console.error("Error deleting notification:", err);
+      alert("Gagal menghapus notifikasi");
     }
   };
 
-  const handleArchiveAll = async () => {
+  const handleDeleteAll = async () => {
     if (
       !confirm(
-        "Arsipkan semua notifikasi? Notifikasi akan disembunyikan tapi tetap ada di database."
+        "Hapus semua notifikasi? Notifikasi akan dihapus dari daftar Anda."
       )
     )
       return;
@@ -133,19 +133,19 @@ const Notifications = () => {
       if (result.success) {
         setNotifications([]);
         alert(
-          `Berhasil mengarsipkan ${result.data?.archivedCount || 0} notifikasi`
+          `Berhasil menghapus ${result.data?.archivedCount || 0} notifikasi`
         );
       }
     } catch (err) {
-      console.error("Error archiving all notifications:", err);
-      alert("Gagal mengarsipkan notifikasi");
+      console.error("Error deleting all notifications:", err);
+      alert("Gagal menghapus notifikasi");
     }
   };
 
-  const handleArchiveRead = async () => {
+  const handleDeleteRead = async () => {
     if (
       !confirm(
-        "Arsipkan semua notifikasi yang sudah dibaca? Notifikasi akan disembunyikan tapi tetap ada di database."
+        "Hapus semua notifikasi yang sudah dibaca? Notifikasi akan dihapus dari daftar Anda."
       )
     )
       return;
@@ -156,12 +156,12 @@ const Notifications = () => {
       if (result.success) {
         setNotifications((prev) => prev.filter((n) => !n.is_read));
         alert(
-          `Berhasil mengarsipkan ${result.data?.archivedCount || 0} notifikasi`
+          `Berhasil menghapus ${result.data?.archivedCount || 0} notifikasi`
         );
       }
     } catch (err) {
-      console.error("Error archiving read notifications:", err);
-      alert("Gagal mengarsipkan notifikasi");
+      console.error("Error deleting read notifications:", err);
+      alert("Gagal menghapus notifikasi");
     }
   };
 
@@ -211,27 +211,20 @@ const Notifications = () => {
               <i className="fas fa-check-double mr-1"></i>Tandai Dibaca
             </button>
             <button
-              className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 transition disabled:text-gray-400 disabled:cursor-not-allowed"
+              className="px-3 py-2 text-sm text-red-600 hover:text-red-800 transition disabled:text-gray-400 disabled:cursor-not-allowed"
               disabled={notifications.length === 0}
-              onClick={handleArchiveAll}
-              title="Arsipkan semua notifikasi"
+              onClick={handleDeleteAll}
+              title="Hapus semua notifikasi"
             >
-              <i className="fas fa-archive mr-1"></i>Arsipkan Semua
-            </button>
-            <button
-              className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 transition disabled:text-gray-400 disabled:cursor-not-allowed"
-              disabled={notifications.filter((n) => n.is_read).length === 0}
-              onClick={handleArchiveRead}
-              title="Arsipkan notifikasi yang sudah dibaca"
-            >
-              <i className="fas fa-archive mr-1"></i>Arsipkan Dibaca
+              <i className="fas fa-trash mr-1"></i>Hapus Semua
             </button>
             <button
               className="px-3 py-2 text-sm text-red-600 hover:text-red-800 transition disabled:text-gray-400 disabled:cursor-not-allowed"
-              disabled={notifications.length === 0}
-              onClick={handleClearAll}
+              disabled={notifications.filter((n) => n.is_read).length === 0}
+              onClick={handleDeleteRead}
+              title="Hapus notifikasi yang sudah dibaca"
             >
-              <i className="fas fa-trash mr-1"></i>Hapus Semua
+              <i className="fas fa-trash mr-1"></i>Hapus Dibaca
             </button>
           </div>
         </div>
@@ -397,12 +390,12 @@ const Notifications = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleArchiveNotification(notif.notification_id);
+                            handleDeleteNotification(notif.notification_id);
                           }}
-                          className="px-2 py-1 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition text-sm"
-                          title="Arsipkan notifikasi ini"
+                          className="px-2 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition text-sm"
+                          title="Hapus notifikasi ini"
                         >
-                          <i className="fas fa-archive"></i>
+                          <i className="fas fa-trash"></i>
                         </button>
                         <button
                           onClick={() => handleViewDetail(notif)}

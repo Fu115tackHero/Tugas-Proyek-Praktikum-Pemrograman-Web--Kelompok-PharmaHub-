@@ -26,6 +26,7 @@ async function createProduct(data) {
       generic_name,
       uses,
       how_it_works,
+      important_info,
       ingredients,
       side_effects,
       precaution,
@@ -33,15 +34,58 @@ async function createProduct(data) {
       indication,
     } = data;
 
+    // --- Numeric normalization & validation layer ---
+    // Allow frontend to send price/stock as strings with formatting (e.g. "50.000", "Rp 12,500", etc.)
+    const normalizePrice = (val) => {
+      if (val === null || val === undefined || val === "") return null;
+      if (typeof val === "number") return Number(val.toFixed(2));
+      if (typeof val === "string") {
+        // Remove currency symbols, spaces, and thousand separators (dot/comma) but keep decimal separator
+        // Strategy: replace commas with dots if they appear as decimal separator, then remove all non-digit/dot
+        const cleaned = val
+          .replace(/rp|idr|currency|\s/gi, "")
+          .replace(/,/g, ".")
+          .replace(/[^0-9.]/g, "")
+          .replace(/(\.(?=.*\.))/g, ""); // keep only first dot
+        if (!cleaned) return null;
+        const num = parseFloat(cleaned);
+        if (isNaN(num)) return null;
+        return Number(num.toFixed(2));
+      }
+      return null;
+    };
+
+    const normalizeStock = (val) => {
+      if (val === null || val === undefined || val === "") return 0;
+      if (typeof val === "number") return val;
+      if (typeof val === "string") {
+        const cleaned = val.replace(/[^0-9-]/g, "");
+        const num = parseInt(cleaned, 10);
+        return isNaN(num) ? 0 : num;
+      }
+      return 0;
+    };
+
+    const safePrice = normalizePrice(price);
+    const safeStock = normalizeStock(stock);
+
     // Validation
     if (!name || name.trim() === "") {
       throw new Error("Product name is required");
     }
-    if (typeof price !== "number" || price <= 0) {
+    if (safePrice === null || safePrice <= 0) {
       throw new Error("Price must be a positive number");
     }
-    if (typeof stock !== "number" || stock < 0) {
+    // Guard against DECIMAL(12,2) overflow (> 9999999999.99)
+    if (safePrice > 9999999999.99) {
+      throw new Error("Price value exceeds maximum allowed (9,999,999,999.99)");
+    }
+    if (safeStock < 0) {
       throw new Error("Stock must be a non-negative number");
+    }
+    // Guard against integer overflow (PostgreSQL INT max 2147483647)
+    if (safeStock > 2147483647) {
+      throw new Error("Stock value exceeds maximum allowed (2,147,483,647)");
     }
     if (!category_id) {
       throw new Error("Category is required");
@@ -54,11 +98,11 @@ async function createProduct(data) {
       RETURNING product_id, name, brand, price, stock, description, category_id, prescription_required, main_image_url, created_at;
     `;
     const productValues = [
-      name,
-      brand || null,
-      price,
-      stock || 0,
-      description || null,
+      name.trim(),
+      brand ? brand.trim() : null,
+      safePrice,
+      safeStock || 0,
+      description ? description.trim() : null,
       category_id,
       prescription_required || false,
       min_stock || 10,
@@ -269,6 +313,39 @@ async function updateProduct(id, data) {
       indication,
     } = data;
 
+    // Reuse normalization logic from createProduct for consistency
+    const normalizePrice = (val) => {
+      if (val === null || val === undefined || val === "") return null;
+      if (typeof val === "number") return Number(val.toFixed(2));
+      if (typeof val === "string") {
+        const cleaned = val
+          .replace(/rp|idr|currency|\s/gi, "")
+          .replace(/,/g, ".")
+          .replace(/[^0-9.]/g, "")
+          .replace(/(\.(?=.*\.))/g, "");
+        if (!cleaned) return null;
+        const num = parseFloat(cleaned);
+        if (isNaN(num)) return null;
+        return Number(num.toFixed(2));
+      }
+      return null;
+    };
+    const normalizeStock = (val) => {
+      if (val === null || val === undefined || val === "") return null;
+      if (typeof val === "number") return val;
+      if (typeof val === "string") {
+        const cleaned = val.replace(/[^0-9-]/g, "");
+        const num = parseInt(cleaned, 10);
+        return isNaN(num) ? null : num;
+      }
+      return null;
+    };
+
+    const safePrice = normalizePrice(price);
+    const safeStock = normalizeStock(stock);
+
+    // Build sanitized values (use existing DB values if null to allow partial updates)
+
     // Update products table
     const updateQuery = `
       UPDATE products
@@ -290,17 +367,17 @@ async function updateProduct(id, data) {
     `;
 
     const values = [
-      name,
-      brand,
-      price,
-      stock,
-      description,
-      category_id,
-      prescription_required,
-      min_stock,
-      is_active,
-      featured,
-      main_image_url,
+      name ? name.trim() : null,
+      brand ? brand.trim() : null,
+      safePrice !== null ? safePrice : null,
+      safeStock !== null ? safeStock : null,
+      description ? description.trim() : null,
+      category_id !== undefined ? category_id : null,
+      prescription_required !== undefined ? prescription_required : null,
+      min_stock !== undefined ? min_stock : null,
+      is_active !== undefined ? is_active : null,
+      featured !== undefined ? featured : null,
+      main_image_url !== undefined ? main_image_url : null,
       id,
     ];
 

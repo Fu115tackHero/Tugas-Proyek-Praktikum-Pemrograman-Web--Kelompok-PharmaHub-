@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import OrderService from "../services/order.service";
+import { waitForGoogleMaps } from "../utils/googleMapsLoader";
 
 const History = () => {
   const { getToken } = useAuth();
@@ -90,94 +91,103 @@ const History = () => {
       return;
     }
 
-    if (!window.google || !window.google.maps) {
-      setTrackingError("Google Maps belum siap. Coba muat ulang halaman.");
-      return;
-    }
+    const initializeMap = async () => {
+      try {
+        // Wait for Google Maps to load
+        await waitForGoogleMaps(15000);
 
-    const mapElement = document.getElementById("live-tracking-map");
-    if (!mapElement) {
-      setTrackingError("Area peta tidak ditemukan.");
-      return;
-    }
-
-    const pharmacyAddress =
-      "Gedung C Fasilkom-TI, Universitas Sumatera Utara, Jl. Alumni No.3, Padang Bulan, Kec. Medan Baru, Kota Medan, Sumatera Utara 20155";
-
-    let map = mapRef.current;
-    if (!map) {
-      map = new window.google.maps.Map(mapElement, {
-        center: { lat: 0, lng: 0 },
-        zoom: 14,
-      });
-
-      const geocoder = new window.google.maps.Geocoder();
-      geocoder.geocode({ address: pharmacyAddress }, (results, status) => {
-        if (status === "OK" && results[0]) {
-          const location = results[0].geometry.location;
-          pharmacyMarkerRef.current = new window.google.maps.Marker({
-            position: location,
-            map,
-            title: "Lokasi Apotek",
-          });
-          map.setCenter(location);
-        } else {
-          console.warn("Gagal geocode alamat apotek:", status);
+        const mapElement = document.getElementById("live-tracking-map");
+        if (!mapElement) {
+          setTrackingError("Area peta tidak ditemukan.");
+          return;
         }
-      });
 
-      mapRef.current = map;
-    }
+        const pharmacyAddress =
+          "Gedung C Fasilkom-TI, Universitas Sumatera Utara, Jl. Alumni No.3, Padang Bulan, Kec. Medan Baru, Kota Medan, Sumatera Utara 20155";
 
-    const successHandler = (position) => {
-      const userPos = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-      };
+        let map = mapRef.current;
+        if (!map) {
+          map = new window.google.maps.Map(mapElement, {
+            center: { lat: 0, lng: 0 },
+            zoom: 14,
+          });
 
-      if (!userMarkerRef.current) {
-        userMarkerRef.current = new window.google.maps.Marker({
-          position: userPos,
-          map,
-          title: "Posisi Anda",
-          icon: {
-            path: window.google.maps.SymbolPath.CIRCLE,
-            scale: 6,
-            fillColor: "#2563eb",
-            fillOpacity: 1,
-            strokeColor: "#ffffff",
-            strokeWeight: 2,
-          },
-        });
-      } else {
-        userMarkerRef.current.setPosition(userPos);
+          const geocoder = new window.google.maps.Geocoder();
+          geocoder.geocode({ address: pharmacyAddress }, (results, status) => {
+            if (status === "OK" && results[0]) {
+              const location = results[0].geometry.location;
+              pharmacyMarkerRef.current = new window.google.maps.Marker({
+                position: location,
+                map,
+                title: "Lokasi Apotek",
+              });
+              map.setCenter(location);
+            } else {
+              console.warn("Gagal geocode alamat apotek:", status);
+            }
+          });
+
+          mapRef.current = map;
+        }
+
+        const successHandler = (position) => {
+          const userPos = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+
+          if (!userMarkerRef.current) {
+            userMarkerRef.current = new window.google.maps.Marker({
+              position: userPos,
+              map,
+              title: "Posisi Anda",
+              icon: {
+                path: window.google.maps.SymbolPath.CIRCLE,
+                scale: 6,
+                fillColor: "#2563eb",
+                fillOpacity: 1,
+                strokeColor: "#ffffff",
+                strokeWeight: 2,
+              },
+            });
+          } else {
+            userMarkerRef.current.setPosition(userPos);
+          }
+
+          const bounds = new window.google.maps.LatLngBounds();
+          if (pharmacyMarkerRef.current) {
+            bounds.extend(pharmacyMarkerRef.current.getPosition());
+          }
+          bounds.extend(userPos);
+          map.fitBounds(bounds);
+          setTrackingError("");
+        };
+
+        const errorHandler = (err) => {
+          console.error("Geolocation error:", err);
+          setTrackingError(
+            "Tidak dapat mengambil lokasi Anda. Pastikan izin lokasi sudah diberikan."
+          );
+        };
+
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          successHandler,
+          errorHandler,
+          {
+            enableHighAccuracy: true,
+            maximumAge: 5000,
+            timeout: 10000,
+          }
+        );
+      } catch (err) {
+        console.error("Error initializing Google Maps:", err);
+        setTrackingError(
+          "Google Maps gagal dimuat. Pastikan koneksi internet aktif dan API key valid."
+        );
       }
-
-      const bounds = new window.google.maps.LatLngBounds();
-      if (pharmacyMarkerRef.current) {
-        bounds.extend(pharmacyMarkerRef.current.getPosition());
-      }
-      bounds.extend(userPos);
-      map.fitBounds(bounds);
-      setTrackingError("");
     };
 
-    const errorHandler = (err) => {
-      console.error("Geolocation error:", err);
-      setTrackingError(
-        "Tidak dapat mengambil lokasi Anda. Pastikan izin lokasi sudah diberikan."
-      );
-    };
-
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      successHandler,
-      errorHandler,
-      {
-        enableHighAccuracy: true,
-        maximumAge: 5000,
-        timeout: 10000,
-      }
-    );
+    initializeMap();
 
     return () => {
       if (watchIdRef.current && navigator.geolocation) {
@@ -239,6 +249,34 @@ const History = () => {
     localStorage.setItem("order_history", "[]");
     setOrders([]);
     setShowDeleteConfirm(false);
+  };
+
+  const handleDeleteOrder = async (orderId) => {
+    if (
+      !confirm(
+        "Hapus pesanan ini dari riwayat? Pesanan akan dihapus dari daftar Anda."
+      )
+    ) {
+      return;
+    }
+    try {
+      const token = getToken();
+      if (!token) {
+        alert("Sesi login telah berakhir. Silakan login kembali.");
+        return;
+      }
+      // Use user-specific hide endpoint instead of admin archive
+      const result = await OrderService.hideOrderFromUser(orderId, token);
+      if (result.success) {
+        setOrders((prev) => prev.filter((o) => o.order_id !== orderId));
+        alert("Pesanan berhasil dihapus dari riwayat");
+      } else {
+        alert("Gagal menghapus pesanan");
+      }
+    } catch (err) {
+      console.error("Error deleting order:", err);
+      alert(err.message || "Gagal menghapus pesanan");
+    }
   };
 
   return (
@@ -511,13 +549,15 @@ const History = () => {
               filteredOrders.map((order) => (
                 <div
                   key={order.order_id}
-                  onClick={() => {
-                    setSelectedOrder(order);
-                    setShowDetailModal(true);
-                  }}
-                  className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:bg-blue-50 cursor-pointer transition"
+                  className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:bg-blue-50 transition"
                 >
-                  <div className="flex-1">
+                  <div
+                    className="flex-1 cursor-pointer"
+                    onClick={() => {
+                      setSelectedOrder(order);
+                      setShowDetailModal(true);
+                    }}
+                  >
                     <p className="text-sm text-gray-500 mb-1">
                       ID Pesanan:{" "}
                       <span className="font-mono text-gray-700">
@@ -537,7 +577,7 @@ const History = () => {
                       })}
                     </p>
                   </div>
-                  <div className="mt-3 sm:mt-0 flex flex-col sm:items-end space-y-1">
+                  <div className="mt-3 sm:mt-0 flex flex-col sm:items-end space-y-2">
                     <span className="text-sm font-medium text-gray-700">
                       Total: Rp {order.total_amount?.toLocaleString("id-ID")}
                     </span>
@@ -562,9 +602,28 @@ const History = () => {
                     >
                       {order.order_status}
                     </span>
-                    <button className="text-blue-600 hover:text-blue-800 text-sm font-semibold mt-1">
-                      <i className="fas fa-chevron-right mr-1"></i>Lihat Detail
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteOrder(order.order_id);
+                        }}
+                        className="px-3 py-1 text-xs text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition"
+                        title="Hapus dari riwayat"
+                      >
+                        <i className="fas fa-trash mr-1"></i>Hapus
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setShowDetailModal(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-semibold"
+                      >
+                        <i className="fas fa-chevron-right mr-1"></i>Lihat
+                        Detail
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -804,77 +863,16 @@ const History = () => {
                 </div>
               </div>
 
-              {/* Order Notes */}
-              {selectedOrder.notes && (
-                <div>
-                  <h3 className="font-semibold text-gray-800 mb-3">
-                    <i className="fas fa-sticky-note text-blue-600 mr-2"></i>
-                    Catatan Pesanan
-                  </h3>
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                    <p className="text-sm text-gray-700">
-                      {selectedOrder.notes}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Admin Notes */}
-              {selectedOrder.adminNotes && (
-                <div>
-                  <h3 className="font-semibold text-gray-800 mb-3">
-                    <i className="fas fa-comment-dots text-orange-600 mr-2"></i>
-                    Pesan dari Admin
-                  </h3>
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                    <p className="text-sm text-gray-700">
-                      {selectedOrder.adminNotes}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Price Summary */}
+              {/* Price Summary - Simplified */}
               <div className="border-t pt-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Subtotal</span>
-                    <span className="font-medium text-gray-800">
-                      Rp{" "}
-                      {(Number(selectedOrder.subtotal) || 0).toLocaleString(
-                        "id-ID"
-                      )}
-                    </span>
-                  </div>
-                  {Number(selectedOrder.discount_amount) > 0 && (
-                    <div className="flex justify-between text-sm text-green-600">
-                      <span>Diskon</span>
-                      <span className="font-medium">
-                        -Rp{" "}
-                        {(
-                          Number(selectedOrder.discount_amount) || 0
-                        ).toLocaleString("id-ID")}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Pajak (PPN 10%)</span>
-                    <span className="font-medium text-gray-800">
-                      Rp{" "}
-                      {(Number(selectedOrder.tax_amount) || 0).toLocaleString(
-                        "id-ID"
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-lg font-bold border-t pt-2">
-                    <span>Total</span>
-                    <span className="text-blue-600">
-                      Rp{" "}
-                      {(Number(selectedOrder.total_amount) || 0).toLocaleString(
-                        "id-ID"
-                      )}
-                    </span>
-                  </div>
+                <div className="flex justify-between text-lg font-bold">
+                  <span>Total Pembayaran</span>
+                  <span className="text-blue-600">
+                    Rp{" "}
+                    {(Number(selectedOrder.total_amount) || 0).toLocaleString(
+                      "id-ID"
+                    )}
+                  </span>
                 </div>
               </div>
 
