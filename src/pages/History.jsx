@@ -13,6 +13,44 @@ const History = () => {
   const userMarkerRef = useRef(null);
   const pharmacyMarkerRef = useRef(null);
   const watchIdRef = useRef(null);
+  const routePolylineRef = useRef(null);
+
+  const drawRouteWithOsrm = async (from, to, map) => {
+    try {
+      const url = `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        console.warn('OSRM route request failed with status', response.status);
+        return;
+      }
+
+      const data = await response.json();
+      if (!data.routes || !data.routes.length) {
+        console.warn('OSRM route response does not contain routes');
+        return;
+      }
+
+      const coordinates = data.routes[0].geometry.coordinates.map(([lng, lat]) => ({
+        lat,
+        lng,
+      }));
+
+      if (routePolylineRef.current) {
+        routePolylineRef.current.setMap(null);
+      }
+
+      routePolylineRef.current = new window.google.maps.Polyline({
+        path: coordinates,
+        geodesic: true,
+        strokeColor: '#2563eb',
+        strokeOpacity: 0.9,
+        strokeWeight: 4,
+        map,
+      });
+    } catch (error) {
+      console.error('OSRM routing error:', error);
+    }
+  };
 
   useEffect(() => {
     try {
@@ -29,6 +67,10 @@ const History = () => {
       if (watchIdRef.current && navigator.geolocation) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
+      }
+      if (routePolylineRef.current) {
+        routePolylineRef.current.setMap(null);
+        routePolylineRef.current = null;
       }
       return;
     }
@@ -50,28 +92,55 @@ const History = () => {
     }
 
     const pharmacyAddress = 'Gedung C Fasilkom-TI, Universitas Sumatera Utara, Jl. Alumni No.3, Padang Bulan, Kec. Medan Baru, Kota Medan, Sumatera Utara 20155';
+    const envLat = parseFloat(import.meta.env.VITE_PHARMACY_LAT || '');
+    const envLng = parseFloat(import.meta.env.VITE_PHARMACY_LNG || '');
+    const pharmacyCoords = !Number.isNaN(envLat) && !Number.isNaN(envLng)
+      ? { lat: envLat, lng: envLng }
+      : null;
+    // Koordinat default (fallback) untuk alamat di atas, jika geocoding gagal/ditolak
+    const DEFAULT_PHARMACY_COORDS = { lat: 3.5597, lng: 98.6540 };
 
     let map = mapRef.current;
     if (!map) {
       map = new window.google.maps.Map(mapElement, {
         center: { lat: 0, lng: 0 },
         zoom: 14,
+        // Map ID diperlukan agar AdvancedMarkerElement tersedia (vector maps)
+        mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID',
       });
 
-      const geocoder = new window.google.maps.Geocoder();
-      geocoder.geocode({ address: pharmacyAddress }, (results, status) => {
-        if (status === 'OK' && results[0]) {
-          const location = results[0].geometry.location;
-          pharmacyMarkerRef.current = new window.google.maps.Marker({
-            position: location,
+      const placeMarker = (position) => {
+        if (window.google?.maps?.marker?.AdvancedMarkerElement) {
+          pharmacyMarkerRef.current = new window.google.maps.marker.AdvancedMarkerElement({
+            position,
             map,
             title: 'Lokasi Apotek',
           });
-          map.setCenter(location);
         } else {
-          console.warn('Gagal geocode alamat apotek:', status);
+          pharmacyMarkerRef.current = new window.google.maps.Marker({
+            position,
+            map,
+            title: 'Lokasi Apotek',
+          });
         }
-      });
+        map.setCenter(position);
+      };
+
+      if (pharmacyCoords) {
+        placeMarker(pharmacyCoords);
+      } else {
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode({ address: pharmacyAddress }, (results, status) => {
+          if (status === 'OK' && results[0]) {
+            const location = results[0].geometry.location;
+            placeMarker(location);
+          } else {
+            console.warn('Gagal geocode alamat apotek:', status);
+            // Fallback ke koordinat default jika geocoding gagal
+            placeMarker(DEFAULT_PHARMACY_COORDS);
+          }
+        });
+      }
 
       mapRef.current = map;
     }
@@ -83,30 +152,71 @@ const History = () => {
       };
 
       if (!userMarkerRef.current) {
-        userMarkerRef.current = new window.google.maps.Marker({
-          position: userPos,
-          map,
-          title: 'Posisi Anda',
-          icon: {
-            path: window.google.maps.SymbolPath.CIRCLE,
-            scale: 6,
-            fillColor: '#2563eb',
-            fillOpacity: 1,
-            strokeColor: '#ffffff',
-            strokeWeight: 2,
-          },
-        });
+        // AdvancedMarkerElement with simple dot content
+        if (window.google?.maps?.marker?.AdvancedMarkerElement) {
+          const dot = document.createElement('div');
+          dot.style.width = '12px';
+          dot.style.height = '12px';
+          dot.style.background = '#2563eb';
+          dot.style.border = '2px solid #ffffff';
+          dot.style.borderRadius = '9999px';
+          dot.style.boxShadow = '0 0 0 2px rgba(37,99,235,0.2)';
+          userMarkerRef.current = new window.google.maps.marker.AdvancedMarkerElement({
+            position: userPos,
+            map,
+            title: 'Posisi Anda',
+            content: dot,
+          });
+        } else {
+          userMarkerRef.current = new window.google.maps.Marker({
+            position: userPos,
+            map,
+            title: 'Posisi Anda',
+            icon: {
+              path: window.google.maps.SymbolPath.CIRCLE,
+              scale: 6,
+              fillColor: '#2563eb',
+              fillOpacity: 1,
+              strokeColor: '#ffffff',
+              strokeWeight: 2,
+            },
+          });
+        }
       } else {
-        userMarkerRef.current.setPosition(userPos);
+        // Update position for both marker types
+        if (userMarkerRef.current.position instanceof window.google.maps.LatLng) {
+          userMarkerRef.current.setPosition(userPos);
+        } else if (userMarkerRef.current.position || userMarkerRef.current.position === undefined) {
+          userMarkerRef.current.position = userPos;
+        }
       }
 
       const bounds = new window.google.maps.LatLngBounds();
-      if (pharmacyMarkerRef.current) {
-        bounds.extend(pharmacyMarkerRef.current.getPosition());
+      const getMarkerPosition = (m) => {
+        if (!m) return null;
+        if (typeof m.getPosition === 'function') return m.getPosition();
+        return m.position || null;
+      };
+      const pharmacyPosForBounds = getMarkerPosition(pharmacyMarkerRef.current);
+      if (pharmacyPosForBounds) {
+        bounds.extend(pharmacyPosForBounds);
       }
       bounds.extend(userPos);
       map.fitBounds(bounds);
       setTrackingError('');
+
+      if (pharmacyMarkerRef.current && !routePolylineRef.current) {
+        const pharmacyPos = (typeof pharmacyMarkerRef.current.getPosition === 'function')
+          ? pharmacyMarkerRef.current.getPosition()
+          : pharmacyMarkerRef.current.position;
+        if (pharmacyPos) {
+          const to = {
+            lat: typeof pharmacyPos.lat === 'function' ? pharmacyPos.lat() : pharmacyPos.lat,
+            lng: typeof pharmacyPos.lng === 'function' ? pharmacyPos.lng() : pharmacyPos.lng,
+          };
+          drawRouteWithOsrm(userPos, to, map);
+        }
+      }
     };
 
     const errorHandler = (err) => {
@@ -124,6 +234,10 @@ const History = () => {
       if (watchIdRef.current && navigator.geolocation) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
+      }
+      if (routePolylineRef.current) {
+        routePolylineRef.current.setMap(null);
+        routePolylineRef.current = null;
       }
     };
   }, [trackingEnabled]);
