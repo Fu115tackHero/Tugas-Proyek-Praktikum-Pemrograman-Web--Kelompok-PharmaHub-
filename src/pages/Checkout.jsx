@@ -4,10 +4,11 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import PaymentService from "../services/payment.service";
 import CouponService from "../services/coupon.service";
+import OrderService from "../services/order.service";
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, getToken } = useAuth();
   const { cart, getCartTotal, getDiscountAmount, appliedCoupon, clearCart } =
     useCart();
 
@@ -199,95 +200,90 @@ const Checkout = () => {
     if (typeof fn === "function") fn();
   };
 
-  const saveOrder = (orderId, status, paymentDetails = null) => {
-    // Save ke order history
-    const orderHistory = JSON.parse(
-      localStorage.getItem("order_history") || "[]"
-    );
-    const newOrder = {
-      id: orderId,
-      customerName: formData.name,
-      customerEmail: formData.email,
-      customerPhone: formData.phone,
-      customerAddress: formData.address,
-      date: new Date().toISOString(),
-      items: cart.map((item) => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-        image: item.image,
-      })),
-      total: total,
-      subtotal: subtotal,
-      tax: tax,
-      discount: discount,
-      status: status,
-      notes: formData.notes || "",
-      paymentMethod: formData.paymentMethod,
-      userId: user?.id || "guest",
-      couponCode: appliedCoupon || null,
-      paymentDetails: paymentDetails,
-    };
+  /**
+   * Save order to database via API
+   * Replaces localStorage-based order saving
+   */
+  const saveOrder = async (orderId, status, paymentDetails = null) => {
+    try {
+      const token = getToken();
+      if (!token) {
+        console.error("[Checkout] No auth token available");
+        throw new Error("Authentication required");
+      }
 
-    // DEBUG: Log order being saved
-    console.log("💾 [Order] Saving order to history:", {
-      orderId,
-      total,
-      subtotal,
-      tax,
-      discount,
-      itemCount: cart.length,
-    });
+      // Determine payment status based on status string
+      let paymentStatus = "pending";
+      let orderStatus = "pending";
 
-    localStorage.setItem(
-      "order_history",
-      JSON.stringify([...orderHistory, newOrder])
-    );
+      if (status.includes("Lunas") || status.includes("Pembayaran Berhasil")) {
+        paymentStatus = "paid";
+        orderStatus = "confirmed";
+      } else if (status.includes("Menunggu Pembayaran")) {
+        paymentStatus = "pending";
+        orderStatus = "pending";
+      } else if (status.includes("Bayar di Tempat")) {
+        paymentStatus = "unpaid";
+        orderStatus = "pending";
+      }
 
-    // Save untuk admin OrderManagement
-    const adminOrders = JSON.parse(localStorage.getItem("adminOrders") || "[]");
+      // Prepare order data for API
+      const orderData = {
+        customerName: formData.name,
+        customerEmail: formData.email,
+        customerPhone: formData.phone,
+        customerAddress: formData.address,
+        items: cart.map((item) => ({
+          product_id: item.id,
+          product_name: item.name,
+          product_price: item.price,
+          quantity: item.quantity,
+        })),
+        subtotal: subtotal,
+        taxAmount: tax,
+        discountAmount: discount,
+        totalAmount: total,
+        couponCode: appliedCoupon?.code || null,
+        paymentMethod:
+          formData.paymentMethod === "midtrans_online"
+            ? "pembayaran_online"
+            : "bayar_ditempat",
+        paymentStatus: paymentStatus,
+        notes: formData.notes || null,
+      };
 
-    // Map status ke admin format
-    let adminStatus = "pending";
-    let adminPaymentStatus = "unpaid";
+      console.log("💾 [Checkout] Creating order via API:", {
+        orderId,
+        total,
+        subtotal,
+        tax,
+        discount,
+        itemCount: cart.length,
+      });
 
-    if (status.includes("Lunas") || status.includes("Pembayaran Berhasil")) {
-      adminStatus = "paid";
-      adminPaymentStatus = "paid";
-    } else if (
-      status.includes("Menunggu Pembayaran") ||
-      status.includes("Pending")
-    ) {
-      adminStatus = "pending";
-      adminPaymentStatus = "unpaid";
+      const result = await OrderService.createOrder(orderData, token);
+
+      if (result.success) {
+        console.log("✅ [Checkout] Order created successfully:", result.order);
+
+        // Record coupon usage if applied
+        if (appliedCoupon?.code) {
+          try {
+            await CouponService.recordUsage(appliedCoupon.code, token);
+            console.log("✅ [Checkout] Coupon usage recorded");
+          } catch (error) {
+            console.error("[Checkout] Error recording coupon usage:", error);
+          }
+        }
+
+        return result.order;
+      } else {
+        throw new Error(result.message || "Failed to create order");
+      }
+    } catch (error) {
+      console.error("[Checkout] Error saving order:", error);
+      throw error;
     }
-
-    const adminOrder = {
-      id: orderId,
-      customerName: formData.name,
-      customerEmail: formData.email,
-      customerPhone: formData.phone,
-      date: new Date().toISOString(),
-      status: adminStatus,
-      paymentStatus: adminPaymentStatus,
-      paymentMethod:
-        formData.paymentMethod === "midtrans_online"
-          ? "pembayaran_online"
-          : "bayar_ditempat",
-      total: total,
-      items: cart.map((item) => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-      })),
-      notes: formData.notes || "",
-    };
-    localStorage.setItem(
-      "adminOrders",
-      JSON.stringify([...adminOrders, adminOrder])
-    );
   };
 
   const handleSubmit = async (e) => {
@@ -335,16 +331,28 @@ const Checkout = () => {
         notes: formData.notes || "",
         adminNotes: "",
       };
-      saveOrder(orderId, orderStatus);
-      addOrderNotification(orderId, orderStatus, orderDetails);
 
-      setLoading(false);
-      showModal(
-        "✅ Pesanan Dikonfirmasi",
-        `Pesanan #${orderId} telah dibuat!\n\nSilakan ambil dan bayar di kasir apotek.\n\nNomor pesanan akan digunakan untuk verifikasi.`,
-        "success",
-        true
-      );
+      try {
+        await saveOrder(orderId, orderStatus);
+        addOrderNotification(orderId, orderStatus, orderDetails);
+
+        setLoading(false);
+        showModal(
+          "✅ Pesanan Dikonfirmasi",
+          `Pesanan #${orderId} telah dibuat!\n\nSilakan ambil dan bayar di kasir apotek.\n\nNomor pesanan akan digunakan untuk verifikasi.`,
+          "success",
+          true
+        );
+      } catch (error) {
+        console.error("[Checkout] Error creating bayar ditempat order:", error);
+        setLoading(false);
+        showModal(
+          "❌ Gagal Membuat Pesanan",
+          `Terjadi kesalahan: ${error.message || "Unknown error"}`,
+          "error",
+          false
+        );
+      }
     } else {
       // ============================================
       // MIDTRANS PAYMENT - REAL INTEGRATION
@@ -367,7 +375,7 @@ const Checkout = () => {
             id: "DISCOUNT",
             price: -Math.round(discount),
             quantity: 1,
-            name: `Diskon (${appliedCoupon || "Kupon"})`,
+            name: `Diskon (${appliedCoupon?.code || "Kupon"})`,
           });
         }
 
@@ -436,34 +444,31 @@ const Checkout = () => {
               notes: formData.notes || "",
               adminNotes: "",
             };
-            saveOrder(orderId, status, transaction);
 
-            // Record coupon usage in backend if applied
             try {
-              if (appliedCoupon && discount > 0) {
-                console.log(
-                  "📝 Recording coupon usage:",
-                  appliedCoupon,
-                  discount
-                );
-                await CouponService.recordUsage({
-                  couponCode: appliedCoupon,
-                  orderId,
-                  discountAmount: discount,
-                });
-                console.log("✅ Coupon usage recorded");
-              }
-            } catch (e) {
-              console.error("⚠️ Failed to record coupon usage:", e.message);
-            }
-            addOrderNotification(orderId, status, orderDetails);
+              await saveOrder(orderId, status, transaction);
+              addOrderNotification(orderId, status, orderDetails);
 
-            showModal(
-              "✅ Pembayaran Berhasil!",
-              `Pesanan #${orderId} telah dibayar!\n\nSilakan menunggu pesanan disiapkan di apotek.`,
-              "success",
-              true
-            );
+              showModal(
+                "✅ Pembayaran Berhasil!",
+                `Pembayaran untuk pesanan #${orderId} berhasil!\n\nSilakan ambil pesanan Anda di apotek.`,
+                "success",
+                true
+              );
+            } catch (error) {
+              console.error(
+                "[Checkout] Error saving order after payment success:",
+                error
+              );
+              showModal(
+                "⚠️ Pembayaran Berhasil, Pesanan Gagal Disimpan",
+                "Pembayaran Anda berhasil, tetapi terjadi kesalahan saat menyimpan pesanan. Silakan hubungi admin dengan ID transaksi Anda.",
+                "error",
+                false
+              );
+            }
+
+            // Record coupon usage is now handled in saveOrder function
           },
 
           onPending: function (transaction) {
@@ -841,7 +846,7 @@ const Checkout = () => {
 
                   {discount > 0 && (
                     <div className="flex justify-between text-sm text-green-600 font-medium">
-                      <span>Diskon ({appliedCoupon}):</span>
+                      <span>Diskon ({appliedCoupon?.code}):</span>
                       <span>-Rp {discount.toLocaleString("id-ID")}</span>
                     </div>
                   )}
