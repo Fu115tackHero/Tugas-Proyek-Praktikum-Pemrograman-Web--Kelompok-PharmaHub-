@@ -12,6 +12,9 @@ router.post("/", orderController.createOrder);
 // GET /api/orders/admin/all - Get all orders (admin only)
 router.get("/admin/all", orderController.getAllOrders);
 
+// GET /api/orders/admin/:id - Get order details for admin (includes items)
+router.get("/admin/:id", orderController.getOrderDetailsForAdmin);
+
 // POST /api/orders/bulk-archive - Bulk archive orders (admin only)
 router.post("/bulk-archive", orderController.bulkArchiveOrders);
 

@@ -101,9 +101,21 @@ const OrderManagement = () => {
     setStatusCounts(counts);
   };
 
-  const openDetailModal = (order) => {
+  const openDetailModal = async (order) => {
     setCurrentOrder(order);
     setShowDetailModal(true);
+    
+    // Fetch full order details with items
+    try {
+      const token = getToken();
+      const detailResult = await OrderService.getOrderDetails(order.order_id, token);
+      
+      if (detailResult.success && detailResult.order) {
+        setCurrentOrder(detailResult.order);
+      }
+    } catch (err) {
+      console.error("Error fetching order details:", err);
+    }
   };
 
   const openStatusModal = (order) => {
@@ -491,9 +503,27 @@ const OrderManagement = () => {
                   <h4 className="font-medium text-gray-900 mb-2">
                     Item Pesanan:
                   </h4>
-                  <div className="text-sm text-gray-600">
-                    {order.total_items} item ({order.total_quantity} total qty)
-                  </div>
+                  {order.items && order.items.length > 0 ? (
+                    <div className="space-y-1">
+                      {order.items.map((item, index) => (
+                        <div key={index} className="flex justify-between text-sm">
+                          <span className="text-gray-700">
+                            • {item.product_name}
+                          </span>
+                          <span className="text-gray-600 font-medium">
+                            x{item.quantity}
+                          </span>
+                        </div>
+                      ))}
+                      <div className="mt-2 pt-2 border-t text-sm text-gray-500">
+                        Total: {order.total_items} item ({order.total_quantity} qty)
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-600">
+                      {order.total_items} item ({order.total_quantity} total qty)
+                    </div>
+                  )}
                 </div>
 
                 {order.notes && (
@@ -641,15 +671,66 @@ const OrderManagement = () => {
                   <h4 className="font-semibold text-gray-900 mb-2">
                     Item Pesanan
                   </h4>
-                  <div className="text-sm text-gray-600">
-                    <p>Total Items: {currentOrder.total_items}</p>
-                    <p>Total Quantity: {currentOrder.total_quantity}</p>
-                  </div>
-                  <div className="mt-2 text-right">
-                    <p className="text-lg font-semibold text-gray-900">
-                      Total: {formatCurrency(currentOrder.total_amount)}
-                    </p>
-                  </div>
+                  
+                  {currentOrder.items && currentOrder.items.length > 0 ? (
+                    <div className="space-y-3">
+                      {currentOrder.items.map((item, index) => (
+                        <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                          {item.product_image && (
+                            <img 
+                              src={item.product_image} 
+                              alt={item.product_name}
+                              className="w-16 h-16 object-cover rounded"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">{item.product_name}</p>
+                            <p className="text-sm text-gray-600">
+                              {formatCurrency(item.product_price)} x {item.quantity}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-gray-900">
+                              {formatCurrency(item.subtotal)}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      <div className="border-t pt-3 mt-3">
+                        <div className="flex justify-between text-sm text-gray-600 mb-1">
+                          <span>Subtotal</span>
+                          <span>{formatCurrency(currentOrder.subtotal)}</span>
+                        </div>
+                        {currentOrder.tax_amount > 0 && (
+                          <div className="flex justify-between text-sm text-gray-600 mb-1">
+                            <span>Pajak</span>
+                            <span>{formatCurrency(currentOrder.tax_amount)}</span>
+                          </div>
+                        )}
+                        {currentOrder.discount_amount > 0 && (
+                          <div className="flex justify-between text-sm text-green-600 mb-1">
+                            <span>Diskon</span>
+                            <span>-{formatCurrency(currentOrder.discount_amount)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-lg font-semibold text-gray-900 mt-2 pt-2 border-t">
+                          <span>Total</span>
+                          <span>{formatCurrency(currentOrder.total_amount)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-600">
+                      <p>Total Items: {currentOrder.total_items}</p>
+                      <p>Total Quantity: {currentOrder.total_quantity}</p>
+                      <div className="mt-2 text-right">
+                        <p className="text-lg font-semibold text-gray-900">
+                          Total: {formatCurrency(currentOrder.total_amount)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {currentOrder.notes && (

@@ -3,9 +3,12 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import OrderService from "../services/order.service";
 import { waitForGoogleMaps } from "../utils/googleMapsLoader";
+import AlertModal from "../components/AlertModal";
+import { useAlert } from "../hooks/useAlert";
 
 const History = () => {
   const { getToken } = useAuth();
+  const { alertState, showAlert, hideAlert } = useAlert();
   const [activeTab, setActiveTab] = useState("all");
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -262,20 +265,20 @@ const History = () => {
     try {
       const token = getToken();
       if (!token) {
-        alert("Sesi login telah berakhir. Silakan login kembali.");
+        showAlert("Sesi login telah berakhir. Silakan login kembali.", "warning");
         return;
       }
       // Use user-specific hide endpoint instead of admin archive
       const result = await OrderService.hideOrderFromUser(orderId, token);
       if (result.success) {
         setOrders((prev) => prev.filter((o) => o.order_id !== orderId));
-        alert("Pesanan berhasil dihapus dari riwayat");
+        showAlert("Pesanan berhasil dihapus dari riwayat", "success");
       } else {
-        alert("Gagal menghapus pesanan");
+        showAlert("Gagal menghapus pesanan", "error");
       }
     } catch (err) {
       console.error("Error deleting order:", err);
-      alert(err.message || "Gagal menghapus pesanan");
+      showAlert(err.message || "Gagal menghapus pesanan", "error");
     }
   };
 
@@ -925,6 +928,15 @@ const History = () => {
           </div>
         </div>
       )}
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertState.isOpen}
+        onClose={hideAlert}
+        message={alertState.message}
+        type={alertState.type}
+        title={alertState.title}
+      />
     </main>
   );
 };

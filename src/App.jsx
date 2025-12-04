@@ -4,6 +4,8 @@ import { AuthProvider } from "./context/AuthContext";
 
 // Layout
 import Layout from "./components/Layout";
+import ScrollToTop from "./components/ScrollToTop";
+import BackToTop from "./components/BackToTop";
 
 // Pages
 import Home from "./pages/Home";
@@ -36,6 +38,8 @@ import AdminRoute from "./components/AdminRoute";
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
+      <BackToTop />
       <AuthProvider>
         <CartProvider>
           <Routes>

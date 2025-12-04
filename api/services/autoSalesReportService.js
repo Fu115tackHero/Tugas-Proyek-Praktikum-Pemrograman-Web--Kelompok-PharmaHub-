@@ -114,17 +114,18 @@ async function getLowStockProducts() {
   try {
     const query = `
       SELECT 
-        product_id,
-        name,
-        brand,
-        stock,
-        min_stock,
-        price,
-        category_id,
-        main_image_url
-      FROM products
-      WHERE stock < 10 AND is_active = TRUE
-      ORDER BY stock ASC, name ASC
+        p.product_id,
+        p.name,
+        p.brand,
+        p.stock,
+        p.min_stock,
+        p.price,
+        p.category_id,
+        pi.image_url as main_image_url
+      FROM products p
+      LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = true
+      WHERE p.stock < 10 AND p.is_active = TRUE
+      ORDER BY p.stock ASC, p.name ASC
     `;
 
     const { rows } = await pool.query(query);
@@ -228,10 +229,11 @@ async function getTransactionDetails(orderId) {
         oi.product_price,
         oi.quantity,
         oi.subtotal,
-        p.main_image_url,
+        pi.image_url as main_image_url,
         p.brand
       FROM order_items oi
       LEFT JOIN products p ON oi.product_id = p.product_id
+      LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = true
       WHERE oi.order_id = $1
       ORDER BY oi.order_item_id
     `;
@@ -391,9 +393,10 @@ async function generateJSON(report, transactions, lowStock) {
         oi.quantity,
         oi.subtotal,
         p.brand,
-        p.main_image_url
+        pi.image_url as main_image_url
       FROM order_items oi
       LEFT JOIN products p ON oi.product_id = p.product_id
+      LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = true
       WHERE oi.order_id = ANY($1::int[])
       ORDER BY oi.order_id, oi.order_item_id
     `;

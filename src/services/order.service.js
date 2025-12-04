@@ -257,6 +257,27 @@ export async function unarchiveOrder(orderId, token) {
 }
 
 /**
+ * Get order details for admin (includes items)
+ * @param {number} orderId - Order ID
+ * @param {string} token - JWT authentication token
+ * @returns {Promise<Object>} - Order details with items
+ */
+export async function getOrderDetails(orderId, token) {
+  try {
+    const response = await axios.get(`${API_URL}/orders/admin/${orderId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error(`[OrderService] Error fetching order details ${orderId}:`, error);
+    throw error.response?.data || error.message;
+  }
+}
+
+/**
  * Bulk archive orders (admin only)
  * @param {Array<number>} orderIds - Array of order IDs to archive
  * @param {string} token - JWT authentication token
@@ -287,6 +308,7 @@ const OrderService = {
   getOrders,
   getAllOrders,
   getOrderById,
+  getOrderDetails, // Admin get order with items
   updateOrderStatus,
   cancelOrder,
   archiveOrder, // Admin archive

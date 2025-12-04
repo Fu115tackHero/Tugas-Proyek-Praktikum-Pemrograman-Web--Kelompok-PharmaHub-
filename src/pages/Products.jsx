@@ -261,9 +261,18 @@ const Products = () => {
                   </div>
                 )}
                 <div className="mt-auto">
-                  <p className="text-blue-600 font-bold mt-4">
-                    Rp {(product.price || 0).toLocaleString("id-ID")}
-                  </p>
+                  <div className="flex items-center justify-between mt-4">
+                    <p className="text-blue-600 font-bold">
+                      Rp {(product.price || 0).toLocaleString("id-ID")}
+                    </p>
+                    <p className={`text-sm font-medium ${
+                      (product.stock || 0) > 0 
+                        ? (product.stock > 10 ? 'text-green-600' : 'text-orange-600')
+                        : 'text-red-600'
+                    }`}>
+                      Stok: {product.stock || 0}
+                    </p>
+                  </div>
                   <div className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition w-full flex items-center justify-center">
                     <i className="fas fa-eye mr-2"></i>
                     Lihat Detail

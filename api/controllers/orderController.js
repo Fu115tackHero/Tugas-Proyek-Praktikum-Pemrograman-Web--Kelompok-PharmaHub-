@@ -111,6 +111,46 @@ async function getAllOrders(req, res) {
 }
 
 /**
+ * GET /api/orders/admin/:id - Get order details for admin (includes items)
+ */
+async function getOrderDetailsForAdmin(req, res) {
+  try {
+    const orderId = parseInt(req.params.id);
+
+    console.log(`[OrderController] Admin fetching order details ${orderId}`);
+
+    if (isNaN(orderId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID pesanan tidak valid",
+      });
+    }
+
+    // Use getOrderByIdForAdmin which doesn't require userId
+    const order = await orderService.getOrderByIdForAdmin(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Pesanan tidak ditemukan",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      order,
+    });
+  } catch (error) {
+    console.error("[OrderController] Error fetching order details for admin:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Gagal mengambil detail pesanan",
+      error: error.message,
+    });
+  }
+}
+
+/**
  * GET /api/orders/:id - Get specific order by ID
  */
 async function getOrderById(req, res) {
@@ -475,6 +515,7 @@ module.exports = {
   createOrder,
   getOrders,
   getAllOrders,
+  getOrderDetailsForAdmin,
   getOrderById,
   updateOrderStatus,
   cancelOrder,

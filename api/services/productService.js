@@ -46,10 +46,17 @@ async function insertDetailArrays(client, detail_id, arrays) {
     for (let i = 0; i < uniqueInfo.length; i++) {
       console.log(`  📌 Inserting item ${i + 1}/${uniqueInfo.length}:`, uniqueInfo[i]);
       const result = await client.query(
-        `INSERT INTO product_important_info (detail_id, info_text, display_order) VALUES ($1, $2, $3) RETURNING info_id`,
+        `INSERT INTO product_important_info (detail_id, info_text, display_order) 
+         VALUES ($1, $2, $3) 
+         ON CONFLICT DO NOTHING
+         RETURNING info_id`,
         [detail_id, uniqueInfo[i].trim(), i]
       );
-      console.log(`  ✅ Inserted with info_id:`, result.rows[0].info_id);
+      if (result.rows.length > 0) {
+        console.log(`  ✅ Inserted with info_id:`, result.rows[0].info_id);
+      } else {
+        console.log(`  ⚠️  Duplicate skipped:`, uniqueInfo[i]);
+      }
     }
   }
 
@@ -58,7 +65,9 @@ async function insertDetailArrays(client, detail_id, arrays) {
     const uniqueSideEffects = deduplicateArray(side_effects);
     for (let i = 0; i < uniqueSideEffects.length; i++) {
       await client.query(
-        `INSERT INTO product_side_effects (detail_id, side_effect_text, display_order) VALUES ($1, $2, $3)`,
+        `INSERT INTO product_side_effects (detail_id, side_effect_text, display_order) 
+         VALUES ($1, $2, $3)
+         ON CONFLICT DO NOTHING`,
         [detail_id, uniqueSideEffects[i].trim(), i]
       );
     }
@@ -69,7 +78,9 @@ async function insertDetailArrays(client, detail_id, arrays) {
     const uniquePrecautions = deduplicateArray(precaution);
     for (let i = 0; i < uniquePrecautions.length; i++) {
       await client.query(
-        `INSERT INTO product_precautions (detail_id, precaution_text, display_order) VALUES ($1, $2, $3)`,
+        `INSERT INTO product_precautions (detail_id, precaution_text, display_order) 
+         VALUES ($1, $2, $3)
+         ON CONFLICT DO NOTHING`,
         [detail_id, uniquePrecautions[i].trim(), i]
       );
     }
@@ -80,7 +91,9 @@ async function insertDetailArrays(client, detail_id, arrays) {
     const uniqueInteractions = deduplicateArray(interactions);
     for (let i = 0; i < uniqueInteractions.length; i++) {
       await client.query(
-        `INSERT INTO product_interactions (detail_id, interaction_text, display_order) VALUES ($1, $2, $3)`,
+        `INSERT INTO product_interactions (detail_id, interaction_text, display_order) 
+         VALUES ($1, $2, $3)
+         ON CONFLICT DO NOTHING`,
         [detail_id, uniqueInteractions[i].trim(), i]
       );
     }
@@ -91,7 +104,9 @@ async function insertDetailArrays(client, detail_id, arrays) {
     const uniqueIndications = deduplicateArray(indication);
     for (let i = 0; i < uniqueIndications.length; i++) {
       await client.query(
-        `INSERT INTO product_indications (detail_id, indication_text, display_order) VALUES ($1, $2, $3)`,
+        `INSERT INTO product_indications (detail_id, indication_text, display_order) 
+         VALUES ($1, $2, $3)
+         ON CONFLICT DO NOTHING`,
         [detail_id, uniqueIndications[i].trim(), i]
       );
     }
@@ -324,13 +339,13 @@ async function getAllProducts() {
       id: row.product_id, // Also add 'id' field for frontend
       image: row.main_image_url,
       prescriptionRequired: row.prescription_required,
-      // Map detail fields to match formData field names
+      // Map detail fields to match formData field names (camelCase)
       genericName: row.generic_name,
-      sideEffects: row.side_effects || [],
       howItWorks: row.how_it_works,
-      // Include all detail arrays
+      // Map all detail arrays to camelCase
       ingredients: row.ingredients || [],
-      important_info: row.important_info || [],
+      importantInfo: row.important_info || [],
+      sideEffects: row.side_effects || [],
       precaution: row.precaution || [],
       interactions: row.interactions || [],
       indication: row.indication || [],
@@ -398,12 +413,13 @@ async function getProductById(id) {
         id: product.product_id,
         image: product.main_image_url,
         prescriptionRequired: product.prescription_required,
-        // Map detail fields to match formData field names
+        // Map detail fields to match formData field names (camelCase)
         genericName: product.generic_name,
-        sideEffects: product.side_effects || [],
         howItWorks: product.how_it_works,
+        // Map array fields from snake_case to camelCase
         ingredients: product.ingredients || [],
         importantInfo: product.important_info || [],
+        sideEffects: product.side_effects || [],
         precaution: product.precaution || [],
         interactions: product.interactions || [],
         indication: product.indication || [],
@@ -417,6 +433,13 @@ async function getProductById(id) {
       prescriptionRequired: product.prescription_required,
       genericName: product.generic_name,
       howItWorks: product.how_it_works,
+      // Add empty arrays as fallback
+      ingredients: [],
+      importantInfo: [],
+      sideEffects: [],
+      precaution: [],
+      interactions: [],
+      indication: [],
     } : null;
   } finally {
     client.release();

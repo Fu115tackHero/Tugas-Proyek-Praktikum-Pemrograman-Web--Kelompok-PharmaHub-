@@ -22,6 +22,9 @@ const ProductDetail = () => {
           navigate("/products");
           return;
         }
+        
+        console.log("📦 Raw product data from API:", p);
+        
         // Backend already maps fields; normalize with safe fallbacks
         const normalized = {
           id: p.id || p.product_id,
@@ -36,12 +39,23 @@ const ProductDetail = () => {
           prescriptionRequired:
             p.prescriptionRequired || p.prescription_required || false,
           ingredients: p.ingredients || [],
-          precaution: p.precaution || p.warnings || [],
+          precaution: p.precaution || [],
           sideEffects: p.sideEffects || p.side_effects || [],
           interactions: p.interactions || [],
           indication: p.indication || [],
           importantInfo: p.importantInfo || p.important_info || [],
         };
+        
+        console.log("✅ Normalized product data:", normalized);
+        console.log("📋 Details check:", {
+          ingredients: normalized.ingredients?.length || 0,
+          precaution: normalized.precaution?.length || 0,
+          sideEffects: normalized.sideEffects?.length || 0,
+          interactions: normalized.interactions?.length || 0,
+          indication: normalized.indication?.length || 0,
+          importantInfo: normalized.importantInfo?.length || 0,
+        });
+        
         setProduct(normalized);
       } catch (e) {
         console.error("Failed to load product detail", e);
@@ -253,25 +267,47 @@ const ProductDetail = () => {
 
               {/* Quantity and Add to Cart */}
               <div className="space-y-4">
-                {/* Quantity Selector */}
-                <div className="flex items-center space-x-4">
-                  <span className="text-gray-700 font-medium">Jumlah:</span>
-                  <div className="flex items-center border border-gray-300 rounded-lg">
-                    <button
-                      onClick={() => handleQuantityChange(-1)}
-                      className="px-3 py-2 hover:bg-gray-100 transition"
-                      disabled={quantity <= 1}
-                    >
-                      <i className="fas fa-minus text-sm"></i>
-                    </button>
-                    <span className="px-4 py-2 font-medium">{quantity}</span>
-                    <button
-                      onClick={() => handleQuantityChange(1)}
-                      className="px-3 py-2 hover:bg-gray-100 transition"
-                      disabled={quantity >= product.stock}
-                    >
-                      <i className="fas fa-plus text-sm"></i>
-                    </button>
+                {/* Quantity Selector with Stock Info */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <span className="text-gray-700 font-medium">Jumlah:</span>
+                    <div className="flex items-center border border-gray-300 rounded-lg">
+                      <button
+                        onClick={() => handleQuantityChange(-1)}
+                        className="px-3 py-2 hover:bg-gray-100 transition"
+                        disabled={quantity <= 1}
+                      >
+                        <i className="fas fa-minus text-sm"></i>
+                      </button>
+                      <span className="px-4 py-2 font-medium">{quantity}</span>
+                      <button
+                        onClick={() => handleQuantityChange(1)}
+                        className="px-3 py-2 hover:bg-gray-100 transition"
+                        disabled={quantity >= product.stock}
+                      >
+                        <i className="fas fa-plus text-sm"></i>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Stock Information */}
+                  <div className="flex items-center space-x-2">
+                    <i className={`fas fa-box ${
+                      product.stock > 10 ? 'text-green-600' : 
+                      product.stock > 0 ? 'text-orange-600' : 'text-red-600'
+                    }`}></i>
+                    <span className={`font-medium ${
+                      product.stock > 10 ? 'text-green-600' : 
+                      product.stock > 0 ? 'text-orange-600' : 'text-red-600'
+                    }`}>
+                      Stok: {product.stock}
+                      {product.stock <= 10 && product.stock > 0 && (
+                        <span className="text-xs ml-1">(Terbatas)</span>
+                      )}
+                      {product.stock === 0 && (
+                        <span className="text-xs ml-1">(Habis)</span>
+                      )}
+                    </span>
                   </div>
                 </div>
 
@@ -342,11 +378,11 @@ const ProductDetail = () => {
                   key={tab.id}
                   className={activeTab === tab.id ? "block" : "hidden"}
                 >
-                  <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+                  <h4 className="font-semibold text-gray-800 mb-4 flex items-center">
                     <i className={`fas ${tab.icon} mr-2 text-blue-600`}></i>
                     {tab.label}:
                   </h4>
-                  <div className="text-gray-600 space-y-2">
+                  <div className="text-gray-600">
                     {tab.data && tab.data.length > 0 ? (
                       <>
                         {tab.id === "ingredients" ? (
@@ -354,25 +390,27 @@ const ProductDetail = () => {
                             <h5 className="font-medium text-gray-800 mb-3">
                               Komposisi per tablet/kapsul:
                             </h5>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2">
                               {tab.data.map((item, index) => (
                                 <div
                                   key={index}
-                                  className="flex items-center py-1"
+                                  className="flex items-start py-1"
                                 >
-                                  <i className="fas fa-circle text-blue-400 text-xs mr-2"></i>
-                                  <span className="text-sm">{item}</span>
+                                  <i className="fas fa-circle text-blue-400 text-xs mr-2 mt-1.5"></i>
+                                  <span className="text-sm leading-relaxed">{item}</span>
                                 </div>
                               ))}
                             </div>
                           </div>
                         ) : (
-                          tab.data.map((item, index) => (
-                            <p key={index} className="flex items-start">
-                              <span className="mr-2">•</span>
-                              <span>{item}</span>
-                            </p>
-                          ))
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                            {tab.data.map((item, index) => (
+                              <div key={index} className="flex items-start py-1">
+                                <span className="text-blue-500 mr-2 font-bold">•</span>
+                                <span className="leading-relaxed">{item}</span>
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </>
                     ) : (

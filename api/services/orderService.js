@@ -301,14 +301,88 @@ async function getAllOrders(includeArchived = false) {
     `;
 
     const result = await pool.query(query);
+    
+    // Fetch items for each order (product_name and quantity only)
+    const orders = result.rows;
+    for (const order of orders) {
+      const itemsQuery = `
+        SELECT 
+          product_name,
+          quantity
+        FROM order_items
+        WHERE order_id = $1
+        ORDER BY order_item_id
+      `;
+      const itemsResult = await pool.query(itemsQuery, [order.order_id]);
+      order.items = itemsResult.rows;
+    }
 
     console.log(
-      `[OrderService] Found ${result.rows.length} total orders (includeArchived: ${includeArchived})`
+      `[OrderService] Found ${orders.length} total orders (includeArchived: ${includeArchived})`
     );
 
-    return result.rows;
+    return orders;
   } catch (error) {
     console.error("[OrderService] Error fetching all orders:", error.message);
+    throw error;
+  }
+}
+
+/**
+ * Get specific order by ID with all items (for admin - no userId check)
+ */
+async function getOrderByIdForAdmin(orderId) {
+  try {
+    console.log(`[OrderService] Admin fetching order ${orderId}`);
+
+    // Get order details
+    const orderQuery = `
+      SELECT 
+        o.*,
+        COUNT(oi.order_item_id) as total_items,
+        SUM(oi.quantity) as total_quantity
+      FROM orders o
+      LEFT JOIN order_items oi ON o.order_id = oi.order_id
+      WHERE o.order_id = $1
+      GROUP BY o.order_id
+    `;
+
+    const orderResult = await pool.query(orderQuery, [orderId]);
+
+    if (orderResult.rows.length === 0) {
+      return null;
+    }
+
+    const order = orderResult.rows[0];
+
+    // Get order items with product images
+    const itemsQuery = `
+      SELECT 
+        oi.order_item_id,
+        oi.product_id,
+        oi.product_name,
+        oi.product_price,
+        oi.quantity,
+        oi.subtotal,
+        pi.image_url as product_image
+      FROM order_items oi
+      LEFT JOIN products p ON oi.product_id = p.product_id
+      LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = true
+      WHERE oi.order_id = $1
+      ORDER BY oi.order_item_id
+    `;
+
+    const itemsResult = await pool.query(itemsQuery, [orderId]);
+
+    order.items = itemsResult.rows;
+
+    console.log(
+      `[OrderService] Admin order ${orderId} found with ${itemsResult.rows.length} items`
+    );
+
+    return order;
+  } catch (error) {
+    console.error("[OrderService] Error fetching order for admin:", error.message);
     throw error;
   }
 }
@@ -349,9 +423,10 @@ async function getOrderById(userId, orderId) {
         oi.product_price,
         oi.quantity,
         oi.subtotal,
-        p.main_image_url as product_image
+        pi.image_url as product_image
       FROM order_items oi
       LEFT JOIN products p ON oi.product_id = p.product_id
+      LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = true
       WHERE oi.order_id = $1
       ORDER BY oi.order_item_id
     `;
@@ -729,6 +804,7 @@ module.exports = {
   getOrdersByUserId,
   getAllOrders,
   getOrderById,
+  getOrderByIdForAdmin,
   updateOrderStatus,
   cancelOrder,
   archiveOrder, // Admin-side archive

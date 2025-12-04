@@ -190,8 +190,8 @@ const DrugManagement = () => {
   const filterDrugs = () => {
     let filtered = drugs.filter((drug) => {
       const matchesSearch =
-        drug.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        drug.description.toLowerCase().includes(searchTerm.toLowerCase());
+        (drug.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (drug.description || drug.howItWorks || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory =
         !categoryFilter ||
         drug.category_name === categoryFilter ||

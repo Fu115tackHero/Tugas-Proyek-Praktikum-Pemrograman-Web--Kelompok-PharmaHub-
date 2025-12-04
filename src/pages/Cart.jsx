@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import AlertModal from "../components/AlertModal";
+import { useAlert } from "../hooks/useAlert";
 
 const Cart = () => {
   const navigate = useNavigate();
+  const { alertState, showAlert, hideAlert } = useAlert();
   const {
     cart,
     savedForLater,
@@ -80,7 +83,7 @@ const Cart = () => {
     
     if (!result.success) {
       console.error("❌ Failed to update quantity:", result.message);
-      alert(result.message);
+      showAlert(result.message, "error");
     }
     setActionLoading(null);
   };
@@ -93,7 +96,7 @@ const Cart = () => {
     
     if (!result.success) {
       console.error("❌ Failed to remove from cart:", result.message);
-      alert(result.message);
+      showAlert(result.message, "error");
     }
     setActionLoading(null);
   };
@@ -106,7 +109,7 @@ const Cart = () => {
     
     if (!result.success) {
       console.error("❌ Failed to save for later:", result.message);
-      alert(result.message);
+      showAlert(result.message, "error");
     }
     setActionLoading(null);
   };
@@ -119,7 +122,7 @@ const Cart = () => {
     
     if (!result.success) {
       console.error("❌ Failed to move to cart:", result.message);
-      alert(result.message);
+      showAlert(result.message, "error");
     }
     setActionLoading(null);
   };
@@ -132,7 +135,7 @@ const Cart = () => {
     
     if (!result.success) {
       console.error("❌ Failed to remove from saved:", result.message);
-      alert(result.message);
+      showAlert(result.message, "error");
     }
     setActionLoading(null);
   };
@@ -147,14 +150,14 @@ const Cart = () => {
     
     if (!result.success) {
       console.error("❌ Failed to clear cart:", result.message);
-      alert(result.message);
+      showAlert(result.message, "error");
     }
     setActionLoading(null);
   };
 
   const handleCheckout = () => {
     if (cart.length === 0) {
-      alert("Keranjang Anda kosong");
+      showAlert("Keranjang Anda kosong", "warning");
       return;
     }
     console.log("💳 Proceeding to checkout");
@@ -584,6 +587,15 @@ const Cart = () => {
           </div>
         </div>
       </div>
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertState.isOpen}
+        onClose={hideAlert}
+        message={alertState.message}
+        type={alertState.type}
+        title={alertState.title}
+      />
     </div>
   );
 };

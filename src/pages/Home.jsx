@@ -225,9 +225,18 @@ const Home = () => {
                   : (product.howItWorks || product.how_it_works || product.description || '')}
               </p>
               <div className="mt-auto">
-                <p className="text-blue-600 font-bold mt-4 text-lg">
-                  Rp {product.price.toLocaleString('id-ID')}
-                </p>
+                <div className="flex items-center justify-between mt-4">
+                  <p className="text-blue-600 font-bold text-lg">
+                    Rp {product.price.toLocaleString('id-ID')}
+                  </p>
+                  <p className={`text-sm font-medium ${
+                    (product.stock || 0) > 0 
+                      ? (product.stock > 10 ? 'text-green-600' : 'text-orange-600')
+                      : 'text-red-600'
+                  }`}>
+                    Stok: {product.stock || 0}
+                  </p>
+                </div>
                 <Link
                   to={`/product/${product.id}`}
                   className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition w-full flex items-center justify-center"
