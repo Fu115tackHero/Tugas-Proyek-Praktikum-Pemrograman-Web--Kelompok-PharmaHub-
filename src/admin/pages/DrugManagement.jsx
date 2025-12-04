@@ -508,6 +508,7 @@ const DrugManagement = () => {
         generic_name: formData.genericName ? formData.genericName.trim() : null,
         uses: formData.uses ? formData.uses.trim() : null,
         how_it_works: formData.howItWorks ? formData.howItWorks.trim() : null,
+        important_info: formData.importantInfo || [],
         ingredients: formData.ingredients || [],
         side_effects: formData.sideEffects || [],
         precaution: formData.precaution || [],

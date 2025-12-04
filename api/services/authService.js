@@ -5,37 +5,12 @@
 
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { Pool } = require("pg");
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
-// Database configuration - Support both DATABASE_URL (Neon/Vercel) and individual params
-// Ensure Neon/Vercel style DATABASE_URL uses SSL
-function normalizeConnectionString(url) {
-  if (!url) return url;
-  // Append sslmode=require if not present
-  if (!/sslmode=/.test(url)) {
-    const hasQuery = url.includes("?");
-    return url + (hasQuery ? "&" : "?") + "sslmode=require";
-  }
-  return url;
-}
+// Use centralized database configuration
+const pool = require("../config/database");
 
-const pool = process.env.DATABASE_URL
-  ? new Pool({
-      connectionString: normalizeConnectionString(process.env.DATABASE_URL),
-      ssl: { rejectUnauthorized: false }, // Required for Neon
-    })
-  : new Pool({
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      host: process.env.DB_HOST || "localhost",
-      port: process.env.DB_PORT || 5432,
-      database: process.env.DB_NAME,
-      ssl: process.env.DB_HOST && process.env.DB_HOST.includes('neon.tech')
-        ? { rejectUnauthorized: false } // Required for Neon
-        : false, // Local postgres without SSL
-    });
 
 // JWT configuration - MUST be set in production
 const JWT_SECRET = process.env.JWT_SECRET;

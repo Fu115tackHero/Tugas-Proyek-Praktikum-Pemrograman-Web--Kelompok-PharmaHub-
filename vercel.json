@@ -1,6 +1,6 @@
 {
+  "version": 2,
   "buildCommand": "npm run build",
-  "devCommand": "npm run dev:all",
   "framework": "vite",
   "redirects": [
     {
@@ -8,5 +8,21 @@
       "destination": "http://localhost:3001/api/:path*",
       "permanent": false
     }
-  ]
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/index.js"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
