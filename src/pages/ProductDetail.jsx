@@ -238,7 +238,9 @@ const ProductDetail = () => {
                 <h3 className="font-semibold text-gray-800 mb-2">
                   Cara Kerja:
                 </h3>
-                <p className="text-gray-600">{product.description}</p>
+                <p className="text-gray-600">
+                  {product.howItWorks || product.how_it_works || product.description || "Informasi cara kerja belum tersedia"}
+                </p>
               </div>
 
               {/* Generics */}

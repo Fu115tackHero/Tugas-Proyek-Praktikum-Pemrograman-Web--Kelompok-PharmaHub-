@@ -61,6 +61,8 @@ module.exports = {
     try {
       const payload = req.body;
       console.log("📝 Creating product:", payload.name);
+      console.log("📊 Important Info array:", payload.important_info);
+      console.log("📊 Important Info length:", payload.important_info?.length);
       const created = await productService.createProduct(payload);
       res.status(201).json({ success: true, data: created });
     } catch (error) {

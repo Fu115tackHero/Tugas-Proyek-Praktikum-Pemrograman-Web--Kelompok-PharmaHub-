@@ -10,62 +10,89 @@ const pool = require("../config/database");
 async function insertDetailArrays(client, detail_id, arrays) {
   const { ingredients, important_info, side_effects, precaution, interactions, indication } = arrays;
 
-  // Insert ingredients
+  // Helper to deduplicate array items (case-insensitive)
+  const deduplicateArray = (arr) => {
+    if (!Array.isArray(arr)) return [];
+    const seen = new Set();
+    return arr.filter(item => {
+      const normalized = String(item).trim().toLowerCase();
+      if (!normalized || seen.has(normalized)) return false;
+      seen.add(normalized);
+      return true;
+    });
+  };
+
+  // Insert ingredients (deduplicated)
   if (Array.isArray(ingredients) && ingredients.length > 0) {
-    for (let i = 0; i < ingredients.length; i++) {
+    const uniqueIngredients = deduplicateArray(ingredients);
+    for (let i = 0; i < uniqueIngredients.length; i++) {
       await client.query(
-        `INSERT INTO product_ingredients (detail_id, ingredient, display_order) VALUES ($1, $2, $3)`,
-        [detail_id, ingredients[i], i]
+        `INSERT INTO product_ingredients (detail_id, ingredient, display_order) VALUES ($1, $2, $3)
+         ON CONFLICT (detail_id, ingredient) DO NOTHING`,
+        [detail_id, uniqueIngredients[i].trim(), i]
       );
     }
   }
 
-  // Insert important_info
+  // Insert important_info (deduplicated)
   if (Array.isArray(important_info) && important_info.length > 0) {
-    for (let i = 0; i < important_info.length; i++) {
-      await client.query(
-        `INSERT INTO product_important_info (detail_id, info_text, display_order) VALUES ($1, $2, $3)`,
-        [detail_id, important_info[i], i]
+    const uniqueInfo = deduplicateArray(important_info);
+    console.log("🔍 Inserting important_info:", {
+      original: important_info,
+      unique: uniqueInfo,
+      originalLength: important_info.length,
+      uniqueLength: uniqueInfo.length
+    });
+    for (let i = 0; i < uniqueInfo.length; i++) {
+      console.log(`  📌 Inserting item ${i + 1}/${uniqueInfo.length}:`, uniqueInfo[i]);
+      const result = await client.query(
+        `INSERT INTO product_important_info (detail_id, info_text, display_order) VALUES ($1, $2, $3) RETURNING info_id`,
+        [detail_id, uniqueInfo[i].trim(), i]
       );
+      console.log(`  ✅ Inserted with info_id:`, result.rows[0].info_id);
     }
   }
 
-  // Insert side_effects
+  // Insert side_effects (deduplicated)
   if (Array.isArray(side_effects) && side_effects.length > 0) {
-    for (let i = 0; i < side_effects.length; i++) {
+    const uniqueSideEffects = deduplicateArray(side_effects);
+    for (let i = 0; i < uniqueSideEffects.length; i++) {
       await client.query(
         `INSERT INTO product_side_effects (detail_id, side_effect_text, display_order) VALUES ($1, $2, $3)`,
-        [detail_id, side_effects[i], i]
+        [detail_id, uniqueSideEffects[i].trim(), i]
       );
     }
   }
 
-  // Insert precautions
+  // Insert precautions (deduplicated)
   if (Array.isArray(precaution) && precaution.length > 0) {
-    for (let i = 0; i < precaution.length; i++) {
+    const uniquePrecautions = deduplicateArray(precaution);
+    for (let i = 0; i < uniquePrecautions.length; i++) {
       await client.query(
         `INSERT INTO product_precautions (detail_id, precaution_text, display_order) VALUES ($1, $2, $3)`,
-        [detail_id, precaution[i], i]
+        [detail_id, uniquePrecautions[i].trim(), i]
       );
     }
   }
 
-  // Insert interactions
+  // Insert interactions (deduplicated)
   if (Array.isArray(interactions) && interactions.length > 0) {
-    for (let i = 0; i < interactions.length; i++) {
+    const uniqueInteractions = deduplicateArray(interactions);
+    for (let i = 0; i < uniqueInteractions.length; i++) {
       await client.query(
         `INSERT INTO product_interactions (detail_id, interaction_text, display_order) VALUES ($1, $2, $3)`,
-        [detail_id, interactions[i], i]
+        [detail_id, uniqueInteractions[i].trim(), i]
       );
     }
   }
 
-  // Insert indications
+  // Insert indications (deduplicated)
   if (Array.isArray(indication) && indication.length > 0) {
-    for (let i = 0; i < indication.length; i++) {
+    const uniqueIndications = deduplicateArray(indication);
+    for (let i = 0; i < uniqueIndications.length; i++) {
       await client.query(
         `INSERT INTO product_indications (detail_id, indication_text, display_order) VALUES ($1, $2, $3)`,
-        [detail_id, indication[i], i]
+        [detail_id, uniqueIndications[i].trim(), i]
       );
     }
   }
@@ -126,6 +153,16 @@ async function createProduct(data) {
     }
     if (!category_id) {
       throw new Error("Category is required");
+    }
+
+    // Check for duplicate product name (case-insensitive)
+    const duplicateCheck = await client.query(
+      `SELECT product_id, name FROM products WHERE LOWER(name) = LOWER($1) LIMIT 1`,
+      [name.trim()]
+    );
+    
+    if (duplicateCheck.rows.length > 0) {
+      throw new Error("Product with this name already exists");
     }
 
     // Insert into products table (WITHOUT main_image_url column)
@@ -211,8 +248,20 @@ async function createProduct(data) {
       throw new Error("Price or stock value is too large");
     }
     if (err.code === "23505") {
-      // Unique violation
-      throw new Error("Product with this name already exists");
+      // Unique violation - Check which constraint was violated
+      console.error("Unique violation details:", err.detail, err.constraint);
+      
+      // Check if it's specifically about the product name
+      if (err.detail && err.detail.toLowerCase().includes('name')) {
+        throw new Error("Product with this name already exists");
+      }
+      
+      // Check constraint name for product ingredients unique constraint
+      if (err.constraint && err.constraint.includes('unique_detail_ingredient')) {
+        throw new Error("Duplicate ingredient entry detected");
+      }
+      
+      throw new Error(`Duplicate entry: ${err.detail || err.constraint || "A unique constraint was violated"}`);
     }
     throw err;
   } finally {
@@ -354,7 +403,7 @@ async function getProductById(id) {
         sideEffects: product.side_effects || [],
         howItWorks: product.how_it_works,
         ingredients: product.ingredients || [],
-        important_info: product.important_info || [],
+        importantInfo: product.important_info || [],
         precaution: product.precaution || [],
         interactions: product.interactions || [],
         indication: product.indication || [],
@@ -405,6 +454,18 @@ async function updateProduct(id, data) {
       indication,
     } = data;
 
+    // Check for duplicate product name if name is being updated (case-insensitive)
+    if (name !== undefined && name !== null) {
+      const duplicateCheck = await client.query(
+        `SELECT product_id, name FROM products WHERE LOWER(name) = LOWER($1) AND product_id != $2 LIMIT 1`,
+        [name.trim(), id]
+      );
+      
+      if (duplicateCheck.rows.length > 0) {
+        throw new Error("Product with this name already exists");
+      }
+    }
+
     // Update products table (WITHOUT main_image_url column)
     const updateQuery = `
       UPDATE products
@@ -452,9 +513,9 @@ async function updateProduct(id, data) {
       const imageCheck = await client.query(checkImageQuery, [id]);
 
       if (imageCheck.rows.length > 0) {
-        // Update existing primary image
+        // Update existing primary image (no updated_at column in normalized schema)
         await client.query(
-          `UPDATE product_images SET image_url = $1, updated_at = CURRENT_TIMESTAMP WHERE product_id = $2 AND is_primary = true`,
+          `UPDATE product_images SET image_url = $1 WHERE product_id = $2 AND is_primary = true`,
           [main_image_url, id]
         );
       } else {
@@ -554,6 +615,27 @@ async function updateProduct(id, data) {
     return updatedProduct;
   } catch (err) {
     await client.query("ROLLBACK");
+    
+    // Provide meaningful error messages
+    if (err.code === "23503") {
+      // Foreign key violation
+      throw new Error("Invalid category ID");
+    }
+    if (err.code === "23505") {
+      // Unique violation
+      console.error("Unique violation details:", err.detail, err.constraint);
+      
+      if (err.detail && err.detail.toLowerCase().includes('name')) {
+        throw new Error("Product with this name already exists");
+      }
+      
+      if (err.constraint && err.constraint.includes('unique_detail_ingredient')) {
+        throw new Error("Duplicate ingredient entry detected");
+      }
+      
+      throw new Error(`Duplicate entry: ${err.detail || err.constraint || "A unique constraint was violated"}`);
+    }
+    
     throw err;
   } finally {
     client.release();

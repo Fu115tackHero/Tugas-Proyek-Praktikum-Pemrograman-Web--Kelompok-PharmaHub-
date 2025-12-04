@@ -247,9 +247,11 @@ const Products = () => {
                 />
                 <h3 className="font-semibold text-gray-800">{product.name || "Produk"}</h3>
                 <p className="text-gray-600 text-sm mt-1">
-                  {product.description && product.description.length > 80
-                    ? product.description.substring(0, 80) + "..."
-                    : product.description || ""}
+                  {/* Prioritize howItWorks/how_it_works over description */}
+                  {(product.howItWorks || product.how_it_works || product.description) && 
+                   (product.howItWorks || product.how_it_works || product.description).length > 80
+                    ? (product.howItWorks || product.how_it_works || product.description).substring(0, 80) + "..."
+                    : (product.howItWorks || product.how_it_works || product.description || "")}
                 </p>
                 {product.prescriptionRequired && (
                   <div className="mt-2 mb-2">

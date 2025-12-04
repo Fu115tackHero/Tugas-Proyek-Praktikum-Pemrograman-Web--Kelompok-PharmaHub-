@@ -254,6 +254,13 @@ const DrugManagement = () => {
         drug.id || drug.product_id
       );
       const full = resp?.data || drug;
+      console.log("📥 Loaded product for edit:", {
+        name: full.name,
+        importantInfo: full.importantInfo,
+        important_info: full.important_info,
+        importantInfoLength: full.importantInfo?.length || 0,
+        important_infoLength: full.important_info?.length || 0
+      });
       setImagePreview(full.image || full.main_image_url || null);
       setFormData({
         name: full.name || "",
@@ -282,7 +289,7 @@ const DrugManagement = () => {
         howItWorks: full.howItWorks || full.how_it_works || "",
         genericName:
           full.genericName || full.generic_name || full.generic || "",
-        importantInfo: full.importantInfo || [],
+        importantInfo: full.importantInfo || full.important_info || [],
         ingredients: full.ingredients || [],
         precaution: full.precaution || full.warnings || [],
         sideEffects: full.sideEffects || full.side_effects || [],
@@ -515,6 +522,12 @@ const DrugManagement = () => {
         interactions: formData.interactions || [],
         indication: formData.indication || [],
       };
+
+      console.log("📤 Sending payload to backend:", {
+        name: payload.name,
+        important_info: payload.important_info,
+        important_info_length: payload.important_info?.length
+      });
 
       // Create or Update based on whether we're editing
       let resp;
