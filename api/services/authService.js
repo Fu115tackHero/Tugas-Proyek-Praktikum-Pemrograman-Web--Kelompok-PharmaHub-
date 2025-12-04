@@ -10,9 +10,20 @@ const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
 // Database configuration - Support both DATABASE_URL (Neon/Vercel) and individual params
+// Ensure Neon/Vercel style DATABASE_URL uses SSL
+function normalizeConnectionString(url) {
+  if (!url) return url;
+  // Append sslmode=require if not present
+  if (!/sslmode=/.test(url)) {
+    const hasQuery = url.includes("?");
+    return url + (hasQuery ? "&" : "?") + "sslmode=require";
+  }
+  return url;
+}
+
 const pool = process.env.DATABASE_URL
   ? new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: normalizeConnectionString(process.env.DATABASE_URL),
       ssl: { rejectUnauthorized: false }, // Required for Neon
     })
   : new Pool({
@@ -21,6 +32,9 @@ const pool = process.env.DATABASE_URL
       host: process.env.DB_HOST || "localhost",
       port: process.env.DB_PORT || 5432,
       database: process.env.DB_NAME,
+      ssl: process.env.DB_HOST && process.env.DB_HOST.includes('neon.tech')
+        ? { rejectUnauthorized: false } // Required for Neon
+        : false, // Local postgres without SSL
     });
 
 // JWT configuration - MUST be set in production
@@ -40,7 +54,7 @@ const SALT_ROUNDS = 10;
  * @param {string} userData.email - Email address
  * @param {string} userData.password - Plain text password
  * @param {string} userData.phone - Phone number (optional)
- * @param {string} userData.address - Address (optional)
+ * @param {string} userData.address - Address (optional) - Will be saved to user_addresses table
  * @returns {Promise<{success: boolean, user: Object, token: string}>}
  */
 async function registerUser(userData) {
@@ -62,10 +76,13 @@ async function registerUser(userData) {
     throw new Error("Password must be at least 6 characters long");
   }
 
+  const client = await pool.connect();
   try {
+    await client.query("BEGIN");
+
     // Check if email already exists
     const checkEmailQuery = "SELECT user_id FROM users WHERE email = $1";
-    const existingUser = await pool.query(checkEmailQuery, [
+    const existingUser = await client.query(checkEmailQuery, [
       email.toLowerCase(),
     ]);
 
@@ -76,11 +93,17 @@ async function registerUser(userData) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
-    // Insert new user
+    // Insert new user (WITHOUT address column) - Use aliases for consistency
     const insertQuery = `
-      INSERT INTO users (name, email, password_hash, phone, address, role)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING user_id, name, email, phone, address, role, created_at;
+      INSERT INTO users (name, email, password_hash, phone, role)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING 
+        user_id AS id, 
+        name, 
+        email, 
+        phone, 
+        role, 
+        created_at AS "createdAt";
     `;
 
     const values = [
@@ -88,17 +111,30 @@ async function registerUser(userData) {
       email.toLowerCase(),
       hashedPassword,
       phone || null,
-      address || null,
       "customer", // Default role
     ];
 
-    const result = await pool.query(insertQuery, values);
+    const result = await client.query(insertQuery, values);
     const user = result.rows[0];
+
+    // If address is provided, insert into user_addresses table with is_default = true
+    if (address && address.trim() !== "") {
+      await client.query(
+        `INSERT INTO user_addresses (user_id, full_address, is_default) VALUES ($1, $2, $3)`,
+        [user.id, address.trim(), true]
+      );
+      // Add address to user object for response
+      user.address = address.trim();
+    } else {
+      user.address = null;
+    }
+
+    await client.query("COMMIT");
 
     // Generate JWT token
     const token = jwt.sign(
       {
-        userId: user.user_id,
+        userId: user.id,
         email: user.email,
         role: user.role,
       },
@@ -111,20 +147,15 @@ async function registerUser(userData) {
     return {
       success: true,
       message: "Registration successful",
-      user: {
-        id: user.user_id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        address: user.address,
-        role: user.role,
-        createdAt: user.created_at,
-      },
+      user,
       token,
     };
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error("❌ Registration error:", error.message);
     throw error;
+  } finally {
+    client.release();
   }
 }
 
@@ -144,11 +175,22 @@ async function loginUser(credentials) {
   }
 
   try {
-    // Find user by email
+    // Find user by email and LEFT JOIN with default address - Use aliases for consistency
     const query = `
-      SELECT user_id, name, email, password_hash, phone, address, role, created_at
-      FROM users
-      WHERE email = $1;
+      SELECT 
+        u.user_id AS id, 
+        u.name, 
+        u.email, 
+        u.password_hash, 
+        u.phone, 
+        u.role, 
+        u.created_at AS "createdAt",
+        ua.full_address AS address
+      FROM users u
+      LEFT JOIN user_addresses ua ON u.user_id = ua.user_id AND ua.is_default = true
+      WHERE u.email = $1
+      ORDER BY ua.created_at DESC
+      LIMIT 1;
     `;
 
     const result = await pool.query(query, [email.toLowerCase()]);
@@ -166,10 +208,13 @@ async function loginUser(credentials) {
       throw new Error("Invalid email or password");
     }
 
+    // Remove password_hash from user object before returning
+    delete user.password_hash;
+
     // Generate JWT token
     const token = jwt.sign(
       {
-        userId: user.user_id,
+        userId: user.id,
         email: user.email,
         role: user.role,
       },
@@ -182,15 +227,7 @@ async function loginUser(credentials) {
     return {
       success: true,
       message: "Login successful",
-      user: {
-        id: user.user_id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        address: user.address,
-        role: user.role,
-        createdAt: user.created_at,
-      },
+      user,
       token,
     };
   } catch (error) {
@@ -221,9 +258,20 @@ function verifyToken(token) {
 async function getUserById(userId) {
   try {
     const query = `
-      SELECT user_id, name, email, phone, address, role, profile_photo_url, created_at
-      FROM users
-      WHERE user_id = $1;
+      SELECT 
+        u.user_id AS id, 
+        u.name, 
+        u.email, 
+        u.phone, 
+        u.role, 
+        u.profile_photo_url, 
+        u.created_at AS "createdAt",
+        ua.full_address AS address
+      FROM users u
+      LEFT JOIN user_addresses ua ON u.user_id = ua.user_id AND ua.is_default = true
+      WHERE u.user_id = $1
+      ORDER BY ua.created_at DESC
+      LIMIT 1;
     `;
 
     const result = await pool.query(query, [userId]);
@@ -245,13 +293,16 @@ async function getUserById(userId) {
  * @param {Object} userData - Updated user data
  * @param {string} userData.name - Full name (optional)
  * @param {string} userData.phone - Phone number (optional)
- * @param {string} userData.address - Address (optional)
+ * @param {string} userData.address - Address (optional) - Will update user_addresses table
  * @param {string} userData.profile_photo_url - Profile photo URL (optional)
  * @returns {Promise<Object>} - Updated user data
  */
 async function updateProfile(userId, userData) {
+  const client = await pool.connect();
   try {
-    // Build dynamic update query based on provided fields
+    await client.query("BEGIN");
+
+    // Build dynamic update query based on provided fields (excluding address)
     const fields = [];
     const values = [];
     let paramIndex = 1;
@@ -266,42 +317,82 @@ async function updateProfile(userId, userData) {
       values.push(userData.phone);
     }
 
-    if (userData.address !== undefined) {
-      fields.push(`address = $${paramIndex++}`);
-      values.push(userData.address);
-    }
-
     if (userData.profile_photo_url !== undefined) {
       fields.push(`profile_photo_url = $${paramIndex++}`);
       values.push(userData.profile_photo_url);
     }
 
-    if (fields.length === 0) {
-      throw new Error("No fields to update");
+    // Update users table if there are fields to update
+    if (fields.length > 0) {
+      values.push(userId);
+
+      const query = `
+        UPDATE users
+        SET ${fields.join(", ")}
+        WHERE user_id = $${paramIndex}
+        RETURNING user_id AS id, name, email, phone, profile_photo_url, role, created_at AS "createdAt", updated_at AS "updatedAt";
+      `;
+
+      await client.query(query, values);
     }
 
-    // Add userId to values
-    values.push(userId);
+    // Update or insert address in user_addresses table if provided
+    if (userData.address !== undefined) {
+      // Check if default address exists
+      const checkAddressQuery = `SELECT address_id FROM user_addresses WHERE user_id = $1 AND is_default = true`;
+      const addressCheck = await client.query(checkAddressQuery, [userId]);
 
-    const query = `
-      UPDATE users
-      SET ${fields.join(", ")}
-      WHERE user_id = $${paramIndex}
-      RETURNING user_id, name, email, phone, address, profile_photo_url, role, created_at, updated_at;
+      if (addressCheck.rows.length > 0) {
+        // Update existing default address
+        await client.query(
+          `UPDATE user_addresses SET full_address = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2 AND is_default = true`,
+          [userData.address, userId]
+        );
+      } else {
+        // Insert new default address
+        await client.query(
+          `INSERT INTO user_addresses (user_id, full_address, is_default) VALUES ($1, $2, $3)`,
+          [userId, userData.address, true]
+        );
+      }
+    }
+
+    // Fetch updated user with address using aliases
+    const finalQuery = `
+      SELECT 
+        u.user_id AS id, 
+        u.name, 
+        u.email, 
+        u.phone, 
+        u.profile_photo_url, 
+        u.role, 
+        u.created_at AS "createdAt", 
+        u.updated_at AS "updatedAt",
+        ua.full_address AS address
+      FROM users u
+      LEFT JOIN user_addresses ua ON u.user_id = ua.user_id AND ua.is_default = true
+      WHERE u.user_id = $1
+      ORDER BY ua.created_at DESC
+      LIMIT 1;
     `;
 
-    const result = await pool.query(query, values);
+    const result = await client.query(finalQuery, [userId]);
 
     if (result.rows.length === 0) {
       throw new Error("User not found");
     }
 
+    await client.query("COMMIT");
+
     console.log("✅ Profile updated successfully:", result.rows[0].email);
 
     return result.rows[0];
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error("❌ Error updating profile:", error.message);
     throw error;
+  } finally {
+    client.release();
   }
 }
 

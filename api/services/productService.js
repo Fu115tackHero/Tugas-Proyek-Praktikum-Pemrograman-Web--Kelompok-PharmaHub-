@@ -3,9 +3,20 @@ const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
 // Support both DATABASE_URL (Neon/Vercel) and individual connection params
+// Ensure Neon/Vercel style DATABASE_URL uses SSL
+function normalizeConnectionString(url) {
+  if (!url) return url;
+  // Append sslmode=require if not present
+  if (!/sslmode=/.test(url)) {
+    const hasQuery = url.includes("?");
+    return url + (hasQuery ? "&" : "?") + "sslmode=require";
+  }
+  return url;
+}
+
 const pool = process.env.DATABASE_URL
   ? new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: normalizeConnectionString(process.env.DATABASE_URL),
       ssl: { rejectUnauthorized: false }, // Required for Neon
     })
   : new Pool({
@@ -14,7 +25,89 @@ const pool = process.env.DATABASE_URL
       host: process.env.DB_HOST || "localhost",
       port: process.env.DB_PORT || 5432,
       database: process.env.DB_NAME,
+      ssl: process.env.DB_HOST && process.env.DB_HOST.includes('neon.tech')
+        ? { rejectUnauthorized: false } // Required for Neon
+        : false, // Local postgres without SSL
     });
+
+/**
+ * Helper: Insert array items into normalized child tables
+ */
+async function insertDetailArrays(client, detail_id, arrays) {
+  const { ingredients, important_info, side_effects, precaution, interactions, indication } = arrays;
+
+  // Insert ingredients
+  if (Array.isArray(ingredients) && ingredients.length > 0) {
+    for (let i = 0; i < ingredients.length; i++) {
+      await client.query(
+        `INSERT INTO product_ingredients (detail_id, ingredient, display_order) VALUES ($1, $2, $3)`,
+        [detail_id, ingredients[i], i]
+      );
+    }
+  }
+
+  // Insert important_info
+  if (Array.isArray(important_info) && important_info.length > 0) {
+    for (let i = 0; i < important_info.length; i++) {
+      await client.query(
+        `INSERT INTO product_important_info (detail_id, info_text, display_order) VALUES ($1, $2, $3)`,
+        [detail_id, important_info[i], i]
+      );
+    }
+  }
+
+  // Insert side_effects
+  if (Array.isArray(side_effects) && side_effects.length > 0) {
+    for (let i = 0; i < side_effects.length; i++) {
+      await client.query(
+        `INSERT INTO product_side_effects (detail_id, side_effect_text, display_order) VALUES ($1, $2, $3)`,
+        [detail_id, side_effects[i], i]
+      );
+    }
+  }
+
+  // Insert precautions
+  if (Array.isArray(precaution) && precaution.length > 0) {
+    for (let i = 0; i < precaution.length; i++) {
+      await client.query(
+        `INSERT INTO product_precautions (detail_id, precaution_text, display_order) VALUES ($1, $2, $3)`,
+        [detail_id, precaution[i], i]
+      );
+    }
+  }
+
+  // Insert interactions
+  if (Array.isArray(interactions) && interactions.length > 0) {
+    for (let i = 0; i < interactions.length; i++) {
+      await client.query(
+        `INSERT INTO product_interactions (detail_id, interaction_text, display_order) VALUES ($1, $2, $3)`,
+        [detail_id, interactions[i], i]
+      );
+    }
+  }
+
+  // Insert indications
+  if (Array.isArray(indication) && indication.length > 0) {
+    for (let i = 0; i < indication.length; i++) {
+      await client.query(
+        `INSERT INTO product_indications (detail_id, indication_text, display_order) VALUES ($1, $2, $3)`,
+        [detail_id, indication[i], i]
+      );
+    }
+  }
+}
+
+/**
+ * Helper: Delete all detail arrays for a product
+ */
+async function deleteDetailArrays(client, detail_id) {
+  await client.query(`DELETE FROM product_ingredients WHERE detail_id = $1`, [detail_id]);
+  await client.query(`DELETE FROM product_important_info WHERE detail_id = $1`, [detail_id]);
+  await client.query(`DELETE FROM product_side_effects WHERE detail_id = $1`, [detail_id]);
+  await client.query(`DELETE FROM product_precautions WHERE detail_id = $1`, [detail_id]);
+  await client.query(`DELETE FROM product_interactions WHERE detail_id = $1`, [detail_id]);
+  await client.query(`DELETE FROM product_indications WHERE detail_id = $1`, [detail_id]);
+}
 
 /**
  * Create a new product
@@ -34,12 +127,13 @@ async function createProduct(data) {
       category_id,
       prescription_required,
       min_stock,
-      main_image_url,
+      main_image_url, // This will be used to create product_images entry
       // Product details
       generic_name,
       uses,
       how_it_works,
       ingredients,
+      important_info,
       side_effects,
       precaution,
       interactions,
@@ -60,11 +154,11 @@ async function createProduct(data) {
       throw new Error("Category is required");
     }
 
-    // Insert into products table
+    // Insert into products table (WITHOUT main_image_url column)
     const insertProductQuery = `
-      INSERT INTO products (name, brand, price, stock, description, category_id, prescription_required, min_stock, main_image_url)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      RETURNING product_id, name, brand, price, stock, description, category_id, prescription_required, main_image_url, created_at;
+      INSERT INTO products (name, brand, price, stock, description, category_id, prescription_required, min_stock)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING product_id, name, brand, price, stock, description, category_id, prescription_required, created_at;
     `;
     const productValues = [
       name,
@@ -75,10 +169,17 @@ async function createProduct(data) {
       category_id,
       prescription_required || false,
       min_stock || 10,
-      main_image_url || null,
     ];
     const productResult = await client.query(insertProductQuery, productValues);
     const product = productResult.rows[0];
+
+    // Insert main image to product_images table if provided
+    if (main_image_url) {
+      await client.query(
+        `INSERT INTO product_images (product_id, image_url, is_primary, image_order) VALUES ($1, $2, $3, $4)`,
+        [product.product_id, main_image_url, true, 0]
+      );
+    }
 
     // Insert into product_details table if any detail is provided
     if (
@@ -86,6 +187,7 @@ async function createProduct(data) {
       uses ||
       how_it_works ||
       ingredients ||
+      important_info ||
       side_effects ||
       precaution ||
       interactions ||
@@ -96,27 +198,29 @@ async function createProduct(data) {
           product_id,
           generic_name,
           uses,
-          how_it_works,
-          ingredients,
-          side_effects,
-          precaution,
-          interactions,
-          indication
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          how_it_works
+        ) VALUES ($1, $2, $3, $4)
         RETURNING detail_id;
       `;
 
-      await client.query(insertDetailsQuery, [
+      const detailResult = await client.query(insertDetailsQuery, [
         product.product_id,
         generic_name || null,
         uses || null,
         how_it_works || null,
-        ingredients || [],
-        side_effects || [],
-        precaution || [],
-        interactions || [],
-        indication || [],
       ]);
+
+      const detail_id = detailResult.rows[0].detail_id;
+
+      // Insert arrays into normalized child tables
+      await insertDetailArrays(client, detail_id, {
+        ingredients,
+        important_info,
+        side_effects,
+        precaution,
+        interactions,
+        indication,
+      });
     }
 
     await client.query("COMMIT");
@@ -142,108 +246,160 @@ async function createProduct(data) {
   }
 }
 
+
 /** Get all products with category name */
 async function getAllProducts() {
-  const query = `
-    SELECT 
-      p.product_id,
-      p.name,
-      p.brand,
-      p.price,
-      p.stock,
-      p.min_stock,
-      p.description,
-      p.prescription_required,
-      p.is_active,
-      p.featured,
-      p.view_count,
-      p.sold_count,
-      p.main_image_url,
-      p.created_at,
-      p.category_id,
-      c.category_name,
-      pd.generic_name,
-      pd.uses,
-      pd.how_it_works,
-      pd.ingredients,
-      pd.side_effects,
-      pd.precaution,
-      pd.interactions,
-      pd.indication
-    FROM products p
-    LEFT JOIN product_categories c ON p.category_id = c.category_id
-    LEFT JOIN product_details pd ON p.product_id = pd.product_id
-    WHERE p.is_active = true
-    ORDER BY p.created_at DESC
-  `;
-  const { rows } = await pool.query(query);
+  const client = await pool.connect();
+  try {
+    const query = `
+      SELECT 
+        p.product_id,
+        p.name,
+        p.brand,
+        p.price,
+        p.stock,
+        p.min_stock,
+        p.description,
+        p.prescription_required,
+        p.is_active,
+        p.featured,
+        p.view_count,
+        p.sold_count,
+        p.created_at,
+        p.category_id,
+        c.category_name,
+        pd.detail_id,
+        pd.generic_name,
+        pd.uses,
+        pd.how_it_works,
+        pi.image_url as main_image_url,
+        -- Aggregate arrays using subqueries for optimal performance
+        (SELECT COALESCE(array_agg(ingredient ORDER BY display_order), ARRAY[]::TEXT[])
+         FROM product_ingredients WHERE detail_id = pd.detail_id) AS ingredients,
+        (SELECT COALESCE(array_agg(info_text ORDER BY display_order), ARRAY[]::TEXT[])
+         FROM product_important_info WHERE detail_id = pd.detail_id) AS important_info,
+        (SELECT COALESCE(array_agg(side_effect_text ORDER BY display_order), ARRAY[]::TEXT[])
+         FROM product_side_effects WHERE detail_id = pd.detail_id) AS side_effects,
+        (SELECT COALESCE(array_agg(precaution_text ORDER BY display_order), ARRAY[]::TEXT[])
+         FROM product_precautions WHERE detail_id = pd.detail_id) AS precaution,
+        (SELECT COALESCE(array_agg(interaction_text ORDER BY display_order), ARRAY[]::TEXT[])
+         FROM product_interactions WHERE detail_id = pd.detail_id) AS interactions,
+        (SELECT COALESCE(array_agg(indication_text ORDER BY display_order), ARRAY[]::TEXT[])
+         FROM product_indications WHERE detail_id = pd.detail_id) AS indication
+      FROM products p
+      LEFT JOIN product_categories c ON p.category_id = c.category_id
+      LEFT JOIN product_details pd ON p.product_id = pd.product_id
+      LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = true
+      WHERE p.is_active = true
+      ORDER BY p.created_at DESC
+    `;
+    const { rows } = await client.query(query);
 
-  // Map main_image_url to image for frontend compatibility
-  return rows.map((row) => ({
-    ...row,
-    id: row.product_id, // Also add 'id' field for frontend
-    image: row.main_image_url,
-    prescriptionRequired: row.prescription_required,
-    // Map detail fields to match formData field names
-    genericName: row.generic_name,
-    sideEffects: row.side_effects,
-    howItWorks: row.how_it_works,
-  }));
+    // Map to frontend-friendly format
+    const productsWithDetails = rows.map((row) => ({
+      ...row,
+      id: row.product_id, // Also add 'id' field for frontend
+      image: row.main_image_url,
+      prescriptionRequired: row.prescription_required,
+      // Map detail fields to match formData field names
+      genericName: row.generic_name,
+      sideEffects: row.side_effects || [],
+      howItWorks: row.how_it_works,
+      // Include all detail arrays
+      ingredients: row.ingredients || [],
+      important_info: row.important_info || [],
+      precaution: row.precaution || [],
+      interactions: row.interactions || [],
+      indication: row.indication || [],
+    }));
+
+    return productsWithDetails;
+  } finally {
+    client.release();
+  }
 }
 
 /** Get full product by id including category */
 async function getProductById(id) {
-  const query = `
-    SELECT 
-      p.product_id,
-      p.name,
-      p.brand,
-      p.price,
-      p.stock,
-      p.min_stock,
-      p.description,
-      p.prescription_required,
-      p.is_active,
-      p.featured,
-      p.view_count,
-      p.sold_count,
-      p.category_id,
-      p.main_image_url,
-      p.created_at,
-      c.category_name,
-      pd.generic_name,
-      pd.uses,
-      pd.how_it_works,
-      pd.ingredients,
-      pd.side_effects,
-      pd.precaution,
-      pd.interactions,
-      pd.indication
-    FROM products p
-    LEFT JOIN product_categories c ON p.category_id = c.category_id
-    LEFT JOIN product_details pd ON p.product_id = pd.product_id
-    WHERE p.product_id = $1
-    LIMIT 1
-  `;
-  const { rows } = await pool.query(query, [id]);
-  const product = rows[0] || null;
+  const client = await pool.connect();
+  try {
+    const query = `
+      SELECT 
+        p.product_id,
+        p.name,
+        p.brand,
+        p.price,
+        p.stock,
+        p.min_stock,
+        p.description,
+        p.prescription_required,
+        p.is_active,
+        p.featured,
+        p.view_count,
+        p.sold_count,
+        p.category_id,
+        p.created_at,
+        c.category_name,
+        pd.detail_id,
+        pd.generic_name,
+        pd.uses,
+        pd.how_it_works,
+        pi.image_url as main_image_url,
+        -- Aggregate arrays using subqueries
+        (SELECT COALESCE(array_agg(ingredient ORDER BY display_order), ARRAY[]::TEXT[])
+         FROM product_ingredients WHERE detail_id = pd.detail_id) AS ingredients,
+        (SELECT COALESCE(array_agg(info_text ORDER BY display_order), ARRAY[]::TEXT[])
+         FROM product_important_info WHERE detail_id = pd.detail_id) AS important_info,
+        (SELECT COALESCE(array_agg(side_effect_text ORDER BY display_order), ARRAY[]::TEXT[])
+         FROM product_side_effects WHERE detail_id = pd.detail_id) AS side_effects,
+        (SELECT COALESCE(array_agg(precaution_text ORDER BY display_order), ARRAY[]::TEXT[])
+         FROM product_precautions WHERE detail_id = pd.detail_id) AS precaution,
+        (SELECT COALESCE(array_agg(interaction_text ORDER BY display_order), ARRAY[]::TEXT[])
+         FROM product_interactions WHERE detail_id = pd.detail_id) AS interactions,
+        (SELECT COALESCE(array_agg(indication_text ORDER BY display_order), ARRAY[]::TEXT[])
+         FROM product_indications WHERE detail_id = pd.detail_id) AS indication
+      FROM products p
+      LEFT JOIN product_categories c ON p.category_id = c.category_id
+      LEFT JOIN product_details pd ON p.product_id = pd.product_id
+      LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = true
+      WHERE p.product_id = $1
+      LIMIT 1
+    `;
+    const { rows } = await client.query(query, [id]);
+    const product = rows[0] || null;
 
-  // Map fields for frontend compatibility
-  if (product) {
-    return {
+    // Map to frontend-friendly format
+    if (product && product.detail_id) {
+      return {
+        ...product,
+        id: product.product_id,
+        image: product.main_image_url,
+        prescriptionRequired: product.prescription_required,
+        // Map detail fields to match formData field names
+        genericName: product.generic_name,
+        sideEffects: product.side_effects || [],
+        howItWorks: product.how_it_works,
+        ingredients: product.ingredients || [],
+        important_info: product.important_info || [],
+        precaution: product.precaution || [],
+        interactions: product.interactions || [],
+        indication: product.indication || [],
+      };
+    }
+
+    return product ? {
       ...product,
       id: product.product_id,
       image: product.main_image_url,
       prescriptionRequired: product.prescription_required,
-      // Map detail fields to match formData field names
       genericName: product.generic_name,
-      sideEffects: product.side_effects,
       howItWorks: product.how_it_works,
-    };
+    } : null;
+  } finally {
+    client.release();
   }
-
-  return null;
 }
+
 
 /** Update product */
 async function updateProduct(id, data) {
@@ -262,19 +418,20 @@ async function updateProduct(id, data) {
       min_stock,
       is_active,
       featured,
-      main_image_url,
+      main_image_url, // Will update product_images table
       // Product details
       generic_name,
       uses,
       how_it_works,
       ingredients,
+      important_info,
       side_effects,
       precaution,
       interactions,
       indication,
     } = data;
 
-    // Update products table
+    // Update products table (WITHOUT main_image_url column)
     const updateQuery = `
       UPDATE products
       SET 
@@ -288,9 +445,8 @@ async function updateProduct(id, data) {
         min_stock = COALESCE($8, min_stock),
         is_active = COALESCE($9, is_active),
         featured = COALESCE($10, featured),
-        main_image_url = COALESCE($11, main_image_url),
         updated_at = CURRENT_TIMESTAMP
-      WHERE product_id = $12
+      WHERE product_id = $11
       RETURNING *;
     `;
 
@@ -305,12 +461,36 @@ async function updateProduct(id, data) {
       min_stock,
       is_active,
       featured,
-      main_image_url,
       id,
     ];
 
     const result = await client.query(updateQuery, values);
     const updatedProduct = result.rows[0] || null;
+
+    if (!updatedProduct) {
+      throw new Error("Product not found");
+    }
+
+    // Update main image in product_images table if provided
+    if (main_image_url !== undefined) {
+      // Check if primary image exists
+      const checkImageQuery = `SELECT image_id FROM product_images WHERE product_id = $1 AND is_primary = true`;
+      const imageCheck = await client.query(checkImageQuery, [id]);
+
+      if (imageCheck.rows.length > 0) {
+        // Update existing primary image
+        await client.query(
+          `UPDATE product_images SET image_url = $1, updated_at = CURRENT_TIMESTAMP WHERE product_id = $2 AND is_primary = true`,
+          [main_image_url, id]
+        );
+      } else {
+        // Insert new primary image
+        await client.query(
+          `INSERT INTO product_images (product_id, image_url, is_primary, image_order) VALUES ($1, $2, $3, $4)`,
+          [id, main_image_url, true, 0]
+        );
+      }
+    }
 
     // Update or insert product_details if any detail field is provided
     if (
@@ -319,6 +499,7 @@ async function updateProduct(id, data) {
         uses !== undefined ||
         how_it_works !== undefined ||
         ingredients !== undefined ||
+        important_info !== undefined ||
         side_effects !== undefined ||
         precaution !== undefined ||
         interactions !== undefined ||
@@ -329,33 +510,39 @@ async function updateProduct(id, data) {
       const detailsCheck = await client.query(checkDetailsQuery, [id]);
 
       if (detailsCheck.rows.length > 0) {
-        // Update existing details
+        const detail_id = detailsCheck.rows[0].detail_id;
+
+        // Update existing details (only scalar fields)
         const updateDetailsQuery = `
           UPDATE product_details
           SET
             generic_name = COALESCE($1, generic_name),
             uses = COALESCE($2, uses),
             how_it_works = COALESCE($3, how_it_works),
-            ingredients = COALESCE($4, ingredients),
-            side_effects = COALESCE($5, side_effects),
-            precaution = COALESCE($6, precaution),
-            interactions = COALESCE($7, interactions),
-            indication = COALESCE($8, indication),
             updated_at = CURRENT_TIMESTAMP
-          WHERE product_id = $9;
+          WHERE product_id = $4;
         `;
 
         await client.query(updateDetailsQuery, [
           generic_name,
           uses,
           how_it_works,
-          ingredients,
-          side_effects,
-          precaution,
-          interactions,
-          indication,
           id,
         ]);
+
+        // Delete old array data and insert new ones if provided
+        if (ingredients !== undefined || important_info !== undefined || side_effects !== undefined ||
+            precaution !== undefined || interactions !== undefined || indication !== undefined) {
+          await deleteDetailArrays(client, detail_id);
+          await insertDetailArrays(client, detail_id, {
+            ingredients,
+            important_info,
+            side_effects,
+            precaution,
+            interactions,
+            indication,
+          });
+        }
       } else {
         // Insert new details
         const insertDetailsQuery = `
@@ -363,26 +550,29 @@ async function updateProduct(id, data) {
             product_id,
             generic_name,
             uses,
-            how_it_works,
-            ingredients,
-            side_effects,
-            precaution,
-            interactions,
-            indication
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+            how_it_works
+          ) VALUES ($1, $2, $3, $4)
+          RETURNING detail_id;
         `;
 
-        await client.query(insertDetailsQuery, [
+        const detailResult = await client.query(insertDetailsQuery, [
           id,
           generic_name || null,
           uses || null,
           how_it_works || null,
-          ingredients || [],
-          side_effects || [],
-          precaution || [],
-          interactions || [],
-          indication || [],
         ]);
+
+        const detail_id = detailResult.rows[0].detail_id;
+
+        // Insert arrays
+        await insertDetailArrays(client, detail_id, {
+          ingredients,
+          important_info,
+          side_effects,
+          precaution,
+          interactions,
+          indication,
+        });
       }
     }
 
@@ -402,10 +592,11 @@ async function deleteProduct(id) {
   try {
     await client.query("BEGIN");
 
-    // Delete from product_details first (if exists)
-    await client.query(`DELETE FROM product_details WHERE product_id = $1`, [
-      id,
-    ]);
+    // Delete from product_images (if not cascade)
+    await client.query(`DELETE FROM product_images WHERE product_id = $1`, [id]);
+
+    // Delete from product_details (child tables will cascade if FK is set properly)
+    await client.query(`DELETE FROM product_details WHERE product_id = $1`, [id]);
 
     // Delete from products
     const query = `

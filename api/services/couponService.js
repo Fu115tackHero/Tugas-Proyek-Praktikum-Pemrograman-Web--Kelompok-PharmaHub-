@@ -9,6 +9,9 @@ const pool = new Pool({
   host: process.env.DB_HOST || "localhost",
   port: process.env.DB_PORT || 5432,
   database: process.env.DB_NAME,
+  ssl: process.env.DB_HOST && process.env.DB_HOST.includes('neon.tech')
+    ? { rejectUnauthorized: false } // Required for Neon
+    : false, // Local postgres without SSL
 });
 
 const couponService = {

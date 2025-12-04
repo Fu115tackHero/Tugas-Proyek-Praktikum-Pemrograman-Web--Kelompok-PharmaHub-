@@ -260,12 +260,12 @@ SELECT
     pd.created_at,
     pd.updated_at,
     -- Aggregate arrays for compatibility with old queries
-    COALESCE(array_agg(DISTINCT pi.ingredient ORDER BY pi.ingredient) FILTER (WHERE pi.ingredient IS NOT NULL), ARRAY[]::TEXT[]) as ingredients,
-    COALESCE(array_agg(DISTINCT pii.info_text ORDER BY pii.display_order) FILTER (WHERE pii.info_text IS NOT NULL), ARRAY[]::TEXT[]) as important_info,
-    COALESCE(array_agg(DISTINCT pp.precaution_text ORDER BY pp.display_order) FILTER (WHERE pp.precaution_text IS NOT NULL), ARRAY[]::TEXT[]) as precautions,
-    COALESCE(array_agg(DISTINCT pse.side_effect_text ORDER BY pse.display_order) FILTER (WHERE pse.side_effect_text IS NOT NULL), ARRAY[]::TEXT[]) as side_effects,
-    COALESCE(array_agg(DISTINCT pin.interaction_text ORDER BY pin.display_order) FILTER (WHERE pin.interaction_text IS NOT NULL), ARRAY[]::TEXT[]) as interactions,
-    COALESCE(array_agg(DISTINCT pind.indication_text ORDER BY pind.display_order) FILTER (WHERE pind.indication_text IS NOT NULL), ARRAY[]::TEXT[]) as indications
+    COALESCE(array_agg(pi.ingredient ORDER BY pi.display_order) FILTER (WHERE pi.ingredient IS NOT NULL), ARRAY[]::TEXT[]) as ingredients,
+    COALESCE(array_agg(pii.info_text ORDER BY pii.display_order) FILTER (WHERE pii.info_text IS NOT NULL), ARRAY[]::TEXT[]) as important_info,
+    COALESCE(array_agg(pp.precaution_text ORDER BY pp.display_order) FILTER (WHERE pp.precaution_text IS NOT NULL), ARRAY[]::TEXT[]) as precautions,
+    COALESCE(array_agg(pse.side_effect_text ORDER BY pse.display_order) FILTER (WHERE pse.side_effect_text IS NOT NULL), ARRAY[]::TEXT[]) as side_effects,
+    COALESCE(array_agg(pin.interaction_text ORDER BY pin.display_order) FILTER (WHERE pin.interaction_text IS NOT NULL), ARRAY[]::TEXT[]) as interactions,
+    COALESCE(array_agg(pind.indication_text ORDER BY pind.display_order) FILTER (WHERE pind.indication_text IS NOT NULL), ARRAY[]::TEXT[]) as indications
 FROM product_details pd
 LEFT JOIN product_ingredients pi ON pd.detail_id = pi.detail_id
 LEFT JOIN product_important_info pii ON pd.detail_id = pii.detail_id

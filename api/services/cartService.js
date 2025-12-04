@@ -9,6 +9,9 @@ const pool = new Pool({
   host: process.env.DB_HOST || "localhost",
   port: process.env.DB_PORT || 5432,
   database: process.env.DB_NAME,
+  ssl: process.env.DB_HOST && process.env.DB_HOST.includes('neon.tech')
+    ? { rejectUnauthorized: false } // Required for Neon
+    : false, // Local postgres without SSL
 });
 
 const cartService = {
@@ -33,13 +36,14 @@ const cartService = {
           p.brand,
           p.price,
           p.stock,
-          p.main_image_url,
+          pi.image_url AS main_image_url,
           p.prescription_required,
           p.is_active,
           pc.category_name
         FROM cart_items ci
         INNER JOIN products p ON ci.product_id = p.product_id
         LEFT JOIN product_categories pc ON p.category_id = pc.category_id
+        LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = TRUE
         WHERE ci.user_id = $1 AND p.is_active = TRUE
         ORDER BY ci.added_at DESC
       `;
@@ -329,13 +333,14 @@ const cartService = {
           p.brand,
           p.price,
           p.stock,
-          p.main_image_url,
+          pi.image_url AS main_image_url,
           p.prescription_required,
           p.is_active,
           pc.category_name
         FROM saved_for_later sfl
         INNER JOIN products p ON sfl.product_id = p.product_id
         LEFT JOIN product_categories pc ON p.category_id = pc.category_id
+        LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = TRUE
         WHERE sfl.user_id = $1 AND p.is_active = TRUE
         ORDER BY sfl.saved_at DESC
       `;
