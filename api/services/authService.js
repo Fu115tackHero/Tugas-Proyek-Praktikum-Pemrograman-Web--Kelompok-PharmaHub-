@@ -9,18 +9,27 @@ const { Pool } = require("pg");
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
-// Database configuration
-const pool = new Pool({
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  host: process.env.DB_HOST || "localhost",
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME,
-});
+// Database configuration - Support both DATABASE_URL (Neon/Vercel) and individual params
+const pool = process.env.DATABASE_URL
+  ? new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }, // Required for Neon
+    })
+  : new Pool({
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      host: process.env.DB_HOST || "localhost",
+      port: process.env.DB_PORT || 5432,
+      database: process.env.DB_NAME,
+    });
 
-// JWT configuration
-const JWT_SECRET =
-  process.env.JWT_SECRET || "pharmahub_secret_key_change_in_production";
+// JWT configuration - MUST be set in production
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error("❌ FATAL ERROR: JWT_SECRET is not set in environment variables!");
+  console.error("   Generate one with: node -e \"console.log(require('crypto').randomBytes(64).toString('hex'))\"");
+  process.exit(1);
+}
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 const SALT_ROUNDS = 10;
 
