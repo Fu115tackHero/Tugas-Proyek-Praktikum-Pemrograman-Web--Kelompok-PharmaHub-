@@ -271,7 +271,10 @@ const Products = () => {
         {/* Products Grid */}
         {filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => (
+            {filteredProducts.map((product) => {
+              const isOutOfStock = (product.stock || 0) === 0;
+              
+              return (
               <Link
                 key={product.id}
                 to={`/product/${product.id}`}
@@ -279,6 +282,7 @@ const Products = () => {
                   group relative bg-white rounded-2xl p-5 flex flex-col border border-transparent
                   transition-all duration-300 ease-out
                   hover:shadow-2xl hover:-translate-y-2 hover:border-blue-200
+                  ${isOutOfStock ? "opacity-50 grayscale hover:opacity-75" : ""}
                   ${
                     product.prescriptionRequired
                       ? "border-l-4 border-l-red-500"
@@ -286,10 +290,19 @@ const Products = () => {
                   }
                 `}
               >
+                {/* Out of Stock Badge */}
+                {isOutOfStock && (
+                  <div className="absolute inset-0 rounded-2xl bg-black bg-opacity-30 flex items-center justify-center z-10">
+                    <div className="bg-red-600 text-white px-6 py-3 rounded-xl font-bold text-lg shadow-lg transform -rotate-12">
+                      HABIS
+                    </div>
+                  </div>
+                )}
+
                 <img
                   src={product.image || "https://via.placeholder.com/150?text=No+Image"}
                   alt={product.name || "Product"}
-                  className="w-32 h-32 object-cover mx-auto mb-4 rounded-lg"
+                  className={`w-32 h-32 object-cover mx-auto mb-4 rounded-lg ${isOutOfStock ? "grayscale" : ""}`}
                   onError={(e) => {
                     e.target.src =
                       "https://via.placeholder.com/150?text=No+Image";
@@ -312,7 +325,7 @@ const Products = () => {
                 )}
                 <div className="mt-auto">
                   <div className="flex items-center justify-between mt-4">
-                    <p className="text-blue-600 font-bold">
+                    <p className={`font-bold ${isOutOfStock ? "text-gray-400" : "text-blue-600"}`}>
                       Rp {(product.price || 0).toLocaleString("id-ID")}
                     </p>
                     <p className={`text-sm font-medium ${
@@ -323,13 +336,18 @@ const Products = () => {
                       Stok: {product.stock || 0}
                     </p>
                   </div>
-                  <div className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition w-full flex items-center justify-center">
+                  <div className={`mt-4 px-4 py-2 rounded-lg transition w-full flex items-center justify-center font-medium ${
+                    isOutOfStock 
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed" 
+                      : "bg-blue-600 text-white hover:bg-blue-700"
+                  }`}>
                     <i className="fas fa-eye mr-2"></i>
-                    Lihat Detail
+                    {isOutOfStock ? "Tidak Tersedia" : "Lihat Detail"}
                   </div>
                 </div>
               </Link>
-            ))}
+            );
+            })}
           </div>
         ) : (
           /* Tampilan jika produk kosong */
