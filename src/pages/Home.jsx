@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { products } from '../data/products';
+import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { products } from "../data/products";
 
 const Home = () => {
   // Get featured products (first 8 products)
@@ -11,26 +11,29 @@ const Home = () => {
 
   const slides = [
     {
-      title: 'One Stop Solution',
-      subtitle: 'for Your Medicine Needs',
-      description: 'Kami tersedia 24/7. Pesan obat kapan saja dan nikmati layanan cepat dan terpercaya.',
-      image: '/images/home-decor-pic.png',
-      bgColor: 'from-blue-50 to-blue-100'
+      title: "One Stop Solution",
+      subtitle: "for Your Medicine Needs",
+      description:
+        "Kami tersedia 24/7. Pesan obat kapan saja dan nikmati layanan cepat dan terpercaya.",
+      image: "/images/home-decor-pic.png",
+      bgColor: "from-blue-50 to-blue-100",
     },
     {
-      title: 'Belanja Online',
-      subtitle: 'Mudah & Aman',
-      description: 'Pesan obat dari rumah dengan sistem keranjang belanja yang praktis dan pembayaran yang aman.',
-      image: '/images/home-decor-pic1.png',
-      bgColor: 'from-green-50 to-green-100'
+      title: "Belanja Online",
+      subtitle: "Mudah & Aman",
+      description:
+        "Pesan obat dari rumah dengan sistem keranjang belanja yang praktis dan pembayaran yang aman.",
+      image: "/images/home-decor-pic1.png",
+      bgColor: "from-green-50 to-green-100",
     },
     {
-      title: 'Obat Original',
-      subtitle: 'Harga Terjangkau',
-      description: '15+ produk obat berkualitas dengan harga bersaing. Resep dokter atau obat bebas tersedia.',
-      image: '/images/home-decor-pic2.png',
-      bgColor: 'from-purple-50 to-purple-100'
-    }
+      title: "Obat Original",
+      subtitle: "Harga Terjangkau",
+      description:
+        "15+ produk obat berkualitas dengan harga bersaing. Resep dokter atau obat bebas tersedia.",
+      image: "/images/home-decor-pic2.png",
+      bgColor: "from-purple-50 to-purple-100",
+    },
   ];
 
   // Auto slide every 5 seconds
@@ -56,18 +59,32 @@ const Home = () => {
 
   // DATA KATEGORI POPULER (Harus sama persis dengan yang ada di data/products.js)
   const popularCategories = [
-    { name: "Nyeri & Demam", icon: "fa-thermometer-half", value: "Obat Nyeri & Demam" },
-    { name: "Pencernaan", icon: "fa-prescription-bottle-alt", value: "Obat Pencernaan" }, // fa-stomach mungkin butuh fa-user-md kalau tidak ada di fontawesome free
+    {
+      name: "Nyeri & Demam",
+      icon: "fa-thermometer-half",
+      value: "Obat Nyeri & Demam",
+    },
+    {
+      name: "Pencernaan",
+      icon: "fa-prescription-bottle-alt",
+      value: "Obat Pencernaan",
+    }, // fa-stomach mungkin butuh fa-user-md kalau tidak ada di fontawesome free
     { name: "Vitamin", icon: "fa-apple-alt", value: "Vitamin & Suplemen" },
-    { name: "Jantung", icon: "fa-heartbeat", value: "Obat Jantung & Hipertensi" },
+    {
+      name: "Jantung",
+      icon: "fa-heartbeat",
+      value: "Obat Jantung & Hipertensi",
+    },
     { name: "Alergi", icon: "fa-hand-dots", value: "Obat Alergi" }, // fa-hand-dots atau fa-shield-virus
-    { name: "Pernapasan", icon: "fa-lungs", value: "Obat Pernapasan" }
+    { name: "Pernapasan", icon: "fa-lungs", value: "Obat Pernapasan" },
   ];
 
   return (
     <div className="bg-gradient-to-b from-blue-50 to-blue-100 text-gray-800">
       {/* Hero Section with Slider */}
-      <section className={`bg-gradient-to-b ${slides[currentSlide].bgColor} transition-colors duration-500 min-h-screen flex items-center relative`}>
+      <section
+        className={`bg-gradient-to-b ${slides[currentSlide].bgColor} transition-colors duration-500 min-h-screen flex items-center relative`}
+      >
         {/* Navigation Arrows */}
         <button
           onClick={prevSlide}
@@ -88,8 +105,10 @@ const Home = () => {
             {/* Text */}
             <div className="w-full md:w-1/2 space-y-6 text-center md:text-left">
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-blue-700 leading-tight animate-fade-in">
-                {slides[currentSlide].title}{' '}
-                <span className="text-blue-500">{slides[currentSlide].subtitle}</span>
+                {slides[currentSlide].title}{" "}
+                <span className="text-blue-500">
+                  {slides[currentSlide].subtitle}
+                </span>
               </h1>
               <p className="text-gray-600 text-lg sm:text-xl animate-fade-in">
                 {slides[currentSlide].description}
@@ -111,7 +130,7 @@ const Home = () => {
                 alt="Pharmacy Illustration"
                 className="w-full max-w-sm md:max-w-md lg:max-w-lg h-auto object-contain animate-slide-in"
                 onError={(e) => {
-                  e.target.style.display = 'none';
+                  e.target.style.display = "none";
                 }}
               />
             </div>
@@ -123,10 +142,11 @@ const Home = () => {
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
-                className={`w-3 h-3 rounded-full transition-all ${currentSlide === index
-                    ? 'bg-blue-600 w-8'
-                    : 'bg-gray-400 hover:bg-gray-500'
-                  }`}
+                className={`w-3 h-3 rounded-full transition-all ${
+                  currentSlide === index
+                    ? "bg-blue-600 w-8"
+                    : "bg-gray-400 hover:bg-gray-500"
+                }`}
               />
             ))}
           </div>
@@ -153,7 +173,9 @@ const Home = () => {
               <div className="bg-blue-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i className="fas fa-user-md text-blue-600 text-3xl"></i>
               </div>
-              <h3 className="font-semibold text-xl mb-2">Konsultasi Apoteker</h3>
+              <h3 className="font-semibold text-xl mb-2">
+                Konsultasi Apoteker
+              </h3>
               <p className="text-gray-600 text-base">
                 Konsultasi gratis dengan apoteker berpengalaman
               </p>
@@ -163,7 +185,9 @@ const Home = () => {
                 <i className="fas fa-shield-alt text-blue-600 text-3xl"></i>
               </div>
               <h3 className="font-semibold text-xl mb-2">Obat Terjamin</h3>
-              <p className="text-gray-600 text-base">Semua obat asli dengan izin BPOM</p>
+              <p className="text-gray-600 text-base">
+                Semua obat asli dengan izin BPOM
+              </p>
             </div>
           </div>
         </div>
@@ -177,16 +201,22 @@ const Home = () => {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
             {popularCategories.map((category, index) => (
-              <Link 
+              <Link
                 key={index}
                 to={`/products?category=${encodeURIComponent(category.value)}`}
                 className="bg-white p-5 sm:p-6 rounded-xl text-center shadow hover:shadow-lg cursor-pointer transition-all duration-300 hover:-translate-y-1 group"
               >
                 <div className="bg-blue-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-200 transition-colors">
                   {/* Gunakan class default jika icon spesifik tidak ditemukan, misal fa-pills */}
-                  <i className={`fas ${category.icon || 'fa-pills'} text-blue-600 text-2xl`}></i>
+                  <i
+                    className={`fas ${
+                      category.icon || "fa-pills"
+                    } text-blue-600 text-2xl`}
+                  ></i>
                 </div>
-                <p className="font-medium text-gray-700 text-sm sm:text-base">{category.name}</p>
+                <p className="font-medium text-gray-700 text-sm sm:text-base">
+                  {category.name}
+                </p>
               </Link>
             ))}
           </div>
@@ -209,8 +239,12 @@ const Home = () => {
                   group relative bg-white rounded-2xl p-5 flex flex-col border border-transparent
                   transition-all duration-300 ease-out
                   hover:shadow-2xl hover:-translate-y-2 hover:border-blue-200
-                  ${product.prescriptionRequired ? 'border-l-4 border-l-red-500' : ''}
-                  ${isOutOfStock ? 'filter grayscale opacity-70' : ''}
+                  ${
+                    product.prescriptionRequired
+                      ? "border-l-4 border-l-red-500"
+                      : ""
+                  }
+                  ${isOutOfStock ? "filter grayscale opacity-70" : ""}
                 `}
               >
                 {isOutOfStock && (
@@ -223,26 +257,58 @@ const Home = () => {
                   alt={product.name}
                   className="w-36 h-36 object-cover mx-auto mb-4 rounded-lg"
                   onError={(e) => {
-                    e.target.src = 'https://via.placeholder.com/150?text=No+Image';
+                    e.target.src =
+                      "https://via.placeholder.com/150?text=No+Image";
                   }}
                 />
-                <h3 className={`font-semibold ${isOutOfStock ? 'text-gray-500' : 'text-gray-800'} text-base`}>{product.name}</h3>
-                <p className={`text-sm mt-1 flex-grow ${isOutOfStock ? 'text-gray-500' : 'text-gray-600'}`}>
+                <h3
+                  className={`font-semibold ${
+                    isOutOfStock ? "text-gray-500" : "text-gray-800"
+                  } text-base`}
+                >
+                  {product.name}
+                </h3>
+                <p
+                  className={`text-sm mt-1 flex-grow ${
+                    isOutOfStock ? "text-gray-500" : "text-gray-600"
+                  }`}
+                >
                   {/* Prioritize howItWorks/how_it_works over description for consistency */}
-                  {((product.howItWorks || product.how_it_works || product.description) || '').length > 60
-                    ? ((product.howItWorks || product.how_it_works || product.description) || '').substring(0, 60) + '...'
-                    : (product.howItWorks || product.how_it_works || product.description || '')}
+                  {(
+                    product.howItWorks ||
+                    product.how_it_works ||
+                    product.description ||
+                    ""
+                  ).length > 60
+                    ? (
+                        product.howItWorks ||
+                        product.how_it_works ||
+                        product.description ||
+                        ""
+                      ).substring(0, 60) + "..."
+                    : product.howItWorks ||
+                      product.how_it_works ||
+                      product.description ||
+                      ""}
                 </p>
                 <div className="mt-auto">
                   <div className="flex items-center justify-between mt-4">
-                    <p className={`${isOutOfStock ? 'text-gray-500' : 'text-blue-600'} font-bold text-lg`}>
-                      Rp {product.price.toLocaleString('id-ID')}
+                    <p
+                      className={`${
+                        isOutOfStock ? "text-gray-500" : "text-blue-600"
+                      } font-bold text-lg`}
+                    >
+                      Rp {product.price.toLocaleString("id-ID")}
                     </p>
-                    <p className={`text-sm font-medium ${
-                      !isOutOfStock
-                        ? (stock > 10 ? 'text-green-600' : 'text-orange-600')
-                        : 'text-red-600'
-                    }`}>
+                    <p
+                      className={`text-sm font-medium ${
+                        !isOutOfStock
+                          ? stock > 10
+                            ? "text-green-600"
+                            : "text-orange-600"
+                          : "text-red-600"
+                      }`}
+                    >
                       Stok: {stock}
                     </p>
                   </div>
@@ -302,7 +368,8 @@ const Home = () => {
                 </div>
               </div>
               <p className="text-gray-600 text-base">
-                "Pelayanan cepat dan obat sampai dalam waktu kurang dari 1 jam. Sangat membantu saat anak saya demam tengah malam."
+                "Pelayanan cepat dan obat sampai dalam waktu kurang dari 1 jam.
+                Sangat membantu saat anak saya demam tengah malam."
               </p>
             </div>
 
@@ -323,7 +390,8 @@ const Home = () => {
                 </div>
               </div>
               <p className="text-gray-600 text-base">
-                "Apoteker sangat membantu memberikan saran obat yang tepat. Harga juga lebih murah dibanding apotek biasa."
+                "Apoteker sangat membantu memberikan saran obat yang tepat.
+                Harga juga lebih murah dibanding apotek biasa."
               </p>
             </div>
 
@@ -344,7 +412,8 @@ const Home = () => {
                 </div>
               </div>
               <p className="text-gray-600 text-base">
-                "Sangat praktis, tidak perlu keluar rumah saat sakit. Obat selalu tersedia dan pengiriman tepat waktu."
+                "Sangat praktis, tidak perlu keluar rumah saat sakit. Obat
+                selalu tersedia dan pengiriman tepat waktu."
               </p>
             </div>
           </div>

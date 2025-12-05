@@ -224,23 +224,31 @@ const Products = () => {
               {filters.priceRange === "custom" && (
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Min (Rp)</label>
+                    <label className="block text-xs text-gray-500 mb-1">
+                      Min (Rp)
+                    </label>
                     <input
                       type="number"
                       min="0"
                       value={filters.minPrice}
-                      onChange={(e) => handleFilterChange("minPrice", e.target.value)}
+                      onChange={(e) =>
+                        handleFilterChange("minPrice", e.target.value)
+                      }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="0"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Maks (Rp)</label>
+                    <label className="block text-xs text-gray-500 mb-1">
+                      Maks (Rp)
+                    </label>
                     <input
                       type="number"
                       min="0"
                       value={filters.maxPrice}
-                      onChange={(e) => handleFilterChange("maxPrice", e.target.value)}
+                      onChange={(e) =>
+                        handleFilterChange("maxPrice", e.target.value)
+                      }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="100000"
                     />
@@ -287,7 +295,11 @@ const Products = () => {
                         ? "border-l-4 border-l-red-500"
                         : ""
                     }
-                    ${isOutOfStock ? "filter grayscale opacity-70 cursor-not-allowed" : ""}
+                    ${
+                      isOutOfStock
+                        ? "filter grayscale opacity-70 cursor-not-allowed"
+                        : ""
+                    }
                   `}
                   aria-disabled={isOutOfStock}
                 >
@@ -299,7 +311,10 @@ const Products = () => {
                   )}
 
                   <img
-                    src={product.image || "https://via.placeholder.com/150?text=No+Image"}
+                    src={
+                      product.image ||
+                      "https://via.placeholder.com/150?text=No+Image"
+                    }
                     alt={product.name || "Product"}
                     className="w-32 h-32 object-cover mx-auto mb-4 rounded-lg"
                     onError={(e) => {
@@ -307,13 +322,36 @@ const Products = () => {
                         "https://via.placeholder.com/150?text=No+Image";
                     }}
                   />
-                  <h3 className={`font-semibold ${isOutOfStock ? 'text-gray-500' : 'text-gray-800'}`}>{product.name || "Produk"}</h3>
-                  <p className={`text-sm mt-1 ${isOutOfStock ? 'text-gray-500' : 'text-gray-600'}`}>
+                  <h3
+                    className={`font-semibold ${
+                      isOutOfStock ? "text-gray-500" : "text-gray-800"
+                    }`}
+                  >
+                    {product.name || "Produk"}
+                  </h3>
+                  <p
+                    className={`text-sm mt-1 ${
+                      isOutOfStock ? "text-gray-500" : "text-gray-600"
+                    }`}
+                  >
                     {/* Prioritize howItWorks/how_it_works over description */}
-                    {(product.howItWorks || product.how_it_works || product.description) && 
-                     (product.howItWorks || product.how_it_works || product.description).length > 80
-                      ? (product.howItWorks || product.how_it_works || product.description).substring(0, 80) + "..."
-                      : (product.howItWorks || product.how_it_works || product.description || "")}
+                    {(product.howItWorks ||
+                      product.how_it_works ||
+                      product.description) &&
+                    (
+                      product.howItWorks ||
+                      product.how_it_works ||
+                      product.description
+                    ).length > 80
+                      ? (
+                          product.howItWorks ||
+                          product.how_it_works ||
+                          product.description
+                        ).substring(0, 80) + "..."
+                      : product.howItWorks ||
+                        product.how_it_works ||
+                        product.description ||
+                        ""}
                   </p>
                   {product.prescriptionRequired && (
                     <div className="mt-2 mb-2">
@@ -324,20 +362,40 @@ const Products = () => {
                   )}
                   <div className="mt-auto">
                     <div className="flex items-center justify-between mt-4">
-                      <p className={`${isOutOfStock ? 'text-gray-500' : 'text-blue-600'} font-bold`}>
+                      <p
+                        className={`${
+                          isOutOfStock ? "text-gray-500" : "text-blue-600"
+                        } font-bold`}
+                      >
                         Rp {(product.price || 0).toLocaleString("id-ID")}
                       </p>
-                      <p className={`text-sm font-medium ${
-                        !isOutOfStock
-                          ? (stock > 10 ? 'text-green-600' : 'text-orange-600')
-                          : 'text-red-600'
-                      }`}>
+                      <p
+                        className={`text-sm font-medium ${
+                          !isOutOfStock
+                            ? stock > 10
+                              ? "text-green-600"
+                              : "text-orange-600"
+                            : "text-red-600"
+                        }`}
+                      >
                         Stok: {stock}
                       </p>
                     </div>
-                    <div className={`mt-4 px-4 py-2 rounded-lg transition w-full flex items-center justify-center ${isOutOfStock ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`} role="button" aria-disabled={isOutOfStock}>
-                      <i className={`fas ${isOutOfStock ? 'fa-ban mr-2' : 'fa-eye mr-2'}`}></i>
-                      {isOutOfStock ? 'Habis' : 'Lihat Detail'}
+                    <div
+                      className={`mt-4 px-4 py-2 rounded-lg transition w-full flex items-center justify-center ${
+                        isOutOfStock
+                          ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                          : "bg-blue-600 text-white hover:bg-blue-700"
+                      }`}
+                      role="button"
+                      aria-disabled={isOutOfStock}
+                    >
+                      <i
+                        className={`fas ${
+                          isOutOfStock ? "fa-ban mr-2" : "fa-eye mr-2"
+                        }`}
+                      ></i>
+                      {isOutOfStock ? "Habis" : "Lihat Detail"}
                     </div>
                   </div>
                 </Link>

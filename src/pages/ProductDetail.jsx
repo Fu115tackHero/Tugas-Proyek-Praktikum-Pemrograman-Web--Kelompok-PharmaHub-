@@ -25,9 +25,9 @@ const ProductDetail = () => {
           navigate("/products");
           return;
         }
-        
+
         console.log("📦 Raw product data from API:", p);
-        
+
         // Backend already maps fields; normalize with safe fallbacks
         const normalized = {
           id: p.id || p.product_id,
@@ -48,7 +48,7 @@ const ProductDetail = () => {
           indication: p.indication || [],
           importantInfo: p.importantInfo || p.important_info || [],
         };
-        
+
         console.log("✅ Normalized product data:", normalized);
         console.log("📋 Details check:", {
           ingredients: normalized.ingredients?.length || 0,
@@ -58,7 +58,7 @@ const ProductDetail = () => {
           indication: normalized.indication?.length || 0,
           importantInfo: normalized.importantInfo?.length || 0,
         });
-        
+
         setProduct(normalized);
       } catch (e) {
         console.error("Failed to load product detail", e);
@@ -256,7 +256,10 @@ const ProductDetail = () => {
                   Cara Kerja:
                 </h3>
                 <p className="text-gray-600">
-                  {product.howItWorks || product.how_it_works || product.description || "Informasi cara kerja belum tersedia"}
+                  {product.howItWorks ||
+                    product.how_it_works ||
+                    product.description ||
+                    "Informasi cara kerja belum tersedia"}
                 </p>
               </div>
 
@@ -292,17 +295,27 @@ const ProductDetail = () => {
                       </button>
                     </div>
                   </div>
-                  
+
                   {/* Stock Information */}
                   <div className="flex items-center space-x-2">
-                    <i className={`fas fa-box ${
-                      product.stock > 10 ? 'text-green-600' : 
-                      product.stock > 0 ? 'text-orange-600' : 'text-red-600'
-                    }`}></i>
-                    <span className={`font-medium ${
-                      product.stock > 10 ? 'text-green-600' : 
-                      product.stock > 0 ? 'text-orange-600' : 'text-red-600'
-                    }`}>
+                    <i
+                      className={`fas fa-box ${
+                        product.stock > 10
+                          ? "text-green-600"
+                          : product.stock > 0
+                          ? "text-orange-600"
+                          : "text-red-600"
+                      }`}
+                    ></i>
+                    <span
+                      className={`font-medium ${
+                        product.stock > 10
+                          ? "text-green-600"
+                          : product.stock > 0
+                          ? "text-orange-600"
+                          : "text-red-600"
+                      }`}
+                    >
                       Stok: {product.stock}
                       {product.stock <= 10 && product.stock > 0 && (
                         <span className="text-xs ml-1">(Terbatas)</span>
@@ -393,18 +406,19 @@ const ProductDetail = () => {
                             Komposisi per tablet/kapsul:
                           </h5>
                         )}
-                        <div className={`grid gap-x-4 gap-y-2 ${
-                          tab.id === "ingredients" 
-                            ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-                            : "grid-cols-1 md:grid-cols-2"
-                        }`}>
+                        <div
+                          className={`grid gap-x-4 gap-y-2 ${
+                            tab.id === "ingredients"
+                              ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                              : "grid-cols-1 md:grid-cols-2"
+                          }`}
+                        >
                           {tab.data.map((item, index) => (
-                            <div
-                              key={index}
-                              className="flex items-start py-1"
-                            >
+                            <div key={index} className="flex items-start py-1">
                               <i className="fas fa-circle text-blue-400 text-xs mr-2 mt-1.5"></i>
-                              <span className="text-sm leading-relaxed">{item}</span>
+                              <span className="text-sm leading-relaxed">
+                                {item}
+                              </span>
                             </div>
                           ))}
                         </div>
