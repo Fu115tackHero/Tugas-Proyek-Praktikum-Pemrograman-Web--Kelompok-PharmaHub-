@@ -27,7 +27,12 @@ const Products = () => {
     const categoryFromUrl = searchParams.get("category");
 
     // 3. Cek apakah kategori dari URL valid (ada di daftar kategori dari backend)
-    if (categoryFromUrl && categoryOptions.includes(categoryFromUrl)) {
+    //    Tunggu sampai kategori backend sudah dimuat (length > 1 artinya ada selain "Semua Produk")
+    if (
+      categoryOptions.length > 1 &&
+      categoryFromUrl &&
+      categoryOptions.includes(categoryFromUrl)
+    ) {
       setFilters((prev) => ({
         ...prev,
         category: categoryFromUrl,
@@ -39,7 +44,7 @@ const Products = () => {
         category: "Semua Produk",
       }));
     }
-  }, [searchParams]);
+  }, [searchParams, categoryOptions]);
 
   // Load products & categories from backend
   useEffect(() => {
@@ -70,7 +75,7 @@ const Products = () => {
    */
   useEffect(() => {
     applyFilters();
-  }, [filters]);
+  }, [filters, allProducts]);
 
   const applyFilters = () => {
     let result = [...allProducts];
