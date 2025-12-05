@@ -1,4 +1,5 @@
 const productService = require("../services/productService");
+const { logActivity } = require("../services/activityService");
 
 /**
  * Get all products
@@ -64,6 +65,19 @@ module.exports = {
       console.log("📊 Important Info array:", payload.important_info);
       console.log("📊 Important Info length:", payload.important_info?.length);
       const created = await productService.createProduct(payload);
+      
+      // Log activity
+      await logActivity({
+        adminId: req.user?.userId || req.body.adminId,
+        actionType: "CREATE",
+        entityType: "PRODUCT",
+        entityId: created.product_id,
+        entityName: created.name,
+        description: `Created product: ${created.name}`,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
+      });
+      
       res.status(201).json({ success: true, data: created });
     } catch (error) {
       console.error("❌ Error creating product:", error.message);
@@ -98,6 +112,18 @@ module.exports = {
           .json({ success: false, message: "Product not found" });
       }
 
+      // Log activity
+      await logActivity({
+        adminId: req.user?.userId || req.body.adminId,
+        actionType: "UPDATE",
+        entityType: "PRODUCT",
+        entityId: updated.product_id,
+        entityName: updated.name,
+        description: `Updated product: ${updated.name}`,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
+      });
+
       res.status(200).json({ success: true, data: updated });
     } catch (error) {
       console.error("❌ Error updating product:", error.message);
@@ -122,6 +148,9 @@ module.exports = {
     try {
       const { id } = req.params;
       console.log(`🗑️  Deleting product ID:`, id);
+      
+      // Get product name before deletion
+      const product = await productService.getProductById(id);
       const deleted = await productService.deleteProduct(id);
 
       if (!deleted) {
@@ -129,6 +158,18 @@ module.exports = {
           .status(404)
           .json({ success: false, message: "Product not found" });
       }
+
+      // Log activity
+      await logActivity({
+        adminId: req.user?.userId || req.body.adminId,
+        actionType: "DELETE",
+        entityType: "PRODUCT",
+        entityId: id,
+        entityName: product?.name || `Product #${id}`,
+        description: `Deleted product: ${product?.name || id}`,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
+      });
 
       res
         .status(200)

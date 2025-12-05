@@ -36,19 +36,7 @@ const AdminDashboard = () => {
       // Fetch dashboard stats from database VIEW
       const statsResponse = await api.get("/admin/dashboard/stats");
       console.log("📊 [AdminDashboard] Stats response:", statsResponse);
-      console.log("📊 [AdminDashboard] Stats data:", statsResponse.data);
-      console.log(
-        "📊 [AdminDashboard] Is success?",
-        statsResponse.data?.success
-      );
-      console.log("📊 [AdminDashboard] Has data?", statsResponse.data?.data);
-      console.log(
-        "📊 [AdminDashboard] Full response structure:",
-        JSON.stringify(statsResponse.data, null, 2)
-      );
-
-      // Check if response has direct data (not nested in success/data)
-      const statsData = statsResponse.data?.data || statsResponse.data;
+      const statsData = statsResponse.data || statsResponse;
       console.log("📊 [AdminDashboard] Extracted stats data:", statsData);
 
       if (
@@ -84,21 +72,12 @@ const AdminDashboard = () => {
       const activityResponse = await api.get(
         "/admin/dashboard/recent-activity?limit=10"
       );
-      console.log(
-        "📋 [AdminDashboard] Activity response:",
-        activityResponse.data
-      );
-
-      if (
-        activityResponse.data &&
-        activityResponse.data.success &&
-        activityResponse.data.data
-      ) {
-        console.log(
-          "✅ [AdminDashboard] Setting activity:",
-          activityResponse.data.data
-        );
-        setRecentActivity(activityResponse.data.data);
+      console.log("📋 [AdminDashboard] Activity response:", activityResponse);
+      const activityData = activityResponse.data || activityResponse;
+      if (activityData?.success && Array.isArray(activityData.data)) {
+        setRecentActivity(activityData.data);
+      } else if (Array.isArray(activityData)) {
+        setRecentActivity(activityData);
       }
 
       console.log("✅ [AdminDashboard] Data fetch completed");

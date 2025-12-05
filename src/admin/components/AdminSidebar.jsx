@@ -71,6 +71,18 @@ const AdminSidebar = () => {
           Laporan Penjualan
         </Link>
         
+        <Link
+          to="/admin/activity"
+          className={`flex items-center px-6 py-3 transition-colors ${
+            isActive('/admin/activity')
+              ? 'bg-blue-700 border-r-4 border-blue-400'
+              : 'hover:bg-blue-700'
+          }`}
+        >
+          <i className="fas fa-history mr-3"></i>
+          Aktivitas Admin
+        </Link>
+        
         <div className="border-t border-blue-700 mt-6 pt-6">
           <div className="px-6 py-3 text-blue-200 text-sm">
             <i className="fas fa-user mr-2"></i>

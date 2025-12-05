@@ -30,6 +30,7 @@ import DrugManagement from "./admin/pages/DrugManagement";
 import OrderManagement from "./admin/pages/OrderManagement";
 import SalesReport from "./admin/pages/SalesReport";
 import AutoSalesReport from "./admin/pages/AutoSalesReport";
+import AdminActivity from "./admin/AdminActivity";
 
 // Protected Route Components
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -99,6 +100,7 @@ function App() {
               <Route path="drugs" element={<DrugManagement />} />
               <Route path="orders" element={<OrderManagement />} />
               <Route path="reports" element={<AutoSalesReport />} />
+              <Route path="activity" element={<AdminActivity />} />
             </Route>
           </Routes>
         </CartProvider>

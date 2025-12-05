@@ -97,32 +97,35 @@ async function getRecentActivity(limit = 10) {
   console.log("   Limit:", limit);
 
   try {
-    // Get recent orders
-    const ordersQuery = `
+    const query = `
       SELECT 
-        order_id,
-        order_number,
-        customer_name,
-        total_amount,
-        order_status,
-        created_at,
-        'order' as activity_type
-      FROM orders
-      ORDER BY created_at DESC
+        aal.log_id,
+        aal.action_type,
+        aal.entity_type,
+        aal.entity_name,
+        aal.description,
+        aal.created_at,
+        u.name AS admin_name
+      FROM admin_activity_logs aal
+      LEFT JOIN users u ON u.user_id = aal.admin_id
+      ORDER BY aal.created_at DESC
       LIMIT $1
     `;
 
-    const { rows } = await pool.query(ordersQuery, [limit]);
+    const { rows } = await pool.query(query, [limit]);
 
-    // Format for display
+    const colorByAction = {
+      CREATE: "green",
+      UPDATE: "blue",
+      DELETE: "red",
+    };
+
     const activities = rows.map((row) => ({
-      id: `order-${row.order_id}`,
-      type: getActivityType(row.order_status),
-      message: `Pesanan ${row.order_number} - ${
-        row.customer_name
-      } (${formatCurrency(row.total_amount)})`,
+      id: `activity-${row.log_id}`,
+      type: row.action_type?.toLowerCase() || "info",
+      message: buildActivityMessage(row),
       time: formatTimeAgo(row.created_at),
-      color: getActivityColor(row.order_status),
+      color: colorByAction[row.action_type] || "gray",
       timestamp: row.created_at,
     }));
 
@@ -137,6 +140,20 @@ async function getRecentActivity(limit = 10) {
     );
     throw error;
   }
+}
+
+function buildActivityMessage(row) {
+  const actor = row.admin_name ? `oleh ${row.admin_name}` : "oleh Admin";
+  const entity = row.entity_type ? `${row.entity_type}` : "ENTITAS";
+  const name = row.entity_name ? ` \u2014 ${row.entity_name}` : "";
+  const actionMap = {
+    CREATE: "Menambahkan",
+    UPDATE: "Mengubah",
+    DELETE: "Menghapus",
+  };
+  const action = actionMap[row.action_type] || "Aksi";
+  const desc = row.description ? ` (${row.description})` : "";
+  return `${action} ${entity}${name} ${actor}${desc}`;
 }
 
 /**
