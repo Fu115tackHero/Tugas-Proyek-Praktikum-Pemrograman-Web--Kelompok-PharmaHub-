@@ -17,7 +17,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 // Only start server in local/dev environment
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`🚀 API Server running on http://localhost:${PORT}`);
   });

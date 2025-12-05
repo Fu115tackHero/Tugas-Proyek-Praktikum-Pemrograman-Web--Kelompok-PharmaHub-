@@ -4,7 +4,7 @@
   (kept original content for reference)
 */
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-console.log('resolveConflicts helper moved to src-backend (no-op)');
+console.log("resolveConflicts helper moved to src-backend (no-op)");
