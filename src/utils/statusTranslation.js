@@ -25,18 +25,23 @@ export function translateOrderStatus(status) {
 
 /**
  * Translate payment status from English to Bahasa Indonesia
- * @param {string} status - Payment status in English
+ * @param {string} status - Payment status in English or Indonesian
  * @returns {string} - Translated status in Bahasa Indonesia
  */
 export function translatePaymentStatus(status) {
   if (!status) return "-";
 
   const statusMap = {
+    // English status
     pending: "Menunggu Pembayaran",
-    paid: "Lunas",
+    paid: "Dibayar",
     cancelled: "Dibatalkan",
     failed: "Gagal",
     refunded: "Dikembalikan",
+    unpaid: "Belum Dibayar",
+    // Indonesian status (untuk konsistensi jika backend sudah menggunakan bahasa Indonesia)
+    dibayar: "Dibayar",
+    belum_dibayar: "Belum Dibayar",
   };
 
   return statusMap[status.toLowerCase()] || status;
@@ -59,8 +64,11 @@ export function getStatusColor(status) {
     completed: "bg-green-100 text-green-800",
     cancelled: "bg-red-100 text-red-800",
     paid: "bg-green-100 text-green-800",
+    dibayar: "bg-green-100 text-green-800",
     failed: "bg-red-100 text-red-800",
     refunded: "bg-orange-100 text-orange-800",
+    unpaid: "bg-yellow-100 text-yellow-800",
+    belum_dibayar: "bg-yellow-100 text-yellow-800",
   };
 
   return colorMap[status.toLowerCase()] || "bg-gray-100 text-gray-800";

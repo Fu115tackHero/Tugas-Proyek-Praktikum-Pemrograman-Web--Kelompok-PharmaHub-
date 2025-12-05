@@ -395,16 +395,17 @@ const OrderManagement = () => {
       case "ready":
         return "Siap diambil di apotek";
       case "completed":
-        if (paymentMethod === "online" || paymentStatus === "paid") {
-          return "Lunas (Selesai)";
-        }
-        return "Selesai";
+        // Untuk semua order yang completed, tampilkan sebagai "Selesai & Dibayar"
+        return "Selesai & Dibayar";
       case "cancelled":
         return "Dibatalkan oleh apotek";
       case "pending":
       default:
-        if (paymentMethod === "online" && paymentStatus === "paid") {
-          return "Lunas (Menunggu Diproses)";
+        if (
+          paymentMethod === "online" &&
+          (paymentStatus === "paid" || paymentStatus === "dibayar")
+        ) {
+          return "Dibayar (Menunggu Diproses)";
         }
         return "Menunggu Diproses";
     }
@@ -579,16 +580,34 @@ const OrderManagement = () => {
                           : "Transfer Online"}
                       </span>
                       {order.payment_method === "bayar_ditempat" && (
-                        <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">
-                          <i className="fas fa-money-bill-wave mr-1"></i>
-                          Belum Dibayar
+                        <span
+                          className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
+                            order.payment_status === "dibayar" ||
+                            order.order_status === "completed"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          <i
+                            className={`fas ${
+                              order.payment_status === "dibayar" ||
+                              order.order_status === "completed"
+                                ? "fa-check-circle"
+                                : "fa-exclamation-circle"
+                            } mr-1`}
+                          ></i>
+                          {order.payment_status === "dibayar" ||
+                          order.order_status === "completed"
+                            ? "Dibayar"
+                            : "Belum Dibayar"}
                         </span>
                       )}
                       {order.payment_method === "pembayaran_online" &&
-                        order.payment_status === "paid" && (
+                        (order.payment_status === "paid" ||
+                          order.payment_status === "dibayar") && (
                           <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                             <i className="fas fa-check-circle mr-1"></i>
-                            Lunas
+                            Dibayar
                           </span>
                         )}
                       {order.payment_method === "pembayaran_online" &&
@@ -754,14 +773,32 @@ const OrderManagement = () => {
                     </span>
 
                     {currentOrder.payment_method === "bayar_ditempat" ? (
-                      <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">
-                        <i className="fas fa-money-bill-wave mr-1"></i>
-                        Belum Dibayar
+                      <span
+                        className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
+                          currentOrder.payment_status === "dibayar" ||
+                          currentOrder.order_status === "completed"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        <i
+                          className={`fas ${
+                            currentOrder.payment_status === "dibayar" ||
+                            currentOrder.order_status === "completed"
+                              ? "fa-check-circle"
+                              : "fa-exclamation-circle"
+                          } mr-1`}
+                        ></i>
+                        {currentOrder.payment_status === "dibayar" ||
+                        currentOrder.order_status === "completed"
+                          ? "Dibayar"
+                          : "Belum Dibayar"}
                       </span>
                     ) : (
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          currentOrder.payment_status === "paid"
+                          currentOrder.payment_status === "paid" ||
+                          currentOrder.payment_status === "dibayar"
                             ? "bg-green-100 text-green-800"
                             : currentOrder.payment_status === "pending"
                             ? "bg-yellow-100 text-yellow-800"
@@ -770,15 +807,17 @@ const OrderManagement = () => {
                       >
                         <i
                           className={`fas ${
-                            currentOrder.payment_status === "paid"
+                            currentOrder.payment_status === "paid" ||
+                            currentOrder.payment_status === "dibayar"
                               ? "fa-check-circle"
                               : currentOrder.payment_status === "pending"
                               ? "fa-clock"
                               : "fa-times-circle"
                           } mr-1`}
                         ></i>
-                        {currentOrder.payment_status === "paid"
-                          ? "Pembayaran Terverifikasi"
+                        {currentOrder.payment_status === "paid" ||
+                        currentOrder.payment_status === "dibayar"
+                          ? "Dibayar"
                           : currentOrder.payment_status === "pending"
                           ? "Menunggu Pembayaran"
                           : "Pembayaran Gagal"}

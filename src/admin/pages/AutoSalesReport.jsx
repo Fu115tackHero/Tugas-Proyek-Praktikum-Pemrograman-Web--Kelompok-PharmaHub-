@@ -519,15 +519,29 @@ const AutoSalesReport = () => {
                           <div className="font-medium">
                             {transaction.payment_method}
                           </div>
-                          <div
-                            className={`text-xs ${
-                              transaction.payment_status === "paid"
-                                ? "text-green-600"
-                                : "text-orange-600"
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                              transaction.payment_status === "paid" ||
+                              transaction.payment_status === "dibayar"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
                             }`}
                           >
-                            {transaction.payment_status}
-                          </div>
+                            <i
+                              className={`fas ${
+                                transaction.payment_status === "paid" ||
+                                transaction.payment_status === "dibayar"
+                                  ? "fa-check-circle"
+                                  : "fa-exclamation-circle"
+                              } mr-1`}
+                            ></i>
+                            {transaction.payment_status === "paid" ||
+                            transaction.payment_status === "dibayar"
+                              ? "Dibayar"
+                              : transaction.payment_status === "belum_dibayar"
+                              ? "Belum Dibayar"
+                              : transaction.payment_status}
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                           {formatCurrency(transaction.subtotal || 0)}

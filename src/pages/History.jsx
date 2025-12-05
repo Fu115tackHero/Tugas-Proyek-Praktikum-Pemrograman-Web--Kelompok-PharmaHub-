@@ -877,7 +877,8 @@ const History = () => {
                     >
                       {translateOrderStatus(order.order_status)}
                     </span>
-                    {order.payment_status === "pending" && (
+                    {(order.payment_status === "pending" ||
+                      order.payment_status === "belum_dibayar") && (
                       <span className="inline-flex px-2 py-1 rounded text-xs bg-orange-100 text-orange-700">
                         {translatePaymentStatus(order.payment_status)}
                       </span>
@@ -910,7 +911,8 @@ const History = () => {
                       )}
                       {(order.order_status === "preparing" ||
                         order.order_status === "ready") &&
-                        order.payment_status === "paid" && (
+                        (order.payment_status === "paid" ||
+                          order.payment_status === "dibayar") && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();

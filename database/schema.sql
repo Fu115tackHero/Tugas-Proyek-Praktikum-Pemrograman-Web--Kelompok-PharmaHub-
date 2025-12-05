@@ -371,7 +371,7 @@ CREATE TABLE orders (
     
     -- Metode Pembayaran & Status
     payment_method VARCHAR(50) NOT NULL, -- 'pembayaran_online', 'bayar_ditempat'
-    payment_status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'paid', 'failed', 'refunded', 'unpaid'
+    payment_status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'dibayar', 'belum_dibayar', 'failed', 'refunded'
     
     -- Prescription untuk obat yang memerlukan resep
     prescription_image VARCHAR(255), -- URL/path ke resep dokter (gambar)
@@ -402,7 +402,7 @@ CREATE TABLE orders (
     
     CONSTRAINT check_totals CHECK (total_amount >= 0),
     CONSTRAINT check_payment_method CHECK (payment_method IN ('pembayaran_online', 'bayar_ditempat')),
-    CONSTRAINT check_payment_status CHECK (payment_status IN ('pending', 'paid', 'failed', 'refunded', 'unpaid')),
+    CONSTRAINT check_payment_status CHECK (payment_status IN ('pending', 'dibayar', 'belum_dibayar', 'failed', 'refunded', 'paid', 'unpaid')),
     CONSTRAINT check_order_status CHECK (order_status IN ('pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled', 'delivered'))
 );
 

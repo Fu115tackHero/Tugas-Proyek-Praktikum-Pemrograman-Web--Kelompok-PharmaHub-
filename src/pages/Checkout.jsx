@@ -216,14 +216,18 @@ const Checkout = () => {
       let paymentStatus = "pending";
       let orderStatus = "pending";
 
-      if (status.includes("Lunas") || status.includes("Pembayaran Berhasil")) {
-        paymentStatus = "paid";
+      if (
+        status.includes("Lunas") ||
+        status.includes("Pembayaran Berhasil") ||
+        status.includes("Dibayar")
+      ) {
+        paymentStatus = "dibayar";
         orderStatus = "confirmed";
       } else if (status.includes("Menunggu Pembayaran")) {
         paymentStatus = "pending";
         orderStatus = "pending";
       } else if (status.includes("Bayar di Tempat")) {
-        paymentStatus = "unpaid";
+        paymentStatus = "belum_dibayar";
         orderStatus = "pending";
       }
 

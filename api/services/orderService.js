@@ -34,7 +34,7 @@ async function createOrder(userId, orderData) {
       totalAmount,
       couponCode = null,
       paymentMethod,
-      paymentStatus = "pending",
+      paymentStatus, // Will be set based on payment method
       prescriptionImage = null,
       notes = null,
     } = orderData;
@@ -43,6 +43,14 @@ async function createOrder(userId, orderData) {
     if (!customerName || !customerPhone || !items || items.length === 0) {
       throw new Error("Missing required order fields");
     }
+
+    // Determine payment status based on payment method
+    // bayar_ditempat: belum_dibayar (will be marked 'dibayar' when completed)
+    // pembayaran_online: pending (waiting for payment)
+    const finalPaymentStatus =
+      paymentMethod === "bayar_ditempat"
+        ? "belum_dibayar"
+        : paymentStatus || "pending";
 
     // Generate unique order number
     const orderNumber = generateOrderNumber();
@@ -85,7 +93,7 @@ async function createOrder(userId, orderData) {
       totalAmount,
       couponCode,
       paymentMethod,
-      paymentStatus,
+      finalPaymentStatus, // Gunakan finalPaymentStatus yang sudah ditentukan
       prescriptionImage,
       "pending", // Default order status
       notes,
@@ -181,7 +189,7 @@ async function createOrder(userId, orderData) {
         created_at,
         total_amount: totalAmount,
         payment_method: paymentMethod,
-        payment_status: paymentStatus,
+        payment_status: finalPaymentStatus,
         order_status: "pending",
       },
     };
@@ -457,7 +465,7 @@ async function getOrderById(userId, orderId) {
     `;
 
     const notesResult = await pool.query(notesQuery, [orderId, userId]);
-    
+
     if (notesResult.rows.length > 0) {
       order.admin_notes = notesResult.rows[0].admin_notes;
     }
@@ -490,27 +498,37 @@ async function updateOrderStatus(orderId, newStatus, adminNotes = null) {
 
     // Get order details and user_id before updating
     const orderQuery = `
-      SELECT order_id, order_number, user_id, order_status
+      SELECT order_id, order_number, user_id, order_status, payment_method, payment_status
       FROM orders
       WHERE order_id = $1
     `;
     const orderResult = await pool.query(orderQuery, [orderId]);
-    
+
     if (orderResult.rows.length === 0) {
       return null;
     }
-    
+
     const order = orderResult.rows[0];
+
+    // Logic: Jika order dengan metode bayar_ditempat di-completed, otomatis tandai sebagai sudah dibayar
+    const shouldMarkAsPaid =
+      newStatus === "completed" &&
+      order.payment_method === "bayar_ditempat" &&
+      order.payment_status !== "dibayar";
 
     const query = `
       UPDATE orders
       SET 
         order_status = $1::varchar,
+        payment_status = CASE 
+          WHEN $1::varchar = 'completed' AND payment_method = 'bayar_ditempat' THEN 'dibayar'
+          ELSE payment_status
+        END,
         updated_at = NOW(),
         completed_at = CASE WHEN $1::varchar = 'completed' THEN NOW() ELSE completed_at END,
         cancelled_at = CASE WHEN $1::varchar = 'cancelled' THEN NOW() ELSE cancelled_at END
       WHERE order_id = $2
-      RETURNING order_id, order_number, order_status, updated_at
+      RETURNING order_id, order_number, order_status, payment_status, updated_at
     `;
 
     const result = await pool.query(query, [newStatus, orderId]);
@@ -521,21 +539,35 @@ async function updateOrderStatus(orderId, newStatus, adminNotes = null) {
 
     console.log("[OrderService] Order status updated:", result.rows[0]);
 
+    // Log jika payment status juga diubah
+    if (shouldMarkAsPaid) {
+      console.log(
+        `[OrderService] Order ${orderId} payment automatically marked as 'dibayar' (bayar_ditempat completed)`
+      );
+    }
+
     // Create notification for user about status change
     try {
       const statusMessages = {
-        'pending': 'menunggu konfirmasi',
-        'confirmed': 'telah dikonfirmasi',
-        'preparing': 'sedang disiapkan',
-        'ready': 'siap untuk diambil',
-        'completed': 'telah selesai',
-        'cancelled': 'telah dibatalkan',
-        'delivered': 'telah dikirim'
+        pending: "menunggu konfirmasi",
+        confirmed: "telah dikonfirmasi",
+        preparing: "sedang disiapkan",
+        ready: "siap untuk diambil",
+        completed: "telah selesai",
+        cancelled: "telah dibatalkan",
+        delivered: "telah dikirim",
       };
 
       const notifTitle = `Status Pesanan ${order.order_number} Diperbarui`;
-      let notifMessage = `Pesanan Anda ${statusMessages[newStatus] || 'telah diperbarui'}`;
-      
+      let notifMessage = `Pesanan Anda ${
+        statusMessages[newStatus] || "telah diperbarui"
+      }`;
+
+      // Add payment confirmation if applicable
+      if (shouldMarkAsPaid) {
+        notifMessage += `\n\n✅ Pembayaran telah dikonfirmasi`;
+      }
+
       // Add admin notes to message if provided
       if (adminNotes && adminNotes.trim()) {
         notifMessage += `\n\nCatatan dari Admin: ${adminNotes}`;
@@ -545,19 +577,26 @@ async function updateOrderStatus(orderId, newStatus, adminNotes = null) {
         INSERT INTO notifications (user_id, type, title, message, related_order_id, order_status, admin_notes)
         VALUES ($1, 'order', $2, $3, $4, $5, $6)
       `;
-      
+
       await pool.query(notifQuery, [
         order.user_id,
         notifTitle,
         notifMessage,
         orderId,
         newStatus,
-        adminNotes || null
+        adminNotes || null,
       ]);
 
-      console.log(`[OrderService] Notification created for user ${order.user_id} - Status: ${newStatus}${adminNotes ? ' with admin notes' : ''}`);
+      console.log(
+        `[OrderService] Notification created for user ${
+          order.user_id
+        } - Status: ${newStatus}${adminNotes ? " with admin notes" : ""}`
+      );
     } catch (notifError) {
-      console.error("[OrderService] Error creating notification:", notifError.message);
+      console.error(
+        "[OrderService] Error creating notification:",
+        notifError.message
+      );
       // Don't throw error, just log it
     }
 
@@ -793,14 +832,14 @@ async function finalizePayment(orderId, userId) {
     if (check.rows.length === 0) throw new Error("Pesanan tidak ditemukan");
 
     const { payment_status, order_status } = check.rows[0];
-    if (payment_status === "paid") {
+    if (payment_status === "dibayar") {
       await client.query("COMMIT");
       return { success: true, message: "Pembayaran sudah ditandai lunas" };
     }
 
     const update = await client.query(
       `UPDATE orders
-       SET payment_status = 'paid',
+       SET payment_status = 'dibayar',
            order_status = CASE WHEN order_status = 'pending' THEN 'preparing' ELSE order_status END,
            updated_at = NOW()
        WHERE order_id = $1
@@ -904,7 +943,7 @@ async function cancelPaidOrderWithRefund(
     const order = check.rows[0];
 
     // Verify payment is paid
-    if (order.payment_status !== "paid") {
+    if (order.payment_status !== "dibayar") {
       throw new Error(
         "Hanya pesanan yang sudah dibayar yang dapat dibatalkan dengan refund"
       );
