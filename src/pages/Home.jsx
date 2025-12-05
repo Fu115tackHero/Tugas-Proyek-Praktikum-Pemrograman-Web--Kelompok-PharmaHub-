@@ -199,53 +199,70 @@ const Home = () => {
           Daftar Obat yang Tersedia
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {featuredProducts.map((product) => (
-            <div
-              key={product.id}
-              className={`
-                group relative bg-white rounded-2xl p-5 flex flex-col border border-transparent
-                transition-all duration-300 ease-out
-                hover:shadow-2xl hover:-translate-y-2 hover:border-blue-200
-                ${product.prescriptionRequired ? 'border-l-4 border-l-red-500' : ''}
-              `}
-            >
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-36 h-36 object-cover mx-auto mb-4 rounded-lg"
-                onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/150?text=No+Image';
-                }}
-              />
-              <h3 className="font-semibold text-gray-800 text-base">{product.name}</h3>
-              <p className="text-gray-600 text-sm mt-1 flex-grow">
-                {/* Prioritize howItWorks/how_it_works over description for consistency */}
-                {((product.howItWorks || product.how_it_works || product.description) || '').length > 60
-                  ? ((product.howItWorks || product.how_it_works || product.description) || '').substring(0, 60) + '...'
-                  : (product.howItWorks || product.how_it_works || product.description || '')}
-              </p>
-              <div className="mt-auto">
-                <div className="flex items-center justify-between mt-4">
-                  <p className="text-blue-600 font-bold text-lg">
-                    Rp {product.price.toLocaleString('id-ID')}
-                  </p>
-                  <p className={`text-sm font-medium ${
-                    (product.stock || 0) > 0 
-                      ? (product.stock > 10 ? 'text-green-600' : 'text-orange-600')
-                      : 'text-red-600'
-                  }`}>
-                    Stok: {product.stock || 0}
-                  </p>
+          {featuredProducts.map((product) => {
+            const stock = product.stock || 0;
+            const isOutOfStock = stock <= 0;
+            return (
+              <div
+                key={product.id}
+                className={`
+                  group relative bg-white rounded-2xl p-5 flex flex-col border border-transparent
+                  transition-all duration-300 ease-out
+                  hover:shadow-2xl hover:-translate-y-2 hover:border-blue-200
+                  ${product.prescriptionRequired ? 'border-l-4 border-l-red-500' : ''}
+                  ${isOutOfStock ? 'filter grayscale opacity-70' : ''}
+                `}
+              >
+                {isOutOfStock && (
+                  <div className="absolute top-3 right-3 bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded">
+                    Habis
+                  </div>
+                )}
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-36 h-36 object-cover mx-auto mb-4 rounded-lg"
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/150?text=No+Image';
+                  }}
+                />
+                <h3 className={`font-semibold ${isOutOfStock ? 'text-gray-500' : 'text-gray-800'} text-base`}>{product.name}</h3>
+                <p className={`text-sm mt-1 flex-grow ${isOutOfStock ? 'text-gray-500' : 'text-gray-600'}`}>
+                  {/* Prioritize howItWorks/how_it_works over description for consistency */}
+                  {((product.howItWorks || product.how_it_works || product.description) || '').length > 60
+                    ? ((product.howItWorks || product.how_it_works || product.description) || '').substring(0, 60) + '...'
+                    : (product.howItWorks || product.how_it_works || product.description || '')}
+                </p>
+                <div className="mt-auto">
+                  <div className="flex items-center justify-between mt-4">
+                    <p className={`${isOutOfStock ? 'text-gray-500' : 'text-blue-600'} font-bold text-lg`}>
+                      Rp {product.price.toLocaleString('id-ID')}
+                    </p>
+                    <p className={`text-sm font-medium ${
+                      !isOutOfStock
+                        ? (stock > 10 ? 'text-green-600' : 'text-orange-600')
+                        : 'text-red-600'
+                    }`}>
+                      Stok: {stock}
+                    </p>
+                  </div>
+                  {isOutOfStock ? (
+                    <div className="mt-4 bg-gray-300 text-gray-600 px-4 py-2 rounded-lg transition w-full flex items-center justify-center">
+                      <i className="fas fa-ban mr-2"></i>
+                      Habis
+                    </div>
+                  ) : (
+                    <Link
+                      to={`/product/${product.id}`}
+                      className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition w-full flex items-center justify-center"
+                    >
+                      <i className="fas fa-shopping-cart"></i>
+                    </Link>
+                  )}
                 </div>
-                <Link
-                  to={`/product/${product.id}`}
-                  className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition w-full flex items-center justify-center"
-                >
-                  <i className="fas fa-shopping-cart"></i>
-                </Link>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Tombol Lihat Produk Lain */}

@@ -199,25 +199,14 @@ const ProductDetail = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6 lg:p-8">
             {/* Product Image */}
             <div className="flex justify-center items-center">
-              <div className={`relative bg-gray-100 rounded-lg p-8 w-full max-w-md ${product.stock === 0 ? "opacity-50" : ""}`}>
-                {/* Out of Stock Overlay */}
-                {product.stock === 0 && (
-                  <div className="absolute inset-0 rounded-lg bg-black bg-opacity-20 flex items-center justify-center z-10">
-                    <div className="bg-red-600 text-white px-6 py-3 rounded-xl font-bold text-lg shadow-lg transform -rotate-12">
-                      HABIS
-                    </div>
-                  </div>
-                )}
-                
+              <div className="bg-gray-100 rounded-lg p-8 w-full max-w-md">
                 <img
                   src={
                     product.image ||
                     "https://via.placeholder.com/400x400?text=No+Image"
                   }
                   alt={product.name}
-                  className={`w-full h-auto max-w-md object-contain rounded-lg transition-transform duration-300 ${
-                    product.stock === 0 ? "grayscale" : "hover:scale-105"
-                  }`}
+                  className="w-full h-auto max-w-md object-contain rounded-lg transition-transform duration-300 hover:scale-105"
                   onError={(e) => {
                     e.target.src =
                       "https://via.placeholder.com/400x400?text=No+Image";
@@ -330,33 +319,19 @@ const ProductDetail = () => {
                   {/* Add to Cart Button */}
                   <button
                     onClick={handleAddToCart}
-                    disabled={product.stock === 0}
-                    className={`py-4 rounded-lg font-semibold flex items-center justify-center space-x-2 transition ${
-                      product.stock === 0
-                        ? "bg-gray-200 text-gray-500 cursor-not-allowed border-2 border-gray-300"
-                        : "bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50"
-                    }`}
+                    className="bg-white border-2 border-blue-600 text-blue-600 py-4 rounded-lg font-semibold hover:bg-blue-50 transition flex items-center justify-center space-x-2"
                   >
                     <i className="fas fa-shopping-cart"></i>
-                    <span>
-                      {product.stock === 0 ? "Tidak Tersedia" : "Masukkan Ke Keranjang"}
-                    </span>
+                    <span>Masukkan Ke Keranjang</span>
                   </button>
 
                   {/* Beli Sekarang (Redirects to Cart) */}
                   <button
                     onClick={handleBuyNow}
-                    disabled={product.stock === 0}
-                    className={`py-4 rounded-lg font-semibold flex items-center justify-center space-x-2 transition ${
-                      product.stock === 0
-                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        : "bg-blue-600 text-white hover:bg-blue-700"
-                    }`}
+                    className="bg-blue-600 text-white py-4 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center space-x-2"
                   >
                     <i className="fas fa-credit-card"></i>
-                    <span>
-                      {product.stock === 0 ? "Stok Habis" : "Checkout"}
-                    </span>
+                    <span>Checkout</span>
                   </button>
                 </div>
               </div>
