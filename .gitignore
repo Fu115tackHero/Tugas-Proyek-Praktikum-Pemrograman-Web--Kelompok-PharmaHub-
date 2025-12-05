@@ -21,6 +21,7 @@ dist-ssr
 .env.staging
 .env.preview
 database/.env
+api/.env
 
 # Package manager caches & stores
 .npm

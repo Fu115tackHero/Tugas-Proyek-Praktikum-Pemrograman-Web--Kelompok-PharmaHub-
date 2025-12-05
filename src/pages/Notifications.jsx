@@ -3,9 +3,13 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import NotificationService from "../services/notification.service";
 import OrderService from "../services/order.service";
+import AlertModal from "../components/AlertModal";
+import ConfirmModal from "../components/ConfirmModal";
+import { useAlert } from "../hooks/useAlert";
 
 const Notifications = () => {
   const { getToken } = useAuth();
+  const { alertState, showAlert, hideAlert } = useAlert();
   const [activeTab, setActiveTab] = useState("all");
   const [notifications, setNotifications] = useState([]);
   const [selectedNotif, setSelectedNotif] = useState(null);
@@ -13,6 +17,8 @@ const Notifications = () => {
   const [loading, setLoading] = useState(true);
   const [loadingOrderDetail, setLoadingOrderDetail] = useState(false);
   const [error, setError] = useState(null);
+  const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
 
   useEffect(() => {
     loadNotifications();
@@ -82,15 +88,12 @@ const Notifications = () => {
       );
     } catch (err) {
       console.error("Error marking all as read:", err);
-      alert("Gagal menandai semua notifikasi sebagai dibaca");
+      showAlert("Gagal menandai semua notifikasi sebagai dibaca", "error");
     }
   };
 
   const handleClearAll = async () => {
-    if (
-      !confirm("Hapus semua notifikasi? Tindakan ini tidak dapat dibatalkan.")
-    )
-      return;
+    setShowClearAllConfirm(false);
     try {
       const token = getToken();
       if (!token) return;
@@ -101,9 +104,10 @@ const Notifications = () => {
         );
       }
       setNotifications([]);
+      showAlert("Semua notifikasi berhasil dihapus", "success");
     } catch (err) {
       console.error("Error clearing notifications:", err);
-      alert("Gagal menghapus notifikasi");
+      showAlert("Gagal menghapus notifikasi", "error");
     }
   };
 
@@ -119,32 +123,28 @@ const Notifications = () => {
       window.dispatchEvent(new Event("notificationUpdated"));
     } catch (err) {
       console.error("Error deleting notification:", err);
-      alert("Gagal menghapus notifikasi");
+      showAlert("Gagal menghapus notifikasi", "error");
     }
   };
 
   const handleDeleteAll = async () => {
-    if (
-      !confirm(
-        "Hapus semua notifikasi? Notifikasi akan dihapus dari daftar Anda."
-      )
-    )
-      return;
+    setShowDeleteAllConfirm(false);
     try {
       const token = getToken();
       if (!token) return;
       const result = await NotificationService.archiveAllNotifications(token);
       if (result.success) {
         setNotifications([]);
-        alert(
-          `Berhasil menghapus ${result.data?.archivedCount || 0} notifikasi`
+        showAlert(
+          `Berhasil menghapus ${result.data?.archivedCount || 0} notifikasi`,
+          "success"
         );
         // Trigger notification update event for Navbar badge
         window.dispatchEvent(new Event("notificationUpdated"));
       }
     } catch (err) {
       console.error("Error deleting all notifications:", err);
-      alert("Gagal menghapus notifikasi");
+      showAlert("Gagal menghapus notifikasi", "error");
     }
   };
 
@@ -176,14 +176,17 @@ const Notifications = () => {
   const handleViewDetail = async (notif) => {
     setSelectedNotif(notif);
     setShowPreviewModal(true);
-    
+
     // Fetch order details if this notification has a related order
     if (notif.related_order_id) {
       setLoadingOrderDetail(true);
       try {
         const token = getToken();
         if (token) {
-          const orderResult = await OrderService.getOrderById(notif.related_order_id, token);
+          const orderResult = await OrderService.getOrderById(
+            notif.related_order_id,
+            token
+          );
           if (orderResult.success && orderResult.order) {
             const order = orderResult.order;
             setSelectedNotif({
@@ -191,17 +194,18 @@ const Notifications = () => {
               order_number: order.order_number, // Add order_number from fetched order
               orderDetails: {
                 items: order.items || [],
-                customerName: order.customer_name || order.full_name || 'N/A',
-                customerPhone: order.customer_phone || order.phone_number || 'N/A',
-                notes: order.notes || '',
-                adminNotes: order.admin_notes || '',
+                customerName: order.customer_name || order.full_name || "N/A",
+                customerPhone:
+                  order.customer_phone || order.phone_number || "N/A",
+                notes: order.notes || "",
+                adminNotes: order.admin_notes || "",
                 subtotal: order.subtotal || order.total_amount || 0,
                 discount_amount: order.discount_amount || 0,
                 tax_amount: order.tax_amount || 0,
                 total: order.total_amount || order.total || 0,
                 createdAt: order.created_at,
-                order_status: order.order_status
-              }
+                order_status: order.order_status,
+              },
             });
           }
         }
@@ -211,7 +215,7 @@ const Notifications = () => {
         setLoadingOrderDetail(false);
       }
     }
-    
+
     if (!notif.is_read) {
       try {
         const token = getToken();
@@ -257,7 +261,7 @@ const Notifications = () => {
             <button
               className="px-3 py-2 text-sm text-red-600 hover:text-red-800 transition disabled:text-gray-400 disabled:cursor-not-allowed"
               disabled={notifications.length === 0}
-              onClick={handleDeleteAll}
+              onClick={() => setShowDeleteAllConfirm(true)}
               title="Hapus semua notifikasi"
             >
               <i className="fas fa-trash mr-1"></i>Hapus Semua
@@ -476,188 +480,202 @@ const Notifications = () => {
                 <i className="fas fa-times text-xl"></i>
               </button>
             </div>
-            
+
             {loadingOrderDetail ? (
               <div className="p-8 text-center">
                 <i className="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
                 <p className="text-gray-600">Memuat detail pesanan...</p>
               </div>
             ) : selectedNotif.orderDetails ? (
-            <div className="p-6 space-y-6">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-600 font-medium">
-                      Waktu Pemesanan
-                    </p>
-                    <p className="text-sm font-semibold text-gray-800">
-                      {new Date(selectedNotif.orderDetails.createdAt).toLocaleString(
-                        "id-ID",
-                        {
+              <div className="p-6 space-y-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-gray-600 font-medium">
+                        Waktu Pemesanan
+                      </p>
+                      <p className="text-sm font-semibold text-gray-800">
+                        {new Date(
+                          selectedNotif.orderDetails.createdAt
+                        ).toLocaleString("id-ID", {
                           day: "2-digit",
                           month: "long",
                           year: "numeric",
                           hour: "2-digit",
                           minute: "2-digit",
-                        }
-                      )}
-                    </p>
+                        })}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-medium">
+                        Status
+                      </p>
+                      <p className="text-sm font-semibold text-blue-600">
+                        {selectedNotif.status}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-600 font-medium">Status</p>
-                    <p className="text-sm font-semibold text-blue-600">
-                      {selectedNotif.status}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-3">
+                    <i className="fas fa-user-circle text-blue-600 mr-2"></i>
+                    Informasi Pemesan
+                  </h3>
+                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium text-gray-700">Nama:</span>{" "}
+                      {selectedNotif.orderDetails.customerName}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium text-gray-700">
+                        Telepon:
+                      </span>{" "}
+                      {selectedNotif.orderDetails.customerPhone}
                     </p>
                   </div>
                 </div>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800 mb-3">
-                  <i className="fas fa-user-circle text-blue-600 mr-2"></i>
-                  Informasi Pemesan
-                </h3>
-                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium text-gray-700">Nama:</span>{" "}
-                    {selectedNotif.orderDetails.customerName}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium text-gray-700">Telepon:</span>{" "}
-                    {selectedNotif.orderDetails.customerPhone}
-                  </p>
-                </div>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800 mb-3">
-                  <i className="fas fa-shopping-bag text-blue-600 mr-2"></i>
-                  Produk Pesanan
-                </h3>
-                <div className="space-y-2">
-                  {selectedNotif.orderDetails.items.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-gray-50 p-3 rounded-lg"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-800">
-                            {item.product_name || item.name}
-                          </p>
-                          <div className="flex items-center gap-4 mt-2">
-                            <div>
-                              <p className="text-xs text-gray-600">Jumlah</p>
-                              <p className="font-semibold text-gray-800">
-                                {item.quantity}x
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-600">Harga Satuan</p>
-                              <p className="font-semibold text-gray-800">
-                                Rp {(Number(item.product_price || item.price) || 0).toLocaleString("id-ID")}
-                              </p>
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-3">
+                    <i className="fas fa-shopping-bag text-blue-600 mr-2"></i>
+                    Produk Pesanan
+                  </h3>
+                  <div className="space-y-2">
+                    {selectedNotif.orderDetails.items.map((item, idx) => (
+                      <div key={idx} className="bg-gray-50 p-3 rounded-lg">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-800">
+                              {item.product_name || item.name}
+                            </p>
+                            <div className="flex items-center gap-4 mt-2">
+                              <div>
+                                <p className="text-xs text-gray-600">Jumlah</p>
+                                <p className="font-semibold text-gray-800">
+                                  {item.quantity}x
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-600">
+                                  Harga Satuan
+                                </p>
+                                <p className="font-semibold text-gray-800">
+                                  Rp{" "}
+                                  {(
+                                    Number(item.product_price || item.price) ||
+                                    0
+                                  ).toLocaleString("id-ID")}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs text-gray-600">Subtotal</p>
-                          <p className="font-bold text-blue-600">
-                            Rp {((Number(item.product_price || item.price) || 0) * item.quantity).toLocaleString("id-ID")}
-                          </p>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-600">Subtotal</p>
+                            <p className="font-bold text-blue-600">
+                              Rp{" "}
+                              {(
+                                (Number(item.product_price || item.price) ||
+                                  0) * item.quantity
+                              ).toLocaleString("id-ID")}
+                            </p>
+                          </div>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                </div>
+                {selectedNotif.orderDetails.notes && (
+                  <div>
+                    <h3 className="font-semibold text-gray-800 mb-3">
+                      <i className="fas fa-sticky-note text-blue-600 mr-2"></i>
+                      Catatan Pesanan
+                    </h3>
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                      <p className="text-sm text-gray-700">
+                        {selectedNotif.orderDetails.notes}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              </div>
-              {selectedNotif.orderDetails.notes && (
-                <div>
-                  <h3 className="font-semibold text-gray-800 mb-3">
-                    <i className="fas fa-sticky-note text-blue-600 mr-2"></i>
-                    Catatan Pesanan
-                  </h3>
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                    <p className="text-sm text-gray-700">
-                      {selectedNotif.orderDetails.notes}
-                    </p>
                   </div>
-                </div>
-              )}
-              {(selectedNotif.orderDetails.adminNotes || selectedNotif.admin_notes) && (
-                <div>
-                  <h3 className="font-semibold text-gray-800 mb-3">
-                    <i className="fas fa-comment-dots text-orange-600 mr-2"></i>
-                    Pesan dari Admin
-                  </h3>
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                    <p className="text-sm text-gray-700">
-                      {selectedNotif.orderDetails.adminNotes || selectedNotif.admin_notes}
-                    </p>
+                )}
+                {(selectedNotif.orderDetails.adminNotes ||
+                  selectedNotif.admin_notes) && (
+                  <div>
+                    <h3 className="font-semibold text-gray-800 mb-3">
+                      <i className="fas fa-comment-dots text-orange-600 mr-2"></i>
+                      Pesan dari Admin
+                    </h3>
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                      <p className="text-sm text-gray-700">
+                        {selectedNotif.orderDetails.adminNotes ||
+                          selectedNotif.admin_notes}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
-              <div className="border-t pt-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Subtotal</span>
-                    <span className="font-medium text-gray-800">
-                      Rp{" "}
-                      {(
-                        Number(selectedNotif.orderDetails.subtotal) || 0
-                      ).toLocaleString("id-ID")}
-                    </span>
-                  </div>
-                  {Number(selectedNotif.orderDetails.discount) > 0 && (
-                    <div className="flex justify-between text-sm text-green-600">
-                      <span>Diskon</span>
-                      <span className="font-medium">
-                        -Rp{" "}
+                )}
+                <div className="border-t pt-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Subtotal</span>
+                      <span className="font-medium text-gray-800">
+                        Rp{" "}
                         {(
-                          Number(selectedNotif.orderDetails.discount) || 0
+                          Number(selectedNotif.orderDetails.subtotal) || 0
                         ).toLocaleString("id-ID")}
                       </span>
                     </div>
-                  )}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Pajak (PPN 10%)</span>
-                    <span className="font-medium text-gray-800">
-                      Rp{" "}
-                      {(
-                        Number(selectedNotif.orderDetails.tax) || 0
-                      ).toLocaleString("id-ID")}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-lg font-bold border-t pt-2">
-                    <span>Total</span>
-                    <span className="text-blue-600">
-                      Rp{" "}
-                      {(
-                        Number(selectedNotif.orderDetails.total) || 0
-                      ).toLocaleString("id-ID")}
-                    </span>
+                    {Number(selectedNotif.orderDetails.discount) > 0 && (
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>Diskon</span>
+                        <span className="font-medium">
+                          -Rp{" "}
+                          {(
+                            Number(selectedNotif.orderDetails.discount) || 0
+                          ).toLocaleString("id-ID")}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Pajak (PPN 10%)</span>
+                      <span className="font-medium text-gray-800">
+                        Rp{" "}
+                        {(
+                          Number(selectedNotif.orderDetails.tax) || 0
+                        ).toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-lg font-bold border-t pt-2">
+                      <span>Total</span>
+                      <span className="text-blue-600">
+                        Rp{" "}
+                        {(
+                          Number(selectedNotif.orderDetails.total) || 0
+                        ).toLocaleString("id-ID")}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowPreviewModal(false)}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-lg font-semibold transition"
-                >
-                  Tutup
-                </button>
-                {selectedNotif.related_order_id && (
-                  <Link
-                    to="/history"
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition text-center"
+                <div className="flex gap-3">
+                  <button
                     onClick={() => setShowPreviewModal(false)}
+                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-lg font-semibold transition"
                   >
-                    Lihat Riwayat
-                  </Link>
-                )}
+                    Tutup
+                  </button>
+                  {selectedNotif.related_order_id && (
+                    <Link
+                      to="/history"
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition text-center"
+                      onClick={() => setShowPreviewModal(false)}
+                    >
+                      Lihat Riwayat
+                    </Link>
+                  )}
+                </div>
               </div>
-            </div>
             ) : (
               <div className="p-6">
-                <p className="text-gray-600 text-center mb-4">{selectedNotif.message || selectedNotif.title}</p>
+                <p className="text-gray-600 text-center mb-4">
+                  {selectedNotif.message || selectedNotif.title}
+                </p>
                 <button
                   onClick={() => setShowPreviewModal(false)}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition"
@@ -669,6 +687,27 @@ const Notifications = () => {
           </div>
         </div>
       )}
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertState.isOpen}
+        onClose={hideAlert}
+        message={alertState.message}
+        type={alertState.type}
+        title={alertState.title}
+      />
+
+      {/* Delete All Confirm Modal */}
+      <ConfirmModal
+        isOpen={showDeleteAllConfirm}
+        onClose={() => setShowDeleteAllConfirm(false)}
+        onConfirm={handleDeleteAll}
+        title="Hapus Semua Notifikasi?"
+        message="Apakah Anda yakin ingin menghapus semua notifikasi? Notifikasi akan dihapus dari daftar Anda."
+        confirmText="Ya, Hapus Semua"
+        cancelText="Batal"
+        type="danger"
+      />
     </main>
   );
 };

@@ -7,9 +7,8 @@
 const { Pool } = require("pg");
 const path = require("path");
 
-// Load environment variables
-require("dotenv").config({ path: path.join(__dirname, "../.env") });
-require("dotenv").config(); // Also try from root
+// Load environment variables from ROOT directory (project root, not api folder)
+require("dotenv").config({ path: path.join(__dirname, "../../.env") });
 
 // Check if we're using connection string (Vercel/Production) or individual credentials (Local)
 const useConnectionString = process.env.DATABASE_URL;
@@ -24,6 +23,8 @@ if (useConnectionString) {
     ssl: {
       rejectUnauthorized: false, // Required for Neon
     },
+    // Set timezone to Asia/Jakarta (WIB)
+    options: "-c timezone=Asia/Jakarta",
   });
 } else {
   // Development: Use individual credentials
@@ -39,6 +40,8 @@ if (useConnectionString) {
       process.env.DB_SSL_MODE === "require"
         ? { rejectUnauthorized: false }
         : undefined,
+    // Set timezone to Asia/Jakarta (WIB)
+    options: "-c timezone=Asia/Jakarta",
   });
 }
 

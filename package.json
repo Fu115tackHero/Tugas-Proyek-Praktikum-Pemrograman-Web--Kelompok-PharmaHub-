@@ -2,7 +2,6 @@
   "name": "pharmahub-react",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
   "scripts": {
     "dev": "vite",
     "dev:api": "node api/server.js",
@@ -21,6 +20,7 @@
     "form-data": "^4.0.5",
     "jsonwebtoken": "^9.0.2",
     "midtrans-client": "^1.4.3",
+    "node-cron": "^4.2.1",
     "node-fetch": "^2.7.0",
     "pg": "^8.16.3",
     "prop-types": "^15.8.1",
