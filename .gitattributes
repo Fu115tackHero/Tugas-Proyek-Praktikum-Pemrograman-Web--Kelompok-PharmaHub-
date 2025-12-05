@@ -1,0 +1,30 @@
+# Normalize all text files to LF in the repository
+* text=auto eol=lf
+
+# Windows batch files keep CRLF
+*.bat text eol=crlf
+
+# Mark common binary assets to avoid line ending changes
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+
+# Fonts and other binaries
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+
+# Archives
+*.zip binary
+*.7z binary
+*.rar binary
+
+# Do not modify images in Git diffs
+*.psd binary
+
+# Keep SVG as text (better diffs)
+# *.svg text eol=lf
