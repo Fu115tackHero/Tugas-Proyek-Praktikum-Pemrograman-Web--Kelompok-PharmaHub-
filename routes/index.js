@@ -13,6 +13,7 @@ const notificationRoutes = require("./notificationRoutes");
 const salesReportRoutes = require("./salesReportRoutes");
 const autoSalesReportRoutes = require("./autoSalesReportRoutes");
 const adminDashboardRoutes = require("./adminDashboardRoutes");
+const adminCouponRoutes = require("./adminCouponRoutes");
 
 /**
  * Health check endpoint
@@ -39,5 +40,6 @@ router.use("/notifications", notificationRoutes);
 router.use("/sales-reports", salesReportRoutes);
 router.use("/auto-sales-reports", autoSalesReportRoutes);
 router.use("/admin/dashboard", adminDashboardRoutes);
+router.use("/admin/coupons", adminCouponRoutes);
 
 module.exports = router;

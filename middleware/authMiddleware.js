@@ -1,7 +1,8 @@
 // Authentication Middleware - JWT verification
 const jwt = require("jsonwebtoken");
+const pool = require("../config/database");
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   try {
     // Get token from Authorization header
     const authHeader = req.headers.authorization;
@@ -39,6 +40,30 @@ const authMiddleware = (req, res, next) => {
 
     if (!req.user.userId) {
       console.log("⚠️ [AuthMiddleware] Missing userId in token payload");
+    }
+
+    // Check if user account is still active (not suspended)
+    const userCheck = await pool.query(
+      "SELECT is_active FROM users WHERE user_id = $1",
+      [req.user.userId]
+    );
+
+    if (userCheck.rows.length === 0) {
+      console.log(`⚠️ [AuthMiddleware] User ${req.user.userId} not found`);
+      return res.status(401).json({
+        success: false,
+        message: "User account not found.",
+      });
+    }
+
+    if (!userCheck.rows[0].is_active) {
+      console.log(
+        `⚠️ [AuthMiddleware] User ${req.user.userId} account is suspended`
+      );
+      return res.status(403).json({
+        success: false,
+        message: "Account has been suspended. Please contact administrator.",
+      });
     }
 
     console.log(

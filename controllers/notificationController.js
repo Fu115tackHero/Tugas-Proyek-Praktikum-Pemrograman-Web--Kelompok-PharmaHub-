@@ -276,6 +276,95 @@ async function archiveReadNotifications(req, res) {
   }
 }
 
+/**
+ * POST /api/notifications/send
+ * Send notification to a specific user (Admin only)
+ */
+async function sendNotification(req, res) {
+  console.log("📤 [NotificationController] Admin sending notification");
+  console.log("   Admin:", req.user.email);
+  console.log("   Body:", JSON.stringify(req.body, null, 2));
+
+  try {
+    const { userId, type, title, message, relatedCouponId } = req.body;
+
+    // Validate required fields
+    if (!userId || !type || !title || !message) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: userId, type, title, message",
+      });
+    }
+
+    // Validate notification type
+    const validTypes = ["promotion", "system", "order"];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid notification type. Must be one of: ${validTypes.join(
+          ", "
+        )}`,
+      });
+    }
+
+    const notification = await notificationService.sendNotificationToUser({
+      userId,
+      type,
+      title,
+      message,
+      relatedCouponId: relatedCouponId || null,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Notification sent successfully",
+      data: notification,
+    });
+  } catch (error) {
+    console.error("❌ [NotificationController] Error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+/**
+ * POST /api/notifications/broadcast - Broadcast notification to all users (Admin only)
+ */
+async function broadcastNotification(req, res) {
+  try {
+    const { type, title, message } = req.body;
+
+    console.log("📢 [NotificationController] Broadcasting notification to all users");
+
+    if (!title || !message) {
+      return res.status(400).json({
+        success: false,
+        message: "Title and message are required",
+      });
+    }
+
+    const result = await notificationService.broadcastNotification({
+      type: type || "system",
+      title,
+      message,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Notification broadcast to ${result.count} users`,
+      data: result,
+    });
+  } catch (error) {
+    console.error("❌ [NotificationController] Broadcast error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
 module.exports = {
   getNotifications,
   getUnreadCount,
@@ -285,4 +374,6 @@ module.exports = {
   archiveNotification,
   archiveAllNotifications,
   archiveReadNotifications,
+  sendNotification,
+  broadcastNotification,
 };

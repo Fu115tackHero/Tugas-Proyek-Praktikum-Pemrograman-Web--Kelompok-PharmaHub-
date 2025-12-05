@@ -2,6 +2,24 @@ const express = require("express");
 const router = express.Router();
 const notificationController = require("../controllers/notificationController");
 const authMiddleware = require("../middleware/authMiddleware");
+const requireAdmin = require("../middleware/requireAdmin");
+
+// Admin-only routes (must come first before authMiddleware)
+// POST /api/notifications/send - Send notification to user (Admin only)
+router.post(
+  "/send",
+  authMiddleware,
+  requireAdmin,
+  notificationController.sendNotification
+);
+
+// POST /api/notifications/broadcast - Broadcast to all users (Admin only)
+router.post(
+  "/broadcast",
+  authMiddleware,
+  requireAdmin,
+  notificationController.broadcastNotification
+);
 
 // All notification routes require authentication
 router.use(authMiddleware);

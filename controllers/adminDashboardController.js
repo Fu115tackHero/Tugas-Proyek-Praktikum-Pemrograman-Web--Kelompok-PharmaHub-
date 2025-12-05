@@ -106,9 +106,61 @@ async function getLowStockAlerts(req, res) {
   }
 }
 
+/**
+ * GET /api/admin/dashboard/users
+ * Get all users (customers)
+ */
+async function getUsers(req, res) {
+  console.log("👥 [AdminDashboardController] GET all users");
+
+  try {
+    const users = await adminDashboardService.getAllUsers();
+
+    res.status(200).json({
+      success: true,
+      data: users,
+      count: users.length,
+    });
+  } catch (error) {
+    console.error("❌ [AdminDashboardController] Error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+/**
+ * PATCH /api/admin/dashboard/users/:id/status
+ * Toggle user active status (Suspend/Activate)
+ */
+async function updateUserStatus(req, res) {
+  console.log("👥 [AdminDashboardController] PATCH user status");
+  console.log("   User ID:", req.params.id);
+
+  try {
+    const userId = parseInt(req.params.id);
+    const user = await adminDashboardService.toggleUserStatus(userId);
+
+    res.status(200).json({
+      success: true,
+      message: `User ${user.is_active ? "activated" : "suspended"} successfully`,
+      data: user,
+    });
+  } catch (error) {
+    console.error("❌ [AdminDashboardController] Error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
 module.exports = {
   getDashboardStats,
   getTopProducts,
   getRecentActivity,
   getLowStockAlerts,
+  getUsers,
+  updateUserStatus,
 };

@@ -8,6 +8,13 @@ const CouponService = {
       discount_amount: discountAmount,
     });
   },
+
+  /**
+   * Get all active coupons (Admin feature for sending to users)
+   */
+  async getActiveCoupons() {
+    return api.get("/coupons");
+  },
 };
 
 export default CouponService;

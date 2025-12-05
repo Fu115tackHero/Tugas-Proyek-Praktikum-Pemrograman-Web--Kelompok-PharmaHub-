@@ -380,6 +380,130 @@ async function archiveReadNotifications(userId) {
   }
 }
 
+/**
+ * Send notification to a specific user (Admin feature)
+ * This allows admin to manually send notifications to users
+ */
+async function sendNotificationToUser(notificationData) {
+  try {
+    console.log("[NotificationService] Admin sending notification to user");
+
+    const {
+      userId,
+      type,
+      title,
+      message,
+      relatedCouponId = null,
+    } = notificationData;
+
+    // Validate input
+    if (!userId || !type || !title || !message) {
+      throw new Error("Missing required fields for notification");
+    }
+
+    const query = `
+      INSERT INTO notifications (
+        user_id,
+        type,
+        title,
+        message,
+        related_coupon_id,
+        icon_type,
+        is_read,
+        created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, false, NOW())
+      RETURNING notification_id, user_id, type, title, message, related_coupon_id, created_at
+    `;
+
+    const iconType = type === "promotion" ? "gift" : "bell";
+    const values = [userId, type, title, message, relatedCouponId, iconType];
+
+    const result = await pool.query(query, values);
+
+    console.log(
+      "[NotificationService] Notification sent to user:",
+      result.rows[0]
+    );
+
+    return result.rows[0];
+  } catch (error) {
+    console.error(
+      "[NotificationService] Error sending notification to user:",
+      error.message
+    );
+    throw error;
+  }
+}
+
+/**
+ * Broadcast notification to all active users
+ */
+async function broadcastNotification({ type, title, message, relatedCouponId = null }) {
+  try {
+    console.log("[NotificationService] Broadcasting notification to all users");
+
+    // Get all active users
+    const usersQuery = `
+      SELECT user_id 
+      FROM users 
+      WHERE role = 'customer' 
+        AND is_active = TRUE
+    `;
+    
+    const usersResult = await pool.query(usersQuery);
+    const userIds = usersResult.rows.map(row => row.user_id);
+
+    if (userIds.length === 0) {
+      return { count: 0, notifications: [] };
+    }
+
+    console.log(`[NotificationService] Broadcasting to ${userIds.length} users`);
+
+    // Insert notifications for all users
+    const insertQuery = `
+      INSERT INTO notifications (
+        user_id, 
+        type, 
+        title, 
+        message,
+        related_coupon_id,
+        is_read
+      )
+      SELECT 
+        unnest($1::integer[]),
+        $2,
+        $3,
+        $4,
+        $5,
+        FALSE
+      RETURNING *
+    `;
+
+    const values = [
+      userIds,
+      type,
+      title,
+      message,
+      relatedCouponId,
+    ];
+
+    const result = await pool.query(insertQuery, values);
+
+    console.log(`✅ [NotificationService] Broadcast sent to ${result.rows.length} users`);
+
+    return {
+      count: result.rows.length,
+      notifications: result.rows,
+    };
+  } catch (error) {
+    console.error(
+      "[NotificationService] Error broadcasting notification:",
+      error.message
+    );
+    throw error;
+  }
+}
+
 module.exports = {
   getNotificationsByUserId,
   getUnreadCount,
@@ -390,4 +514,6 @@ module.exports = {
   archiveNotification,
   archiveAllNotifications,
   archiveReadNotifications,
+  sendNotificationToUser,
+  broadcastNotification,
 };

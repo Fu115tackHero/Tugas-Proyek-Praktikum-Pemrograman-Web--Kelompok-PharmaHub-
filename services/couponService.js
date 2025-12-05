@@ -60,6 +60,7 @@ const couponService = {
         usage_per_user: coupon.usage_per_user || 1,
         start_date: coupon.start_date,
         end_date: coupon.end_date,
+        is_active: coupon.is_active,
         total_usage: parseInt(coupon.total_usage),
         remaining_usage: coupon.usage_limit
           ? coupon.usage_limit - parseInt(coupon.total_usage)
@@ -160,8 +161,12 @@ const couponService = {
           [coupon.coupon_id, userId]
         );
 
-        if (parseInt(userUsageResult.rows[0].count) >= coupon.usage_per_user) {
-          throw new Error("You have reached the usage limit for this coupon");
+        const userUsageCount = parseInt(userUsageResult.rows[0].count);
+        
+        if (userUsageCount >= coupon.usage_per_user) {
+          throw new Error(
+            `Kupon ${coupon.code} sudah kamu gunakan ${userUsageCount}x (maksimal ${coupon.usage_per_user}x per user)`
+          );
         }
       }
 
@@ -329,6 +334,166 @@ const couponService = {
         "❌ [CouponService] Error fetching coupon by code:",
         error.message
       );
+      throw error;
+    }
+  },
+
+  /**
+   * Create new coupon
+   */
+  async createCoupon(couponData) {
+    try {
+      console.log("🎫 [CouponService] Creating coupon:", couponData.code);
+
+      const query = `
+        INSERT INTO coupons (
+          code, description, discount_type, discount_value,
+          min_purchase, max_discount, usage_limit, usage_per_user,
+          start_date, end_date, is_active
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        RETURNING *
+      `;
+
+      const values = [
+        couponData.code.toUpperCase(),
+        couponData.description || null,
+        couponData.discount_type,
+        couponData.discount_value,
+        couponData.min_purchase || 0,
+        couponData.max_discount || null,
+        couponData.usage_limit || null,
+        couponData.usage_per_user || 1,
+        couponData.start_date,
+        couponData.end_date,
+        couponData.is_active !== false,
+      ];
+
+      const result = await pool.query(query, values);
+      console.log("✅ [CouponService] Coupon created successfully");
+
+      return result.rows[0];
+    } catch (error) {
+      console.error("❌ [CouponService] Error creating coupon:", error.message);
+      if (error.code === "23505") {
+        // Unique violation
+        throw new Error("Kode kupon sudah digunakan");
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Update coupon
+   */
+  async updateCoupon(couponId, couponData) {
+    try {
+      console.log("🎫 [CouponService] Updating coupon:", couponId);
+
+      const query = `
+        UPDATE coupons SET
+          code = $1,
+          description = $2,
+          discount_type = $3,
+          discount_value = $4,
+          min_purchase = $5,
+          max_discount = $6,
+          usage_limit = $7,
+          usage_per_user = $8,
+          start_date = $9,
+          end_date = $10,
+          is_active = $11
+        WHERE coupon_id = $12
+        RETURNING *
+      `;
+
+      const values = [
+        couponData.code.toUpperCase(),
+        couponData.description || null,
+        couponData.discount_type,
+        couponData.discount_value,
+        couponData.min_purchase || 0,
+        couponData.max_discount || null,
+        couponData.usage_limit || null,
+        couponData.usage_per_user || 1,
+        couponData.start_date,
+        couponData.end_date,
+        couponData.is_active !== false,
+        couponId,
+      ];
+
+      const result = await pool.query(query, values);
+
+      if (result.rows.length === 0) {
+        throw new Error("Kupon tidak ditemukan");
+      }
+
+      console.log("✅ [CouponService] Coupon updated successfully");
+      return result.rows[0];
+    } catch (error) {
+      console.error("❌ [CouponService] Error updating coupon:", error.message);
+      if (error.code === "23505") {
+        throw new Error("Kode kupon sudah digunakan");
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Delete coupon
+   */
+  async deleteCoupon(couponId) {
+    try {
+      console.log("🎫 [CouponService] Deleting coupon:", couponId);
+
+      // Check if coupon has been used
+      const usageCheck = await pool.query(
+        `SELECT COUNT(*) as usage_count FROM coupon_usage WHERE coupon_id = $1`,
+        [couponId]
+      );
+
+      if (parseInt(usageCheck.rows[0].usage_count) > 0) {
+        throw new Error(
+          "Kupon tidak dapat dihapus karena sudah digunakan oleh user. Nonaktifkan saja."
+        );
+      }
+
+      const result = await pool.query(
+        `DELETE FROM coupons WHERE coupon_id = $1 RETURNING *`,
+        [couponId]
+      );
+
+      if (result.rows.length === 0) {
+        throw new Error("Kupon tidak ditemukan");
+      }
+
+      console.log("✅ [CouponService] Coupon deleted successfully");
+      return result.rows[0];
+    } catch (error) {
+      console.error("❌ [CouponService] Error deleting coupon:", error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Toggle coupon active status
+   */
+  async toggleCouponStatus(couponId) {
+    try {
+      console.log("🎫 [CouponService] Toggling coupon status:", couponId);
+
+      const result = await pool.query(
+        `UPDATE coupons SET is_active = NOT is_active WHERE coupon_id = $1 RETURNING *`,
+        [couponId]
+      );
+
+      if (result.rows.length === 0) {
+        throw new Error("Kupon tidak ditemukan");
+      }
+
+      console.log("✅ [CouponService] Coupon status toggled successfully");
+      return result.rows[0];
+    } catch (error) {
+      console.error("❌ [CouponService] Error toggling coupon:", error.message);
       throw error;
     }
   },

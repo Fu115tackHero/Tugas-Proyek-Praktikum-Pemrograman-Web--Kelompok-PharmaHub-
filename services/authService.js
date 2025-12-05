@@ -160,6 +160,7 @@ async function loginUser(credentials) {
         u.password_hash, 
         u.phone, 
         u.role, 
+        u.is_active,
         u.profile_photo_url AS "profile_photo_url",
         u.created_at AS "createdAt",
         ua.full_address AS address
@@ -177,6 +178,11 @@ async function loginUser(credentials) {
     }
 
     const user = result.rows[0];
+
+    // Check if account is active
+    if (!user.is_active) {
+      throw new Error("Account has been suspended. Please contact administrator.");
+    }
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);

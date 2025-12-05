@@ -189,6 +189,105 @@ const couponController = {
         .json({ success: false, message: "Failed to record coupon usage" });
     }
   },
+
+  /**
+   * POST /api/admin/coupons - Create new coupon (Admin only)
+   */
+  async createCoupon(req, res) {
+    try {
+      console.log("🎫 [CouponController] POST create coupon");
+
+      const couponData = req.body;
+      const coupon = await couponService.createCoupon(couponData);
+
+      res.status(201).json({
+        success: true,
+        message: "Kupon berhasil dibuat",
+        data: coupon,
+      });
+    } catch (error) {
+      console.error("❌ [CouponController] Error creating coupon:", error.message);
+      res.status(500).json({
+        success: false,
+        message: error.message || "Gagal membuat kupon",
+      });
+    }
+  },
+
+  /**
+   * PUT /api/admin/coupons/:id - Update coupon (Admin only)
+   */
+  async updateCoupon(req, res) {
+    try {
+      const couponId = parseInt(req.params.id);
+      const couponData = req.body;
+
+      console.log(`🎫 [CouponController] PUT update coupon ${couponId}`);
+
+      const coupon = await couponService.updateCoupon(couponId, couponData);
+
+      res.status(200).json({
+        success: true,
+        message: "Kupon berhasil diupdate",
+        data: coupon,
+      });
+    } catch (error) {
+      console.error("❌ [CouponController] Error updating coupon:", error.message);
+      res.status(500).json({
+        success: false,
+        message: error.message || "Gagal mengupdate kupon",
+      });
+    }
+  },
+
+  /**
+   * DELETE /api/admin/coupons/:id - Delete coupon (Admin only)
+   */
+  async deleteCoupon(req, res) {
+    try {
+      const couponId = parseInt(req.params.id);
+
+      console.log(`🎫 [CouponController] DELETE coupon ${couponId}`);
+
+      await couponService.deleteCoupon(couponId);
+
+      res.status(200).json({
+        success: true,
+        message: "Kupon berhasil dihapus",
+      });
+    } catch (error) {
+      console.error("❌ [CouponController] Error deleting coupon:", error.message);
+      res.status(500).json({
+        success: false,
+        message: error.message || "Gagal menghapus kupon",
+      });
+    }
+  },
+
+  /**
+   * PATCH /api/admin/coupons/:id/toggle - Toggle coupon active status (Admin only)
+   */
+  async toggleCouponStatus(req, res) {
+    try {
+      const couponId = parseInt(req.params.id);
+
+      console.log(`🎫 [CouponController] PATCH toggle coupon ${couponId} status`);
+
+      const coupon = await couponService.toggleCouponStatus(couponId);
+
+      res.status(200).json({
+        success: true,
+        message: `Kupon ${coupon.is_active ? 'diaktifkan' : 'dinonaktifkan'}`,
+        data: coupon,
+      });
+    } catch (error) {
+      console.error("❌ [CouponController] Error toggling coupon:", error.message);
+      res.status(500).json({
+        success: false,
+        message: error.message || "Gagal mengubah status kupon",
+      });
+    }
+  },
 };
 
 module.exports = couponController;
