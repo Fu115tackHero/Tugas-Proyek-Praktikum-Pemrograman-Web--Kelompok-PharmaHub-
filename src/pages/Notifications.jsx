@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import NotificationService from "../services/notification.service";
+import OrderService from "../services/order.service";
 
 const Notifications = () => {
   const { getToken } = useAuth();
@@ -10,6 +11,7 @@ const Notifications = () => {
   const [selectedNotif, setSelectedNotif] = useState(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingOrderDetail, setLoadingOrderDetail] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -168,6 +170,42 @@ const Notifications = () => {
   const handleViewDetail = async (notif) => {
     setSelectedNotif(notif);
     setShowPreviewModal(true);
+    
+    // Fetch order details if this notification has a related order
+    if (notif.related_order_id) {
+      setLoadingOrderDetail(true);
+      try {
+        const token = getToken();
+        if (token) {
+          const orderResult = await OrderService.getOrderById(notif.related_order_id, token);
+          if (orderResult.success && orderResult.order) {
+            const order = orderResult.order;
+            setSelectedNotif({
+              ...notif,
+              order_number: order.order_number, // Add order_number from fetched order
+              orderDetails: {
+                items: order.items || [],
+                customerName: order.customer_name || order.full_name || 'N/A',
+                customerPhone: order.customer_phone || order.phone_number || 'N/A',
+                notes: order.notes || '',
+                adminNotes: order.admin_notes || '',
+                subtotal: order.subtotal || order.total_amount || 0,
+                discount_amount: order.discount_amount || 0,
+                tax_amount: order.tax_amount || 0,
+                total: order.total_amount || order.total || 0,
+                createdAt: order.created_at,
+                order_status: order.order_status
+              }
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching order details:", err);
+      } finally {
+        setLoadingOrderDetail(false);
+      }
+    }
+    
     if (!notif.is_read) {
       try {
         const token = getToken();
@@ -413,7 +451,7 @@ const Notifications = () => {
         </div>
       )}
 
-      {showPreviewModal && selectedNotif && selectedNotif.orderDetails && (
+      {showPreviewModal && selectedNotif && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-center">
@@ -432,6 +470,13 @@ const Notifications = () => {
                 <i className="fas fa-times text-xl"></i>
               </button>
             </div>
+            
+            {loadingOrderDetail ? (
+              <div className="p-8 text-center">
+                <i className="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
+                <p className="text-gray-600">Memuat detail pesanan...</p>
+              </div>
+            ) : selectedNotif.orderDetails ? (
             <div className="p-6 space-y-6">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -440,7 +485,7 @@ const Notifications = () => {
                       Waktu Pemesanan
                     </p>
                     <p className="text-sm font-semibold text-gray-800">
-                      {new Date(selectedNotif.createdAt).toLocaleString(
+                      {new Date(selectedNotif.orderDetails.createdAt).toLocaleString(
                         "id-ID",
                         {
                           day: "2-digit",
@@ -481,50 +526,37 @@ const Notifications = () => {
                   <i className="fas fa-shopping-bag text-blue-600 mr-2"></i>
                   Produk Pesanan
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {selectedNotif.orderDetails.items.map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex gap-4 bg-gray-50 p-3 rounded-lg"
+                      className="bg-gray-50 p-3 rounded-lg"
                     >
-                      <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden flex items-center justify-center">
-                        <img
-                          src={
-                            item.image?.startsWith("http") ||
-                            item.image?.startsWith("/")
-                              ? item.image
-                              : item.image
-                              ? `/images/allproducts/${item.image}`
-                              : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23eee" width="100" height="100"/%3E%3C/svg%3E'
-                          }
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.style.display = "none";
-                            e.target.parentElement.innerHTML =
-                              '<i class="fas fa-image text-gray-400 text-2xl"></i>';
-                          }}
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-800">
-                          {item.name}
-                        </p>
-                        <div className="flex justify-between items-end mt-2">
-                          <div>
-                            <p className="text-xs text-gray-600">Jumlah</p>
-                            <p className="font-semibold text-gray-800">
-                              {item.quantity}x
-                            </p>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-800">
+                            {item.product_name || item.name}
+                          </p>
+                          <div className="flex items-center gap-4 mt-2">
+                            <div>
+                              <p className="text-xs text-gray-600">Jumlah</p>
+                              <p className="font-semibold text-gray-800">
+                                {item.quantity}x
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-600">Harga Satuan</p>
+                              <p className="font-semibold text-gray-800">
+                                Rp {(Number(item.product_price || item.price) || 0).toLocaleString("id-ID")}
+                              </p>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-xs text-gray-600">
-                              Harga Satuan
-                            </p>
-                            <p className="font-semibold text-gray-800">
-                              Rp {(item.price || 0).toLocaleString("id-ID")}
-                            </p>
-                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-gray-600">Subtotal</p>
+                          <p className="font-bold text-blue-600">
+                            Rp {((Number(item.product_price || item.price) || 0) * item.quantity).toLocaleString("id-ID")}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -544,7 +576,7 @@ const Notifications = () => {
                   </div>
                 </div>
               )}
-              {selectedNotif.orderDetails.adminNotes && (
+              {(selectedNotif.orderDetails.adminNotes || selectedNotif.admin_notes) && (
                 <div>
                   <h3 className="font-semibold text-gray-800 mb-3">
                     <i className="fas fa-comment-dots text-orange-600 mr-2"></i>
@@ -552,7 +584,7 @@ const Notifications = () => {
                   </h3>
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
                     <p className="text-sm text-gray-700">
-                      {selectedNotif.orderDetails.adminNotes}
+                      {selectedNotif.orderDetails.adminNotes || selectedNotif.admin_notes}
                     </p>
                   </div>
                 </div>
@@ -599,13 +631,35 @@ const Notifications = () => {
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => setShowPreviewModal(false)}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition"
-              >
-                <i className="fas fa-check mr-2"></i>Tutup
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowPreviewModal(false)}
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-lg font-semibold transition"
+                >
+                  Tutup
+                </button>
+                {selectedNotif.related_order_id && (
+                  <Link
+                    to="/history"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition text-center"
+                    onClick={() => setShowPreviewModal(false)}
+                  >
+                    Lihat Riwayat
+                  </Link>
+                )}
+              </div>
             </div>
+            ) : (
+              <div className="p-6">
+                <p className="text-gray-600 text-center mb-4">{selectedNotif.message || selectedNotif.title}</p>
+                <button
+                  onClick={() => setShowPreviewModal(false)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition"
+                >
+                  <i className="fas fa-check mr-2"></i>Tutup
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

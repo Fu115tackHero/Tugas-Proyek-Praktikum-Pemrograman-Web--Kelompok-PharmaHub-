@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
+import { uploadImage } from "../utils/imageUpload";
 
 const Profile = () => {
   const { user, updateProfile } = useAuth();
@@ -17,7 +18,9 @@ const Profile = () => {
     completedOrders: 0,
   });
   const [photoPreview, setPhotoPreview] = useState("");
+  const [photoFile, setPhotoFile] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   // Load user data and statistics
   useEffect(() => {
@@ -26,9 +29,9 @@ const Profile = () => {
         name: user.name || "",
         phone: user.phone || "",
         address: user.address || "",
-        photo: user.photo || "",
+        photo: user.profile_photo_url || "",
       });
-      setPhotoPreview(user.photo || "");
+      setPhotoPreview(user.profile_photo_url || "");
 
       // Calculate statistics from order history
       const orderHistory = JSON.parse(
@@ -63,25 +66,68 @@ const Profile = () => {
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validasi file
+      const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+      if (!validTypes.includes(file.type)) {
+        alert("Format file harus JPG, PNG, atau WebP");
+        return;
+      }
+
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        alert("Ukuran file maksimal 5MB");
+        return;
+      }
+
+      // Simpan file untuk upload nanti
+      setPhotoFile(file);
+
+      // Buat preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setPhotoPreview(reader.result);
-        setFormData((prev) => ({
-          ...prev,
-          photo: reader.result,
-        }));
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = updateProfile(formData);
-    if (result.success) {
-      setIsEditing(false);
-      setSuccessMessage("Profil berhasil diperbarui!");
-      setTimeout(() => setSuccessMessage(""), 3000);
+    setUploadingPhoto(true);
+
+    try {
+      let profilePhotoUrl = formData.photo;
+
+      // Upload foto ke Supabase jika ada file baru
+      if (photoFile) {
+        console.log("📤 Uploading photo to Supabase...");
+        profilePhotoUrl = await uploadImage(photoFile, "profile-photos");
+        console.log("✅ Photo uploaded:", profilePhotoUrl);
+      }
+
+      // Update profile dengan URL foto dari Supabase
+      const updateData = {
+        name: formData.name,
+        phone: formData.phone,
+        address: formData.address,
+        profile_photo_url: profilePhotoUrl,
+      };
+
+      const result = await updateProfile(updateData);
+      
+      if (result.success) {
+        setIsEditing(false);
+        setPhotoFile(null);
+        setSuccessMessage("Profil berhasil diperbarui!");
+        setTimeout(() => setSuccessMessage(""), 3000);
+      } else {
+        alert(result.message || "Gagal update profil");
+      }
+    } catch (error) {
+      console.error("❌ Error updating profile:", error);
+      alert(error.message || "Terjadi kesalahan saat mengupdate profil");
+    } finally {
+      setUploadingPhoto(false);
     }
   };
 
@@ -90,15 +136,16 @@ const Profile = () => {
       name: user.name || "",
       phone: user.phone || "",
       address: user.address || "",
-      photo: user.photo || "",
+      photo: user.profile_photo_url || "",
     });
-    setPhotoPreview(user.photo || "");
+    setPhotoPreview(user.profile_photo_url || "");
+    setPhotoFile(null);
     setIsEditing(false);
   };
 
   const getProfileImage = () => {
     if (photoPreview) return photoPreview;
-    if (user?.photo) return user.photo;
+    if (user?.profile_photo_url) return user.profile_photo_url;
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(
       user?.name || "User"
     )}&background=3b82f6&color=fff&size=200&rounded=true`;
@@ -293,15 +340,34 @@ const Profile = () => {
               <div className="flex space-x-4 mt-6 pt-6 border-t border-gray-200">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all"
+                  disabled={uploadingPhoto}
+                  className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all flex items-center justify-center ${
+                    uploadingPhoto
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-700 text-white"
+                  }`}
                 >
-                  <i className="fas fa-save mr-2"></i>
-                  Simpan Perubahan
+                  {uploadingPhoto ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin mr-2"></i>
+                      Menyimpan...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-save mr-2"></i>
+                      Simpan Perubahan
+                    </>
+                  )}
                 </button>
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="flex-1 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-all"
+                  disabled={uploadingPhoto}
+                  className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
+                    uploadingPhoto
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-gray-300 text-gray-700 hover:bg-gray-400"
+                  }`}
                 >
                   <i className="fas fa-times mr-2"></i>
                   Batal

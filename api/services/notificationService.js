@@ -26,6 +26,7 @@ async function getNotificationsByUserId(userId) {
         n.is_read,
         n.read_at,
         n.action_url,
+        n.admin_notes,
         n.created_at,
         n.expires_at,
         n.is_archived,

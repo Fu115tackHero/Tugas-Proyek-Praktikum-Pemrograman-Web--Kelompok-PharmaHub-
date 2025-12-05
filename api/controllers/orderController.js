@@ -198,11 +198,12 @@ async function getOrderById(req, res) {
 async function updateOrderStatus(req, res) {
   try {
     const orderId = parseInt(req.params.id);
-    const { status } = req.body;
+    const { status, admin_notes } = req.body;
 
     console.log(
       `[OrderController] Updating order ${orderId} status to:`,
-      status
+      status,
+      admin_notes ? `with admin notes: ${admin_notes}` : ""
     );
 
     if (isNaN(orderId)) {
@@ -235,7 +236,7 @@ async function updateOrderStatus(req, res) {
       });
     }
 
-    const result = await orderService.updateOrderStatus(orderId, status);
+    const result = await orderService.updateOrderStatus(orderId, status, admin_notes);
 
     if (!result) {
       return res.status(404).json({
