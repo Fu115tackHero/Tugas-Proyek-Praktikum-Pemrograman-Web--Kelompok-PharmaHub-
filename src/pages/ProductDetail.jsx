@@ -384,35 +384,28 @@ const ProductDetail = () => {
                   </h4>
                   <div className="text-gray-600">
                     {tab.data && tab.data.length > 0 ? (
-                      <>
-                        {tab.id === "ingredients" ? (
-                          <div className="bg-blue-50 p-4 rounded-lg">
-                            <h5 className="font-medium text-gray-800 mb-3">
-                              Komposisi per tablet/kapsul:
-                            </h5>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2">
-                              {tab.data.map((item, index) => (
-                                <div
-                                  key={index}
-                                  className="flex items-start py-1"
-                                >
-                                  <i className="fas fa-circle text-blue-400 text-xs mr-2 mt-1.5"></i>
-                                  <span className="text-sm leading-relaxed">{item}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-                            {tab.data.map((item, index) => (
-                              <div key={index} className="flex items-start py-1">
-                                <span className="text-blue-500 mr-2 font-bold">•</span>
-                                <span className="leading-relaxed">{item}</span>
-                              </div>
-                            ))}
-                          </div>
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        {tab.id === "ingredients" && (
+                          <h5 className="font-medium text-gray-800 mb-3">
+                            Komposisi per tablet/kapsul:
+                          </h5>
                         )}
-                      </>
+                        <div className={`grid gap-x-4 gap-y-2 ${
+                          tab.id === "ingredients" 
+                            ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                            : "grid-cols-1 md:grid-cols-2"
+                        }`}>
+                          {tab.data.map((item, index) => (
+                            <div
+                              key={index}
+                              className="flex items-start py-1"
+                            >
+                              <i className="fas fa-circle text-blue-400 text-xs mr-2 mt-1.5"></i>
+                              <span className="text-sm leading-relaxed">{item}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     ) : (
                       <p className="text-gray-500 italic">
                         Informasi {tab.label.toLowerCase()} tidak tersedia.
