@@ -12,6 +12,14 @@ const requireAdmin = require("../middleware/requireAdmin");
 router.get("/products", productController.getAllProducts);
 
 /**
+ * GET /api/products/deleted
+ * Get all deleted/archived products
+ * PROTECTED - Admin only
+ * NOTE: This must come BEFORE /:id route to avoid matching "deleted" as an ID
+ */
+router.get("/products/deleted", authMiddleware, requireAdmin, productController.getDeletedProducts);
+
+/**
  * GET /api/products/:id
  * Retrieve specific product by ID
  * PUBLIC - No authentication required
@@ -38,5 +46,12 @@ router.put("/products/:id", authMiddleware, requireAdmin, productController.upda
  * PROTECTED - Admin only
  */
 router.delete("/products/:id", authMiddleware, requireAdmin, productController.deleteProduct);
+
+/**
+ * POST /api/products/:id/restore
+ * Restore a deleted product
+ * PROTECTED - Admin only
+ */
+router.post("/products/:id/restore", authMiddleware, requireAdmin, productController.restoreProduct);
 
 module.exports = router;

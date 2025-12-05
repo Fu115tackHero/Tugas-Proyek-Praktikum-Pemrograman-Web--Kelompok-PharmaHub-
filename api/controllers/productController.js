@@ -117,11 +117,11 @@ module.exports = {
     }
   },
 
-  /** Delete product handler */
+  /** Delete product handler (soft delete) */
   async deleteProduct(req, res) {
     try {
       const { id } = req.params;
-      console.log(`🗑️  Deleting product ID:`, id);
+      console.log(`🗑️  Archiving product ID:`, id);
       const deleted = await productService.deleteProduct(id);
 
       if (!deleted) {
@@ -132,15 +132,62 @@ module.exports = {
 
       res
         .status(200)
-        .json({ success: true, message: "Product deleted successfully" });
+        .json({ success: true, message: "Product archived successfully", data: deleted });
     } catch (error) {
-      console.error("❌ Error deleting product:", error.message);
+      console.error("❌ Error archiving product:", error.message);
 
       const statusCode = error.message.includes("not found") ? 404 : 500;
 
       res.status(statusCode).json({
         success: false,
-        message: error.message || "Failed to delete product",
+        message: error.message || "Failed to archive product",
+        error: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      });
+    }
+  },
+
+  /** Get deleted products handler */
+  async getDeletedProducts(req, res) {
+    try {
+      console.log("📦 Fetching deleted products");
+      const deletedProducts = await productService.getDeletedProducts();
+
+      res.status(200).json({
+        success: true,
+        data: deletedProducts,
+        count: deletedProducts.length,
+      });
+    } catch (error) {
+      console.error("❌ Error fetching deleted products:", error.message);
+
+      res.status(500).json({
+        success: false,
+        message: error.message || "Failed to fetch deleted products",
+        error: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      });
+    }
+  },
+
+  /** Restore deleted product handler */
+  async restoreProduct(req, res) {
+    try {
+      const { id } = req.params;
+      console.log(`♻️  Restoring product ID:`, id);
+      const restored = await productService.restoreProduct(id);
+
+      res.status(200).json({
+        success: true,
+        message: "Product restored successfully",
+        data: restored,
+      });
+    } catch (error) {
+      console.error("❌ Error restoring product:", error.message);
+
+      const statusCode = error.message.includes("not found") ? 404 : 500;
+
+      res.status(statusCode).json({
+        success: false,
+        message: error.message || "Failed to restore product",
         error: process.env.NODE_ENV === "development" ? error.stack : undefined,
       });
     }
