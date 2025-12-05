@@ -25,6 +25,10 @@ app.use(
   cors({
     origin: function (origin, callback) {
       const isDev = (process.env.NODE_ENV || "development") !== "production";
+      const envAllowed = (process.env.ALLOWED_ORIGINS || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
       const allowedOrigins = [
         "http://localhost:5173",
         "http://localhost:5174",
@@ -33,6 +37,7 @@ app.use(
         "https://pharmahub.vercel.app",
         "https://tugas-proyek-praktikum-pemrograman-web--kelompok-pharmahub-.vercel.app",
         process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
+        ...envAllowed,
       ].filter(Boolean);
 
       if (
