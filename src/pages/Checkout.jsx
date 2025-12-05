@@ -283,15 +283,8 @@ const Checkout = () => {
       if (result.success) {
         console.log("✅ [Checkout] Order created successfully:", result.order);
 
-        // Record coupon usage if applied
-        if (appliedCoupon?.code) {
-          try {
-            await CouponService.recordUsage(appliedCoupon.code, token);
-            console.log("✅ [Checkout] Coupon usage recorded");
-          } catch (error) {
-            console.error("[Checkout] Error recording coupon usage:", error);
-          }
-        }
+        // Coupon usage is now automatically recorded by the backend during order creation
+        // No need for a separate API call
 
         return result.order;
       } else {
