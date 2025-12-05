@@ -280,16 +280,18 @@ const ProductDetail = () => {
                     <div className="flex items-center border border-gray-300 rounded-lg">
                       <button
                         onClick={() => handleQuantityChange(-1)}
-                        className="px-3 py-2 hover:bg-gray-100 transition"
-                        disabled={quantity <= 1}
+                        className="px-3 py-2 hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={quantity <= 1 || product.stock === 0}
                       >
                         <i className="fas fa-minus text-sm"></i>
                       </button>
                       <span className="px-4 py-2 font-medium">{quantity}</span>
                       <button
                         onClick={() => handleQuantityChange(1)}
-                        className="px-3 py-2 hover:bg-gray-100 transition"
-                        disabled={quantity >= product.stock}
+                        className="px-3 py-2 hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={
+                          quantity >= product.stock || product.stock === 0
+                        }
                       >
                         <i className="fas fa-plus text-sm"></i>
                       </button>
@@ -332,19 +334,35 @@ const ProductDetail = () => {
                   {/* Add to Cart Button */}
                   <button
                     onClick={handleAddToCart}
-                    className="bg-white border-2 border-blue-600 text-blue-600 py-4 rounded-lg font-semibold hover:bg-blue-50 transition flex items-center justify-center space-x-2"
+                    disabled={product.stock === 0}
+                    className={`py-4 rounded-lg font-semibold transition flex items-center justify-center space-x-2 ${
+                      product.stock === 0
+                        ? "bg-gray-200 text-gray-500 cursor-not-allowed border-2 border-gray-300"
+                        : "bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50"
+                    }`}
                   >
                     <i className="fas fa-shopping-cart"></i>
-                    <span>Masukkan Ke Keranjang</span>
+                    <span>
+                      {product.stock === 0
+                        ? "Stok Habis"
+                        : "Masukkan Ke Keranjang"}
+                    </span>
                   </button>
 
                   {/* Beli Sekarang (Redirects to Cart) */}
                   <button
                     onClick={handleBuyNow}
-                    className="bg-blue-600 text-white py-4 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center space-x-2"
+                    disabled={product.stock === 0}
+                    className={`py-4 rounded-lg font-semibold transition flex items-center justify-center space-x-2 ${
+                      product.stock === 0
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "bg-blue-600 text-white hover:bg-blue-700"
+                    }`}
                   >
                     <i className="fas fa-credit-card"></i>
-                    <span>Checkout</span>
+                    <span>
+                      {product.stock === 0 ? "Tidak Tersedia" : "Checkout"}
+                    </span>
                   </button>
                 </div>
               </div>

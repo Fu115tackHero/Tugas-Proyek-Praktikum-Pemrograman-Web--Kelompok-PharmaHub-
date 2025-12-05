@@ -295,13 +295,8 @@ const Products = () => {
                         ? "border-l-4 border-l-red-500"
                         : ""
                     }
-                    ${
-                      isOutOfStock
-                        ? "filter grayscale opacity-70 cursor-not-allowed"
-                        : ""
-                    }
+                    ${isOutOfStock ? "filter grayscale opacity-70" : ""}
                   `}
-                  aria-disabled={isOutOfStock}
                 >
                   {/* Out of stock badge */}
                   {isOutOfStock && (

@@ -233,8 +233,9 @@ const Home = () => {
             const stock = product.stock || 0;
             const isOutOfStock = stock <= 0;
             return (
-              <div
+              <Link
                 key={product.id}
+                to={`/product/${product.id}`}
                 className={`
                   group relative bg-white rounded-2xl p-5 flex flex-col border border-transparent
                   transition-all duration-300 ease-out
@@ -313,20 +314,17 @@ const Home = () => {
                     </p>
                   </div>
                   {isOutOfStock ? (
-                    <div className="mt-4 bg-gray-300 text-gray-600 px-4 py-2 rounded-lg transition w-full flex items-center justify-center">
+                    <div className="mt-4 bg-gray-300 text-gray-600 px-4 py-2 rounded-lg transition w-full flex items-center justify-center pointer-events-none">
                       <i className="fas fa-ban mr-2"></i>
                       Habis
                     </div>
                   ) : (
-                    <Link
-                      to={`/product/${product.id}`}
-                      className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition w-full flex items-center justify-center"
-                    >
+                    <div className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition w-full flex items-center justify-center">
                       <i className="fas fa-shopping-cart"></i>
-                    </Link>
+                    </div>
                   )}
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
