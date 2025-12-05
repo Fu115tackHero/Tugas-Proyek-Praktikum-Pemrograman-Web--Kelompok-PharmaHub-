@@ -31,93 +31,101 @@ const AlertModal = ({
 
   if (!isOpen) return null;
 
-  // Configure styles and icons based on type
+  // Konfigurasi gaya & ikon berdasarkan tipe (Bahasa Indonesia)
   const configs = {
     success: {
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-200',
-      iconBg: 'bg-green-100',
-      iconColor: 'text-green-600',
+      containerRing: 'ring-emerald-100',
+      iconBg: 'bg-emerald-100',
+      iconColor: 'text-emerald-600',
       icon: 'fa-check-circle',
-      titleColor: 'text-green-800',
-      buttonBg: 'bg-green-600 hover:bg-green-700',
-      defaultTitle: 'Berhasil'
+      titleColor: 'text-emerald-800',
+      buttonBg: 'bg-emerald-600 hover:bg-emerald-700',
+      defaultTitle: 'Berhasil',
+      defaultMessage: 'Tindakan berhasil dilakukan.'
     },
     error: {
-      bgColor: 'bg-red-50',
-      borderColor: 'border-red-200',
+      containerRing: 'ring-red-100',
       iconBg: 'bg-red-100',
       iconColor: 'text-red-600',
       icon: 'fa-exclamation-circle',
       titleColor: 'text-red-800',
       buttonBg: 'bg-red-600 hover:bg-red-700',
-      defaultTitle: 'Error'
+      defaultTitle: 'Terjadi Kesalahan',
+      defaultMessage: 'Terjadi kesalahan. Silakan coba lagi.'
     },
     warning: {
-      bgColor: 'bg-yellow-50',
-      borderColor: 'border-yellow-200',
-      iconBg: 'bg-yellow-100',
-      iconColor: 'text-yellow-600',
+      containerRing: 'ring-amber-100',
+      iconBg: 'bg-amber-100',
+      iconColor: 'text-amber-600',
       icon: 'fa-exclamation-triangle',
-      titleColor: 'text-yellow-800',
-      buttonBg: 'bg-yellow-600 hover:bg-yellow-700',
-      defaultTitle: 'Peringatan'
+      titleColor: 'text-amber-800',
+      buttonBg: 'bg-amber-600 hover:bg-amber-700',
+      defaultTitle: 'Peringatan',
+      defaultMessage: 'Mohon periksa kembali data atau tindakan Anda.'
     },
     info: {
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-200',
+      containerRing: 'ring-blue-100',
       iconBg: 'bg-blue-100',
       iconColor: 'text-blue-600',
       icon: 'fa-info-circle',
       titleColor: 'text-blue-800',
       buttonBg: 'bg-blue-600 hover:bg-blue-700',
-      defaultTitle: 'Informasi'
+      defaultTitle: 'Informasi',
+      defaultMessage: 'Berikut adalah informasi penting untuk Anda.'
     }
   };
 
   const config = configs[type] || configs.info;
 
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4"
+    <div
+      className="fixed inset-0 bg-black/40 z-[9999] flex items-center justify-center px-4"
       onClick={onClose}
     >
-      <div 
-        className={`${config.bgColor} ${config.borderColor} border-2 rounded-lg shadow-2xl max-w-md w-full transform transition-all animate-fade-in`}
+      <div
+        className={`w-full max-w-md rounded-2xl bg-white shadow-xl ring-1 ring-gray-100 ${config.containerRing}`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="p-6 pb-4">
-          <div className="flex items-start space-x-4">
-            {/* Icon */}
-            <div className={`${config.iconBg} p-3 rounded-full flex-shrink-0`}>
-              <i className={`fas ${config.icon} ${config.iconColor} text-2xl`}></i>
+        {/* Header + Content */}
+        <div className="px-6 pt-6 pb-4 flex items-start justify-between">
+          <div className="flex items-start space-x-3">
+            {/* Icon bulat */}
+            <div className={`${config.iconBg} h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0`}>
+              <i className={`fas ${config.icon} ${config.iconColor} text-xl`}></i>
             </div>
-            
-            {/* Content */}
+            {/* Teks */}
             <div className="flex-1 min-w-0">
-              <h3 className={`text-lg font-semibold ${config.titleColor} mb-2`}>
+              <h3 className={`text-base font-semibold ${config.titleColor}`}>
                 {title || config.defaultTitle}
               </h3>
-              <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
-                {message}
+              <p className="mt-1 text-sm text-gray-600 whitespace-pre-line">
+                {message || config.defaultMessage}
               </p>
             </div>
           </div>
+          {/* Tombol tutup (X) */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="ml-3 inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+          >
+            <i className="fas fa-times text-sm"></i>
+          </button>
         </div>
 
-        {/* Footer */}
-        <div className="px-6 pb-6 flex justify-end">
+        {/* Footer tombol */}
+        <div className="px-6 pb-6 pt-2 flex justify-end border-t border-gray-100 mt-2">
           <button
             onClick={onClose}
-            className={`${config.buttonBg} text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2`}
+            className={`${config.buttonBg} text-white px-6 py-2 rounded-lg text-sm font-semibold shadow-sm hover:shadow-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white`}
           >
-            OK
+            Tutup
           </button>
         </div>
       </div>
     </div>
   );
-};
+}
+;
 
 export default AlertModal;

@@ -11,12 +11,13 @@ const Login = () => {
     password: "",
     remember: false,
   });
-  
+
   // State untuk mengontrol visibilitas password
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("idle"); // 'idle' | 'success'
 
   // Redirect if already logged in
   useEffect(() => {
@@ -38,24 +39,37 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setStatus("idle");
 
     try {
       // Simulasi API delay
       await new Promise((resolve) => setTimeout(resolve, 800));
 
-      const result = login(formData.email, formData.password);
+      // Panggil fungsi login dari AuthContext (async)
+      const result = await login(formData.email, formData.password);
 
       if (result.success) {
-        if (formData.email === "admin@pharmahub.com") {
-          navigate("/admin");
-        } else {
-          navigate("/");
-        }
+        // Tampilkan status sukses di tombol, lalu redirect setelah jeda singkat
+        setStatus("success");
+        setError("");
+
+        setTimeout(() => {
+          if (formData.email === "admin@pharmahub.com") {
+            navigate("/admin");
+          } else {
+            navigate("/");
+          }
+        }, 2000);
       } else {
-        setError(result.message || "Login gagal. Silakan coba lagi.");
+        const msg =
+          result.message ||
+          "Login gagal. Periksa kembali email dan password lalu coba lagi.";
+        setError(msg);
       }
     } catch (err) {
-      setError("Terjadi kesalahan. Silakan coba lagi.");
+      const msg =
+        "Terjadi kesalahan pada sistem. Silakan coba lagi nanti atau hubungi admin.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -165,11 +179,25 @@ const Login = () => {
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading || status === "success"}
+              className={`w-full py-3 rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed 
+                ${
+                  status === "success"
+                    ? "bg-green-600 hover:bg-green-700 text-white"
+                    : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700"
+                }
+              `}
             >
-              <span>{loading ? "Memproses..." : "Masuk ke Dashboard"}</span>
-              {loading && <i className="fas fa-spinner fa-spin ml-2"></i>}
+              {status === "success" ? (
+                "Berhasil masuk, mengalihkan..."
+              ) : loading ? (
+                <>
+                  <span>Memproses...</span>
+                  <i className="fas fa-spinner fa-spin ml-2"></i>
+                </>
+              ) : (
+                "Masuk ke Dashboard"
+              )}
             </button>
 
             <div className="text-center mt-4">
