@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import OrderService from "../../services/order.service";
+import {
+  translateOrderStatus,
+  translatePaymentStatus,
+  getStatusColor,
+} from "../../utils/statusTranslation";
+import ConfirmModal from "../../components/ConfirmModal";
 
 const OrderManagement = () => {
   const { getToken } = useAuth();
@@ -21,6 +27,14 @@ const OrderManagement = () => {
     preparing: 0,
     ready: 0,
     completed: 0,
+  });
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "warning",
+    onConfirm: null,
+    confirmText: "Konfirmasi",
   });
 
   useEffect(() => {
@@ -104,12 +118,15 @@ const OrderManagement = () => {
   const openDetailModal = async (order) => {
     setCurrentOrder(order);
     setShowDetailModal(true);
-    
+
     // Fetch full order details with items
     try {
       const token = getToken();
-      const detailResult = await OrderService.getOrderDetails(order.order_id, token);
-      
+      const detailResult = await OrderService.getOrderDetails(
+        order.order_id,
+        token
+      );
+
       if (detailResult.success && detailResult.order) {
         setCurrentOrder(detailResult.order);
       }
@@ -133,7 +150,14 @@ const OrderManagement = () => {
       const token = getToken();
 
       if (!token) {
-        alert("Sesi login telah berakhir. Silakan login kembali.");
+        setConfirmModal({
+          isOpen: true,
+          title: "Sesi Berakhir",
+          message: "Sesi login telah berakhir. Silakan login kembali.",
+          type: "warning",
+          onConfirm: () => setConfirmModal({ ...confirmModal, isOpen: false }),
+          confirmText: "OK",
+        });
         return;
       }
 
@@ -147,83 +171,180 @@ const OrderManagement = () => {
         // Reload orders to get fresh data
         await loadOrders();
         setShowStatusModal(false);
-        alert("Status pesanan berhasil diperbarui!");
+        setConfirmModal({
+          isOpen: true,
+          title: "Berhasil",
+          message: "Status pesanan berhasil diperbarui!",
+          type: "success",
+          onConfirm: () => setConfirmModal({ ...confirmModal, isOpen: false }),
+          confirmText: "OK",
+        });
       } else {
-        alert("Gagal memperbarui status pesanan");
+        setConfirmModal({
+          isOpen: true,
+          title: "Gagal",
+          message: "Gagal memperbarui status pesanan",
+          type: "danger",
+          onConfirm: () => setConfirmModal({ ...confirmModal, isOpen: false }),
+          confirmText: "OK",
+        });
       }
     } catch (err) {
       console.error("Error updating order status:", err);
-      alert(err.message || "Gagal memperbarui status pesanan");
+      setConfirmModal({
+        isOpen: true,
+        title: "Error",
+        message: err.message || "Gagal memperbarui status pesanan",
+        type: "danger",
+        onConfirm: () => setConfirmModal({ ...confirmModal, isOpen: false }),
+        confirmText: "OK",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const cancelOrder = async (orderId) => {
-    if (!confirm("Apakah Anda yakin ingin membatalkan pesanan ini?")) return;
+    setConfirmModal({
+      isOpen: true,
+      title: "Konfirmasi Pembatalan",
+      message: "Apakah Anda yakin ingin membatalkan pesanan ini?",
+      type: "danger",
+      confirmText: "Batalkan Pesanan",
+      onConfirm: async () => {
+        setConfirmModal({ ...confirmModal, isOpen: false });
+        try {
+          setLoading(true);
+          const token = getToken();
 
-    try {
-      setLoading(true);
-      const token = getToken();
+          if (!token) {
+            setConfirmModal({
+              isOpen: true,
+              title: "Sesi Berakhir",
+              message: "Sesi login telah berakhir. Silakan login kembali.",
+              type: "warning",
+              onConfirm: () =>
+                setConfirmModal({ ...confirmModal, isOpen: false }),
+              confirmText: "OK",
+            });
+            return;
+          }
 
-      if (!token) {
-        alert("Sesi login telah berakhir. Silakan login kembali.");
-        return;
-      }
+          const result = await OrderService.cancelOrder(
+            orderId,
+            "Dibatalkan oleh admin",
+            token
+          );
 
-      const result = await OrderService.cancelOrder(
-        orderId,
-        "Dibatalkan oleh admin",
-        token
-      );
-
-      if (result.success) {
-        // Reload orders to get fresh data
-        await loadOrders();
-        alert("Pesanan berhasil dibatalkan");
-      } else {
-        alert("Gagal membatalkan pesanan");
-      }
-    } catch (err) {
-      console.error("Error cancelling order:", err);
-      alert(err.message || "Gagal membatalkan pesanan");
-    } finally {
-      setLoading(false);
-    }
+          if (result.success) {
+            // Reload orders to get fresh data
+            await loadOrders();
+            setConfirmModal({
+              isOpen: true,
+              title: "Berhasil",
+              message: "Pesanan berhasil dibatalkan",
+              type: "success",
+              onConfirm: () =>
+                setConfirmModal({ ...confirmModal, isOpen: false }),
+              confirmText: "OK",
+            });
+          } else {
+            setConfirmModal({
+              isOpen: true,
+              title: "Gagal",
+              message: "Gagal membatalkan pesanan",
+              type: "danger",
+              onConfirm: () =>
+                setConfirmModal({ ...confirmModal, isOpen: false }),
+              confirmText: "OK",
+            });
+          }
+        } catch (err) {
+          console.error("Error cancelling order:", err);
+          setConfirmModal({
+            isOpen: true,
+            title: "Error",
+            message: err.message || "Gagal membatalkan pesanan",
+            type: "danger",
+            onConfirm: () =>
+              setConfirmModal({ ...confirmModal, isOpen: false }),
+            confirmText: "OK",
+          });
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   const archiveOrder = async (orderId) => {
-    if (
-      !confirm(
-        "Arsipkan pesanan ini? Pesanan akan disembunyikan dari daftar tapi tetap ada di database."
-      )
-    )
-      return;
+    setConfirmModal({
+      isOpen: true,
+      title: "Konfirmasi Arsip",
+      message:
+        "Arsipkan pesanan ini? Pesanan akan disembunyikan dari daftar tapi tetap ada di database.",
+      type: "warning",
+      confirmText: "Arsipkan",
+      onConfirm: async () => {
+        setConfirmModal({ ...confirmModal, isOpen: false });
+        try {
+          setLoading(true);
+          const token = getToken();
 
-    try {
-      setLoading(true);
-      const token = getToken();
+          if (!token) {
+            setConfirmModal({
+              isOpen: true,
+              title: "Sesi Berakhir",
+              message: "Sesi login telah berakhir. Silakan login kembali.",
+              type: "warning",
+              onConfirm: () =>
+                setConfirmModal({ ...confirmModal, isOpen: false }),
+              confirmText: "OK",
+            });
+            return;
+          }
 
-      if (!token) {
-        alert("Sesi login telah berakhir. Silakan login kembali.");
-        return;
-      }
+          const result = await OrderService.archiveOrder(orderId, token);
 
-      const result = await OrderService.archiveOrder(orderId, token);
-
-      if (result.success) {
-        // Reload orders to get fresh data (archived orders will be excluded)
-        await loadOrders();
-        alert("Pesanan berhasil diarsipkan");
-      } else {
-        alert("Gagal mengarsipkan pesanan");
-      }
-    } catch (err) {
-      console.error("Error archiving order:", err);
-      alert(err.message || "Gagal mengarsipkan pesanan");
-    } finally {
-      setLoading(false);
-    }
+          if (result.success) {
+            // Reload orders to get fresh data (archived orders will be excluded)
+            await loadOrders();
+            setConfirmModal({
+              isOpen: true,
+              title: "Berhasil",
+              message: "Pesanan berhasil diarsipkan",
+              type: "success",
+              onConfirm: () =>
+                setConfirmModal({ ...confirmModal, isOpen: false }),
+              confirmText: "OK",
+            });
+          } else {
+            setConfirmModal({
+              isOpen: true,
+              title: "Gagal",
+              message: "Gagal mengarsipkan pesanan",
+              type: "danger",
+              onConfirm: () =>
+                setConfirmModal({ ...confirmModal, isOpen: false }),
+              confirmText: "OK",
+            });
+          }
+        } catch (err) {
+          console.error("Error archiving order:", err);
+          setConfirmModal({
+            isOpen: true,
+            title: "Error",
+            message: err.message || "Gagal mengarsipkan pesanan",
+            type: "danger",
+            onConfirm: () =>
+              setConfirmModal({ ...confirmModal, isOpen: false }),
+            confirmText: "OK",
+          });
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   const getStatusClass = (status) => {
@@ -238,14 +359,7 @@ const OrderManagement = () => {
   };
 
   const getStatusText = (status) => {
-    const texts = {
-      pending: "Pending",
-      preparing: "Sedang Disiapkan",
-      ready: "Siap Diambil",
-      completed: "Selesai",
-      cancelled: "Dibatalkan",
-    };
-    return texts[status] || status;
+    return translateOrderStatus(status);
   };
 
   const formatCurrency = (amount) => {
@@ -506,7 +620,10 @@ const OrderManagement = () => {
                   {order.items && order.items.length > 0 ? (
                     <div className="space-y-1">
                       {order.items.map((item, index) => (
-                        <div key={index} className="flex justify-between text-sm">
+                        <div
+                          key={index}
+                          className="flex justify-between text-sm"
+                        >
                           <span className="text-gray-700">
                             • {item.product_name}
                           </span>
@@ -516,12 +633,14 @@ const OrderManagement = () => {
                         </div>
                       ))}
                       <div className="mt-2 pt-2 border-t text-sm text-gray-500">
-                        Total: {order.total_items} item ({order.total_quantity} qty)
+                        Total: {order.total_items} item ({order.total_quantity}{" "}
+                        qty)
                       </div>
                     </div>
                   ) : (
                     <div className="text-sm text-gray-600">
-                      {order.total_items} item ({order.total_quantity} total qty)
+                      {order.total_items} item ({order.total_quantity} total
+                      qty)
                     </div>
                   )}
                 </div>
@@ -671,22 +790,28 @@ const OrderManagement = () => {
                   <h4 className="font-semibold text-gray-900 mb-2">
                     Item Pesanan
                   </h4>
-                  
+
                   {currentOrder.items && currentOrder.items.length > 0 ? (
                     <div className="space-y-3">
                       {currentOrder.items.map((item, index) => (
-                        <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                        <div
+                          key={index}
+                          className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg"
+                        >
                           {item.product_image && (
-                            <img 
-                              src={item.product_image} 
+                            <img
+                              src={item.product_image}
                               alt={item.product_name}
                               className="w-16 h-16 object-cover rounded"
                             />
                           )}
                           <div className="flex-1">
-                            <p className="font-medium text-gray-900">{item.product_name}</p>
+                            <p className="font-medium text-gray-900">
+                              {item.product_name}
+                            </p>
                             <p className="text-sm text-gray-600">
-                              {formatCurrency(item.product_price)} x {item.quantity}
+                              {formatCurrency(item.product_price)} x{" "}
+                              {item.quantity}
                             </p>
                           </div>
                           <div className="text-right">
@@ -696,7 +821,7 @@ const OrderManagement = () => {
                           </div>
                         </div>
                       ))}
-                      
+
                       <div className="border-t pt-3 mt-3">
                         <div className="flex justify-between text-sm text-gray-600 mb-1">
                           <span>Subtotal</span>
@@ -705,18 +830,24 @@ const OrderManagement = () => {
                         {currentOrder.tax_amount > 0 && (
                           <div className="flex justify-between text-sm text-gray-600 mb-1">
                             <span>Pajak</span>
-                            <span>{formatCurrency(currentOrder.tax_amount)}</span>
+                            <span>
+                              {formatCurrency(currentOrder.tax_amount)}
+                            </span>
                           </div>
                         )}
                         {currentOrder.discount_amount > 0 && (
                           <div className="flex justify-between text-sm text-green-600 mb-1">
                             <span>Diskon</span>
-                            <span>-{formatCurrency(currentOrder.discount_amount)}</span>
+                            <span>
+                              -{formatCurrency(currentOrder.discount_amount)}
+                            </span>
                           </div>
                         )}
                         <div className="flex justify-between text-lg font-semibold text-gray-900 mt-2 pt-2 border-t">
                           <span>Total</span>
-                          <span>{formatCurrency(currentOrder.total_amount)}</span>
+                          <span>
+                            {formatCurrency(currentOrder.total_amount)}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -825,6 +956,18 @@ const OrderManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        cancelText="Batal"
+        type={confirmModal.type}
+      />
     </div>
   );
 };

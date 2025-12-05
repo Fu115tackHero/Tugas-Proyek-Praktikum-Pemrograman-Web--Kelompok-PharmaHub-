@@ -4,7 +4,14 @@ import { useAuth } from "../context/AuthContext";
 import OrderService from "../services/order.service";
 import { waitForGoogleMaps } from "../utils/googleMapsLoader";
 import AlertModal from "../components/AlertModal";
+import ConfirmModal from "../components/ConfirmModal";
 import { useAlert } from "../hooks/useAlert";
+import {
+  translateOrderStatus,
+  translatePaymentStatus,
+  getStatusColor,
+} from "../utils/statusTranslation";
+import PaymentService from "../services/payment.service";
 
 const History = () => {
   const { getToken } = useAuth();
@@ -18,6 +25,16 @@ const History = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "warning",
+    onConfirm: null,
+    confirmText: "Konfirmasi",
+    showInput: false,
+    inputValue: "",
+  });
   const mapRef = useRef(null);
   const userMarkerRef = useRef(null);
   const pharmacyMarkerRef = useRef(null);
@@ -25,6 +42,37 @@ const History = () => {
 
   useEffect(() => {
     loadOrders();
+
+    // Check for payment status from URL query params
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get("payment");
+
+    if (paymentStatus) {
+      // Remove query params from URL
+      window.history.replaceState({}, "", "/history");
+
+      // Show alert based on payment status
+      setTimeout(() => {
+        if (paymentStatus === "success") {
+          showAlert(
+            "Pembayaran berhasil! Status pesanan Anda telah diperbarui.",
+            "success"
+          );
+        } else if (paymentStatus === "pending") {
+          showAlert(
+            "Pembayaran sedang diproses. Silakan tunggu konfirmasi.",
+            "info"
+          );
+        } else if (paymentStatus === "error") {
+          showAlert(
+            "Pembayaran gagal atau dibatalkan. Silakan coba lagi.",
+            "error"
+          );
+        }
+        // Reload orders to get updated status
+        loadOrders();
+      }, 500);
+    }
   }, []);
 
   const loadOrders = async () => {
@@ -255,31 +303,269 @@ const History = () => {
   };
 
   const handleDeleteOrder = async (orderId) => {
-    if (
-      !confirm(
-        "Hapus pesanan ini dari riwayat? Pesanan akan dihapus dari daftar Anda."
-      )
-    ) {
+    const order = orders.find((o) => o.order_id === orderId);
+    if (order && order.order_status !== "completed") {
+      setConfirmModal({
+        isOpen: true,
+        title: "Tidak Bisa Menghapus Riwayat",
+        message:
+          "Riwayat pesanan hanya bisa dihapus jika pesanan sudah berstatus 'Selesai'. Pesanan ini masih berstatus '" +
+          translateOrderStatus(order.order_status) +
+          "'.",
+        type: "warning",
+        confirmText: "Mengerti",
+        onConfirm: () => setConfirmModal({ ...confirmModal, isOpen: false }),
+      });
       return;
     }
-    try {
-      const token = getToken();
-      if (!token) {
-        showAlert("Sesi login telah berakhir. Silakan login kembali.", "warning");
-        return;
-      }
-      // Use user-specific hide endpoint instead of admin archive
-      const result = await OrderService.hideOrderFromUser(orderId, token);
-      if (result.success) {
-        setOrders((prev) => prev.filter((o) => o.order_id !== orderId));
-        showAlert("Pesanan berhasil dihapus dari riwayat", "success");
-      } else {
-        showAlert("Gagal menghapus pesanan", "error");
-      }
-    } catch (err) {
-      console.error("Error deleting order:", err);
-      showAlert(err.message || "Gagal menghapus pesanan", "error");
-    }
+
+    setConfirmModal({
+      isOpen: true,
+      title: "Hapus Riwayat Pesanan",
+      message:
+        "Apakah Anda yakin ingin menghapus pesanan ini dari riwayat? Pesanan akan dihapus dari daftar Anda.",
+      type: "danger",
+      confirmText: "Hapus",
+      onConfirm: async () => {
+        setConfirmModal({ ...confirmModal, isOpen: false });
+        try {
+          const token = getToken();
+          if (!token) {
+            showAlert(
+              "Sesi login telah berakhir. Silakan login kembali.",
+              "warning"
+            );
+            return;
+          }
+          const result = await OrderService.hideOrderFromUser(orderId, token);
+          if (result.success) {
+            setOrders((prev) => prev.filter((o) => o.order_id !== orderId));
+            showAlert("Pesanan berhasil dihapus dari riwayat", "success");
+          } else {
+            showAlert("Gagal menghapus pesanan", "error");
+          }
+        } catch (err) {
+          console.error("Error deleting order:", err);
+          showAlert(err.message || "Gagal menghapus pesanan", "error");
+        }
+      },
+    });
+  };
+
+  const handlePayNow = async (order) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Lanjutkan Pembayaran",
+      message: `Total pembayaran: Rp ${order.total_amount?.toLocaleString(
+        "id-ID"
+      )}\n\nAnda akan diarahkan ke halaman pembayaran Midtrans untuk menyelesaikan transaksi.`,
+      type: "info",
+      confirmText: "Bayar Sekarang",
+      onConfirm: async () => {
+        setConfirmModal({ ...confirmModal, isOpen: false });
+        try {
+          const token = getToken();
+          if (!token) {
+            showAlert(
+              "Sesi login telah berakhir. Silakan login kembali.",
+              "warning"
+            );
+            return;
+          }
+
+          // Calculate item total and build item array
+          const items =
+            order.items?.map((item) => ({
+              id: item.product_id,
+              name: item.product_name,
+              price: item.product_price,
+              quantity: item.quantity,
+            })) || [];
+
+          // Calculate subtotal from items
+          const itemsTotal = items.reduce(
+            (sum, item) => sum + item.price * item.quantity,
+            0
+          );
+
+          // Add tax as separate line item if exists
+          if (order.tax_amount && order.tax_amount > 0) {
+            items.push({
+              id: "TAX",
+              name: "Pajak",
+              price: order.tax_amount,
+              quantity: 1,
+            });
+          }
+
+          // Add discount as negative line item if exists
+          if (order.discount_amount && order.discount_amount > 0) {
+            items.push({
+              id: "DISCOUNT",
+              name: order.coupon_code
+                ? `Diskon (${order.coupon_code})`
+                : "Diskon",
+              price: -order.discount_amount, // negative for discount
+              quantity: 1,
+            });
+          }
+
+          // Calculate final gross_amount (should match order.total_amount)
+          const gross_amount = items.reduce(
+            (sum, item) => sum + item.price * item.quantity,
+            0
+          );
+
+          console.log("Payment data:", {
+            order_number: order.order_number,
+            items_total: itemsTotal,
+            tax: order.tax_amount,
+            discount: order.discount_amount,
+            calculated_gross: gross_amount,
+            db_total: order.total_amount,
+            items: items.length,
+          });
+
+          // Generate unique transaction ID for Midtrans
+          // Format: ORDER_NUMBER-TIMESTAMP to ensure uniqueness on retry
+          const uniqueTransactionId = `${order.order_number}-${Date.now()}`;
+
+          // Create Midtrans transaction
+          const paymentData = {
+            order_id: uniqueTransactionId,
+            original_order_id: order.order_id, // Send original order ID for backend reference
+            order_number: order.order_number, // Send order number for backend reference
+            gross_amount: gross_amount,
+            items: items,
+            customer: {
+              first_name: order.customer_name,
+              email: order.customer_email || "customer@pharmahub.com",
+              phone: order.customer_phone,
+              address: order.customer_address,
+            },
+          };
+
+          const result = await PaymentService.createTransaction(
+            paymentData,
+            token
+          );
+
+          if (result.success && result.redirect_url) {
+            // Redirect to Midtrans payment page in same window
+            window.location.href = result.redirect_url;
+          } else {
+            showAlert("Gagal membuat transaksi pembayaran", "error");
+          }
+        } catch (err) {
+          console.error("Error creating payment:", err);
+          showAlert(
+            err.message || "Gagal membuat transaksi pembayaran",
+            "error"
+          );
+        }
+      },
+    });
+  };
+
+  const handleCancelPayment = async (orderId) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Batalkan Pembayaran",
+      message:
+        "Apakah Anda yakin ingin membatalkan pembayaran ini? Pesanan akan dibatalkan dan tidak dapat diproses.",
+      type: "danger",
+      confirmText: "Batalkan",
+      showInput: true,
+      inputPlaceholder: "Alasan pembatalan (wajib diisi)",
+      inputValue: "",
+      onConfirm: async () => {
+        const reason = confirmModal.inputValue?.trim();
+        if (!reason) {
+          showAlert("Alasan pembatalan wajib diisi", "warning");
+          return;
+        }
+        setConfirmModal({ ...confirmModal, isOpen: false });
+        try {
+          const token = getToken();
+          if (!token) {
+            showAlert(
+              "Sesi login telah berakhir. Silakan login kembali.",
+              "warning"
+            );
+            return;
+          }
+          const result = await OrderService.cancelPayment(
+            orderId,
+            reason,
+            token
+          );
+          if (result.success) {
+            await loadOrders();
+            showAlert("Pembayaran berhasil dibatalkan", "success");
+          } else {
+            showAlert("Gagal membatalkan pembayaran", "error");
+          }
+        } catch (err) {
+          console.error("Error canceling payment:", err);
+          showAlert(err.message || "Gagal membatalkan pembayaran", "error");
+        }
+      },
+    });
+  };
+
+  const handleCancelPaidOrder = async (order) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Batalkan Pesanan",
+      message: `Anda akan membatalkan pesanan yang sudah dibayar.\n\nTotal pembayaran: Rp ${order.total_amount?.toLocaleString(
+        "id-ID"
+      )}\n\nDana akan dikembalikan setelah diproses oleh admin.\n\nMohon berikan alasan pembatalan:`,
+      type: "danger",
+      confirmText: "Batalkan Pesanan & Minta Refund",
+      showInput: true,
+      inputPlaceholder: "Alasan pembatalan (wajib diisi)",
+      inputValue: "",
+      onConfirm: async () => {
+        const reason = confirmModal.inputValue?.trim();
+        if (!reason) {
+          showAlert("Alasan pembatalan wajib diisi", "warning");
+          return;
+        }
+        setConfirmModal({ ...confirmModal, isOpen: false });
+        try {
+          const token = getToken();
+          if (!token) {
+            showAlert(
+              "Sesi login telah berakhir. Silakan login kembali.",
+              "warning"
+            );
+            return;
+          }
+
+          // Call API to cancel paid order with refund
+          const result = await OrderService.cancelPaidOrder(
+            order.order_id,
+            reason,
+            token
+          );
+
+          if (result.success) {
+            await loadOrders();
+            showAlert(
+              `Pesanan berhasil dibatalkan. Refund sebesar Rp ${order.total_amount?.toLocaleString(
+                "id-ID"
+              )} akan diproses oleh admin.`,
+              "success"
+            );
+          } else {
+            showAlert(result.message || "Gagal membatalkan pesanan", "error");
+          }
+        } catch (err) {
+          console.error("Error canceling paid order:", err);
+          showAlert(err.message || "Gagal membatalkan pesanan", "error");
+        }
+      },
+    });
   };
 
   return (
@@ -585,37 +871,69 @@ const History = () => {
                       Total: Rp {order.total_amount?.toLocaleString("id-ID")}
                     </span>
                     <span
-                      className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold
-                      ${
-                        order.order_status?.toLowerCase() === "completed"
-                          ? "bg-green-100 text-green-700"
-                          : ""
-                      }
-                      ${
-                        order.order_status?.toLowerCase() === "pending"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : ""
-                      }
-                      ${
-                        order.order_status?.toLowerCase() === "cancelled"
-                          ? "bg-red-100 text-red-700"
-                          : ""
-                      }
-                    `}
+                      className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
+                        order.order_status
+                      )}`}
                     >
-                      {order.order_status}
+                      {translateOrderStatus(order.order_status)}
                     </span>
+                    {order.payment_status === "pending" && (
+                      <span className="inline-flex px-2 py-1 rounded text-xs bg-orange-100 text-orange-700">
+                        {translatePaymentStatus(order.payment_status)}
+                      </span>
+                    )}
                     <div className="flex items-center space-x-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteOrder(order.order_id);
-                        }}
-                        className="px-3 py-1 text-xs text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition"
-                        title="Hapus dari riwayat"
-                      >
-                        <i className="fas fa-trash mr-1"></i>Hapus
-                      </button>
+                      {order.payment_status === "pending" && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePayNow(order);
+                            }}
+                            className="px-3 py-1 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition font-semibold"
+                            title="Bayar sekarang"
+                          >
+                            <i className="fas fa-credit-card mr-1"></i>Bayar
+                            Sekarang
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCancelPayment(order.order_id);
+                            }}
+                            className="px-3 py-1 text-xs text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition"
+                            title="Batalkan pembayaran"
+                          >
+                            <i className="fas fa-times mr-1"></i>Batal
+                          </button>
+                        </>
+                      )}
+                      {(order.order_status === "preparing" ||
+                        order.order_status === "ready") &&
+                        order.payment_status === "paid" && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCancelPaidOrder(order);
+                            }}
+                            className="px-3 py-1 text-xs text-orange-600 hover:text-orange-800 hover:bg-orange-50 rounded transition font-semibold"
+                            title="Batalkan pesanan & minta refund"
+                          >
+                            <i className="fas fa-undo mr-1"></i>Batalkan Pesanan
+                          </button>
+                        )}
+                      {order.order_status === "completed" && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteOrder(order.order_id);
+                          }}
+                          className="px-3 py-1 text-xs text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition"
+                          title="Hapus dari riwayat"
+                        >
+                          <i className="fas fa-trash mr-1"></i>Hapus
+                        </button>
+                      )}
                       <button
                         onClick={() => {
                           setSelectedOrder(order);
@@ -760,8 +1078,14 @@ const History = () => {
                       }
                     `}
                     >
-                      {selectedOrder.order_status}
+                      {translateOrderStatus(selectedOrder.order_status)}
                     </p>
+                    {selectedOrder.payment_status && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Pembayaran:{" "}
+                        {translatePaymentStatus(selectedOrder.payment_status)}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -936,6 +1260,23 @@ const History = () => {
         message={alertState.message}
         type={alertState.type}
         title={alertState.title}
+      />
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+        confirmText={confirmModal.confirmText}
+        showInput={confirmModal.showInput}
+        inputPlaceholder={confirmModal.inputPlaceholder}
+        inputValue={confirmModal.inputValue}
+        onInputChange={(value) =>
+          setConfirmModal({ ...confirmModal, inputValue: value })
+        }
       />
     </main>
   );

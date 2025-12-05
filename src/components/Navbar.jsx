@@ -3,9 +3,10 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { searchProducts } from "../data/products";
+import NotificationService from "../services/notification.service";
 
 const Navbar = () => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, getToken } = useAuth();
   const { getCartItemsCount } = useCart();
   const navigate = useNavigate();
 
@@ -16,19 +17,47 @@ const Navbar = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
 
-  // Ambil jumlah notifikasi belum dibaca dari localStorage
+  // Fetch unread notification count from API (excludes archived and expired)
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  useEffect(() => {
+
+  const fetchUnreadCount = async () => {
     try {
-      const raw = localStorage.getItem("notifications");
-      if (raw) {
-        const arr = JSON.parse(raw);
-        const count = arr.filter((n) => !n.read).length;
-        setUnreadNotifications(count);
+      const token = getToken();
+      if (!token) {
+        setUnreadNotifications(0);
+        return;
       }
+      const count = await NotificationService.getUnreadCount(token);
+      setUnreadNotifications(count || 0);
     } catch (e) {
-      // silent fail
+      console.error("Error fetching unread notification count:", e);
+      setUnreadNotifications(0);
     }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUnreadCount();
+      // Refresh count every 10 seconds for more responsive updates
+      const interval = setInterval(fetchUnreadCount, 10000);
+      return () => clearInterval(interval);
+    } else {
+      setUnreadNotifications(0);
+    }
+  }, [isAuthenticated, getToken]);
+
+  // Listen for notification updates via custom event
+  useEffect(() => {
+    const handleNotificationUpdate = () => {
+      fetchUnreadCount();
+    };
+
+    window.addEventListener("notificationUpdated", handleNotificationUpdate);
+    return () =>
+      window.removeEventListener(
+        "notificationUpdated",
+        handleNotificationUpdate
+      );
   }, []);
 
   const profileRef = useRef(null);

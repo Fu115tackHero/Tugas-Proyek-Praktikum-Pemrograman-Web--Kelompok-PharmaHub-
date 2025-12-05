@@ -113,6 +113,8 @@ const Notifications = () => {
       setNotifications((prev) =>
         prev.filter((n) => n.notification_id !== notificationId)
       );
+      // Trigger notification update event for Navbar badge
+      window.dispatchEvent(new Event("notificationUpdated"));
     } catch (err) {
       console.error("Error deleting notification:", err);
       alert("Gagal menghapus notifikasi");
@@ -135,6 +137,8 @@ const Notifications = () => {
         alert(
           `Berhasil menghapus ${result.data?.archivedCount || 0} notifikasi`
         );
+        // Trigger notification update event for Navbar badge
+        window.dispatchEvent(new Event("notificationUpdated"));
       }
     } catch (err) {
       console.error("Error deleting all notifications:", err);
@@ -158,6 +162,8 @@ const Notifications = () => {
         alert(
           `Berhasil menghapus ${result.data?.archivedCount || 0} notifikasi`
         );
+        // Trigger notification update event for Navbar badge
+        window.dispatchEvent(new Event("notificationUpdated"));
       }
     } catch (err) {
       console.error("Error deleting read notifications:", err);

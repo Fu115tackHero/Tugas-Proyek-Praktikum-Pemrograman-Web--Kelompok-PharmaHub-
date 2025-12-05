@@ -141,7 +141,10 @@ async function getOrderDetailsForAdmin(req, res) {
       order,
     });
   } catch (error) {
-    console.error("[OrderController] Error fetching order details for admin:", error.message);
+    console.error(
+      "[OrderController] Error fetching order details for admin:",
+      error.message
+    );
     res.status(500).json({
       success: false,
       message: "Gagal mengambil detail pesanan",
@@ -511,6 +514,85 @@ async function unarchiveOrderForUser(req, res) {
   }
 }
 
+/**
+ * PUT /api/orders/:id/payment/finalize - Mark pending payment as paid and advance status
+ */
+async function finalizePayment(req, res) {
+  try {
+    const userId = req.user.userId;
+    const orderId = parseInt(req.params.id);
+
+    if (isNaN(orderId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "ID pesanan tidak valid" });
+    }
+
+    const result = await orderService.finalizePayment(orderId, userId);
+    return res.status(200).json({ success: true, order: result });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+/**
+ * PUT /api/orders/:id/payment/cancel - Cancel pending payment and order
+ */
+async function cancelPayment(req, res) {
+  try {
+    const userId = req.user.userId;
+    const orderId = parseInt(req.params.id);
+    const { reason } = req.body || {};
+
+    if (isNaN(orderId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "ID pesanan tidak valid" });
+    }
+
+    const result = await orderService.cancelPayment(orderId, userId, reason);
+    return res.status(200).json({ success: true, order: result });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+/**
+ * PUT /api/orders/:id/cancel-with-refund - Cancel paid order and request refund
+ */
+async function cancelPaidOrderWithRefund(req, res) {
+  try {
+    const userId = req.user.userId;
+    const orderId = parseInt(req.params.id);
+    const { reason } = req.body || {};
+
+    if (isNaN(orderId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "ID pesanan tidak valid" });
+    }
+
+    if (!reason || reason.trim() === "") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Alasan pembatalan wajib diisi" });
+    }
+
+    const result = await orderService.cancelPaidOrderWithRefund(
+      orderId,
+      userId,
+      reason
+    );
+    return res.status(200).json({
+      success: true,
+      message: "Pesanan berhasil dibatalkan. Refund akan diproses oleh admin.",
+      order: result,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
 module.exports = {
   createOrder,
   getOrders,
@@ -524,4 +606,7 @@ module.exports = {
   bulkArchiveOrders, // Admin bulk archive
   archiveOrderForUser, // User hide from history
   unarchiveOrderForUser, // User restore to history
+  finalizePayment,
+  cancelPayment,
+  cancelPaidOrderWithRefund, // Cancel paid order with refund
 };

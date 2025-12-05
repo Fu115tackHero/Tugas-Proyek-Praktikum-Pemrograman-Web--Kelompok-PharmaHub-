@@ -39,6 +39,19 @@ router.put("/:id/hide-from-user", orderController.archiveOrderForUser);
 // PUT /api/orders/:id/restore-to-user - Restore order to user's history
 router.put("/:id/restore-to-user", orderController.unarchiveOrderForUser);
 
+// Payment actions for pending payments
+// PUT /api/orders/:id/payment/finalize - Mark payment as paid
+router.put("/:id/payment/finalize", orderController.finalizePayment);
+// PUT /api/orders/:id/payment/cancel - Cancel payment and order
+router.put("/:id/payment/cancel", orderController.cancelPayment);
+
+// Cancel paid order with refund
+// PUT /api/orders/:id/cancel-with-refund - Cancel paid order and request refund
+router.put(
+  "/:id/cancel-with-refund",
+  orderController.cancelPaidOrderWithRefund
+);
+
 // GET /api/orders/:id - Get specific order by ID
 router.get("/:id", orderController.getOrderById);
 

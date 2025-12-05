@@ -272,7 +272,10 @@ export async function getOrderDetails(orderId, token) {
 
     return response.data;
   } catch (error) {
-    console.error(`[OrderService] Error fetching order details ${orderId}:`, error);
+    console.error(
+      `[OrderService] Error fetching order details ${orderId}:`,
+      error
+    );
     throw error.response?.data || error.message;
   }
 }
@@ -303,6 +306,94 @@ export async function bulkArchiveOrders(orderIds, token) {
   }
 }
 
+/**
+ * Finalize a pending payment (mark as paid)
+ * @param {number} orderId - Order ID
+ * @param {string} token - JWT authentication token
+ * @returns {Promise<Object>} - Updated order
+ */
+export async function finalizePayment(orderId, token) {
+  try {
+    const response = await axios.put(
+      `${API_URL}/orders/${orderId}/payment/finalize`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      `[OrderService] Error finalizing payment for order ${orderId}:`,
+      error
+    );
+    throw error.response?.data || error.message;
+  }
+}
+
+/**
+ * Cancel a pending payment
+ * @param {number} orderId - Order ID
+ * @param {string} reason - Cancellation reason
+ * @param {string} token - JWT authentication token
+ * @returns {Promise<Object>} - Updated order
+ */
+export async function cancelPayment(orderId, reason, token) {
+  try {
+    const response = await axios.put(
+      `${API_URL}/orders/${orderId}/payment/cancel`,
+      { reason },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      `[OrderService] Error canceling payment for order ${orderId}:`,
+      error
+    );
+    throw error.response?.data || error.message;
+  }
+}
+
+/**
+ * Cancel a paid order and request refund
+ * @param {number} orderId - Order ID
+ * @param {string} reason - Cancellation reason
+ * @param {string} token - JWT authentication token
+ * @returns {Promise<Object>} - Updated order with refund status
+ */
+export async function cancelPaidOrder(orderId, reason, token) {
+  try {
+    const response = await axios.put(
+      `${API_URL}/orders/${orderId}/cancel-with-refund`,
+      { reason },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      `[OrderService] Error canceling paid order ${orderId}:`,
+      error
+    );
+    throw error.response?.data || error.message;
+  }
+}
+
 const OrderService = {
   createOrder,
   getOrders,
@@ -316,6 +407,9 @@ const OrderService = {
   bulkArchiveOrders, // Admin bulk archive
   hideOrderFromUser, // User hide from history
   restoreOrderToUser, // User restore to history
+  finalizePayment, // Mark pending payment as paid
+  cancelPayment, // Cancel pending payment
+  cancelPaidOrder, // Cancel paid order with refund
 };
 
 export default OrderService;

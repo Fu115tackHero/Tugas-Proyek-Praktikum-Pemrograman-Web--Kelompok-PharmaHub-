@@ -301,7 +301,7 @@ async function getAllOrders(includeArchived = false) {
     `;
 
     const result = await pool.query(query);
-    
+
     // Fetch items for each order (product_name and quantity only)
     const orders = result.rows;
     for (const order of orders) {
@@ -382,7 +382,10 @@ async function getOrderByIdForAdmin(orderId) {
 
     return order;
   } catch (error) {
-    console.error("[OrderService] Error fetching order for admin:", error.message);
+    console.error(
+      "[OrderService] Error fetching order for admin:",
+      error.message
+    );
     throw error;
   }
 }
@@ -639,6 +642,13 @@ async function archiveOrderForUser(orderId, userId) {
 
     const orderStatus = verifyResult.rows[0].order_status;
 
+    // Only allow hiding from history if order is completed
+    if (orderStatus !== "completed") {
+      throw new Error(
+        "Riwayat hanya bisa dihapus jika pesanan sudah berstatus selesai"
+      );
+    }
+
     // Check if already hidden
     const checkQuery = `
       SELECT history_id, is_hidden_from_user 
@@ -686,6 +696,210 @@ async function archiveOrderForUser(orderId, userId) {
   } catch (error) {
     console.error("[OrderService] Error hiding order for user:", error.message);
     throw error;
+  }
+}
+
+/**
+ * Finalize a pending payment: set payment_status to 'paid' and optionally advance order_status
+ */
+async function finalizePayment(orderId, userId) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const check = await client.query(
+      `SELECT order_id, user_id, payment_status, order_status FROM orders WHERE order_id = $1 AND user_id = $2`,
+      [orderId, userId]
+    );
+    if (check.rows.length === 0) throw new Error("Pesanan tidak ditemukan");
+
+    const { payment_status, order_status } = check.rows[0];
+    if (payment_status === "paid") {
+      await client.query("COMMIT");
+      return { success: true, message: "Pembayaran sudah ditandai lunas" };
+    }
+
+    const update = await client.query(
+      `UPDATE orders
+       SET payment_status = 'paid',
+           order_status = CASE WHEN order_status = 'pending' THEN 'preparing' ELSE order_status END,
+           updated_at = NOW()
+       WHERE order_id = $1
+       RETURNING order_id, order_number, payment_status, order_status`,
+      [orderId]
+    );
+
+    await client.query(
+      `INSERT INTO notifications (user_id, type, title, message, related_order_id, order_status, icon_type, is_read, created_at)
+       VALUES ($1, 'order', 'Pembayaran Berhasil', 'Pembayaran untuk pesanan ' || $2 || ' telah berhasil.', $3, $4, 'credit-card', false, NOW())`,
+      [
+        userId,
+        update.rows[0].order_number,
+        orderId,
+        update.rows[0].order_status,
+      ]
+    );
+
+    await client.query("COMMIT");
+    return update.rows[0];
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Cancel a pending payment: set payment_status to 'cancelled' and set order_status to 'cancelled'
+ */
+async function cancelPayment(
+  orderId,
+  userId,
+  reason = "Dibatalkan oleh pengguna"
+) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const check = await client.query(
+      `SELECT order_id, user_id, payment_status, order_status, order_number FROM orders WHERE order_id = $1 AND user_id = $2`,
+      [orderId, userId]
+    );
+    if (check.rows.length === 0) throw new Error("Pesanan tidak ditemukan");
+
+    const update = await client.query(
+      `UPDATE orders
+       SET payment_status = 'cancelled',
+           order_status = 'cancelled',
+           cancelled_at = NOW(),
+           cancellation_reason = $2,
+           updated_at = NOW()
+       WHERE order_id = $1
+       RETURNING order_id, order_number, payment_status, order_status`,
+      [orderId, reason]
+    );
+
+    await client.query(
+      `INSERT INTO notifications (user_id, type, title, message, related_order_id, order_status, icon_type, is_read, created_at)
+       VALUES ($1, 'order', 'Pembayaran Dibatalkan', 'Pembayaran untuk pesanan ' || $2 || ' dibatalkan. Alasan: ' || $3, $4, 'cancelled', 'x-circle', false, NOW())`,
+      [userId, update.rows[0].order_number, reason, orderId]
+    );
+
+    await client.query("COMMIT");
+    return update.rows[0];
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Cancel a paid order with refund request
+ * Set payment_status to 'refunded', order_status to 'cancelled'
+ * Admin will process the refund manually
+ */
+async function cancelPaidOrderWithRefund(
+  orderId,
+  userId,
+  reason = "Dibatalkan oleh pengguna"
+) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Verify order belongs to user and is paid
+    const check = await client.query(
+      `SELECT order_id, user_id, payment_status, order_status, order_number, total_amount 
+       FROM orders 
+       WHERE order_id = $1 AND user_id = $2`,
+      [orderId, userId]
+    );
+
+    if (check.rows.length === 0) {
+      throw new Error("Pesanan tidak ditemukan");
+    }
+
+    const order = check.rows[0];
+
+    // Verify payment is paid
+    if (order.payment_status !== "paid") {
+      throw new Error(
+        "Hanya pesanan yang sudah dibayar yang dapat dibatalkan dengan refund"
+      );
+    }
+
+    // Verify order is still preparing or ready (not completed/delivered)
+    if (!["preparing", "ready"].includes(order.order_status)) {
+      throw new Error(
+        "Pesanan sudah terlalu lanjut untuk dibatalkan. Hubungi admin untuk bantuan."
+      );
+    }
+
+    // Update order status
+    const update = await client.query(
+      `UPDATE orders
+       SET payment_status = 'refunded',
+           order_status = 'cancelled',
+           cancelled_at = NOW(),
+           cancellation_reason = $2,
+           updated_at = NOW()
+       WHERE order_id = $1
+       RETURNING order_id, order_number, payment_status, order_status, total_amount`,
+      [orderId, reason]
+    );
+
+    // Create notification for user
+    await client.query(
+      `INSERT INTO notifications (user_id, type, title, message, related_order_id, order_status, icon_type, is_read, created_at)
+       VALUES ($1, 'order', 'Pesanan Dibatalkan - Refund Diproses', 
+       'Pesanan ' || $2 || ' telah dibatalkan. Refund sebesar Rp ' || $3 || ' akan diproses oleh admin. Alasan: ' || $4, 
+       $5, 'cancelled', 'info-circle', false, NOW())`,
+      [
+        userId,
+        order.order_number,
+        order.total_amount.toLocaleString("id-ID"),
+        reason,
+        orderId,
+      ]
+    );
+
+    // Create notification for admin about refund request
+    const adminQuery = `SELECT user_id FROM users WHERE role = 'admin' LIMIT 1`;
+    const adminResult = await client.query(adminQuery);
+
+    if (adminResult.rows.length > 0) {
+      await client.query(
+        `INSERT INTO notifications (user_id, type, title, message, related_order_id, order_status, icon_type, is_read, created_at)
+         VALUES ($1, 'admin', 'Permintaan Refund', 
+         'Pesanan ' || $2 || ' dibatalkan oleh customer. Refund sebesar Rp ' || $3 || ' perlu diproses. Alasan: ' || $4, 
+         $5, 'cancelled', 'dollar-sign', false, NOW())`,
+        [
+          adminResult.rows[0].user_id,
+          order.order_number,
+          order.total_amount.toLocaleString("id-ID"),
+          reason,
+          orderId,
+        ]
+      );
+    }
+
+    await client.query("COMMIT");
+    console.log(
+      `[OrderService] Paid order ${orderId} cancelled with refund request`
+    );
+    return update.rows[0];
+  } catch (e) {
+    await client.query("ROLLBACK");
+    console.error(
+      `[OrderService] Error cancelling paid order ${orderId}:`,
+      e.message
+    );
+    throw e;
+  } finally {
+    client.release();
   }
 }
 
@@ -812,4 +1026,7 @@ module.exports = {
   archiveOrderForUser, // User-side hide from history
   unarchiveOrderForUser, // User-side restore to history
   bulkArchiveOrders,
+  finalizePayment,
+  cancelPayment,
+  cancelPaidOrderWithRefund, // Cancel paid order with refund
 };
