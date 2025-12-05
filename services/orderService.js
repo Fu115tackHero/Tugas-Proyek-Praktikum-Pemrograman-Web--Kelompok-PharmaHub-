@@ -610,7 +610,7 @@ async function updateOrderStatus(orderId, newStatus, adminNotes = null) {
 /**
  * Cancel an order (only if still pending)
  */
-async function cancelOrder(userId, orderId, cancellationReason) {
+async function cancelOrder(userId, orderId, cancellationReason, role = "user") {
   const client = await pool.connect();
 
   try {
@@ -620,20 +620,29 @@ async function cancelOrder(userId, orderId, cancellationReason) {
       `[OrderService] Cancelling order ${orderId} for user ${userId}`
     );
 
-    // Check if order exists and belongs to user
-    const checkQuery = `
+    // Check if order exists. If role is admin, don't restrict by user.
+    const checkQuery =
+      role === "admin"
+        ? `
+      SELECT order_id, order_status, user_id
+      FROM orders
+      WHERE order_id = $1
+    `
+        : `
       SELECT order_id, order_status, user_id
       FROM orders
       WHERE order_id = $1 AND user_id = $2
     `;
 
-    const checkResult = await client.query(checkQuery, [orderId, userId]);
+    const checkParams = role === "admin" ? [orderId] : [orderId, userId];
+
+    const checkResult = await client.query(checkQuery, checkParams);
 
     if (checkResult.rows.length === 0) {
       throw new Error("Order not found");
     }
 
-    const order = checkResult.rows[0];
+  const order = checkResult.rows[0];
 
     if (order.order_status !== "pending") {
       throw new Error("Only pending orders can be cancelled");
@@ -672,7 +681,8 @@ async function cancelOrder(userId, orderId, cancellationReason) {
     `;
 
     const notificationValues = [
-      userId,
+      // Notify the actual order owner (even when admin cancels)
+      order.user_id,
       "order", // Valid type from CHECK constraint
       "Pesanan Dibatalkan",
       `Pesanan ${updateResult.rows[0].order_number} telah dibatalkan. Alasan: ${cancellationReason}`,

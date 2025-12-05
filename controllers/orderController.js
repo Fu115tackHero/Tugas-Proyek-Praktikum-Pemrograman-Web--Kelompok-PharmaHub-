@@ -271,6 +271,7 @@ async function updateOrderStatus(req, res) {
 async function cancelOrder(req, res) {
   try {
     const userId = req.user.userId;
+    const userRole = req.user.role;
     const orderId = parseInt(req.params.id);
     const { cancellationReason } = req.body;
 
@@ -295,7 +296,8 @@ async function cancelOrder(req, res) {
     const result = await orderService.cancelOrder(
       userId,
       orderId,
-      cancellationReason
+      cancellationReason,
+      userRole
     );
 
     res.status(200).json({
