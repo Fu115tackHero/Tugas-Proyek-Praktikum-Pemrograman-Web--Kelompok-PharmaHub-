@@ -77,7 +77,8 @@ async function registerUser(userData) {
         name, 
         email, 
         phone, 
-        role, 
+        role,
+        profile_photo_url AS "profile_photo_url",
         created_at AS "createdAt";
     `;
 
@@ -159,6 +160,7 @@ async function loginUser(credentials) {
         u.password_hash, 
         u.phone, 
         u.role, 
+        u.profile_photo_url AS "profile_photo_url",
         u.created_at AS "createdAt",
         ua.full_address AS address
       FROM users u
@@ -198,6 +200,7 @@ async function loginUser(credentials) {
     );
 
     console.log("✅ User logged in successfully:", user.email);
+    console.log("📸 Profile photo URL returned:", user.profile_photo_url);
 
     return {
       success: true,
@@ -239,7 +242,7 @@ async function getUserById(userId) {
         u.email, 
         u.phone, 
         u.role, 
-        u.profile_photo_url, 
+        u.profile_photo_url AS "profile_photo_url", 
         u.created_at AS "createdAt",
         ua.full_address AS address
       FROM users u
@@ -305,7 +308,7 @@ async function updateProfile(userId, userData) {
         UPDATE users
         SET ${fields.join(", ")}
         WHERE user_id = $${paramIndex}
-        RETURNING user_id AS id, name, email, phone, profile_photo_url, role, created_at AS "createdAt", updated_at AS "updatedAt";
+        RETURNING user_id AS id, name, email, phone, profile_photo_url AS "profile_photo_url", role, created_at AS "createdAt", updated_at AS "updatedAt";
       `;
 
       await client.query(query, values);
@@ -339,7 +342,7 @@ async function updateProfile(userId, userData) {
         u.name, 
         u.email, 
         u.phone, 
-        u.profile_photo_url, 
+        u.profile_photo_url AS "profile_photo_url", 
         u.role, 
         u.created_at AS "createdAt", 
         u.updated_at AS "updatedAt",

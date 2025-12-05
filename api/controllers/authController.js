@@ -98,6 +98,9 @@ async function login(req, res) {
       password,
     });
 
+    console.log("✅ Login result user data:", result.user);
+    console.log("📸 Profile photo URL in response:", result.user?.profile_photo_url);
+
     res.status(200).json(result);
   } catch (error) {
     console.error("❌ Login error:", error.message);
