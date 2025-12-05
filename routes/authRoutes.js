@@ -20,6 +20,12 @@ router.post("/register", authController.register);
 router.post("/login", authController.login);
 
 /**
+ * POST /api/auth/google
+ * Login or register via Google OAuth token
+ */
+router.post("/google", authController.googleLogin);
+
+/**
  * GET /api/auth/me
  * Get current user profile (requires authentication)
  */

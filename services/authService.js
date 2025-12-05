@@ -1,52 +1,51 @@
-/**
- * Authentication Service
- * Handles user registration and login business logic
- */
-
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const path = require("path");
+const { OAuth2Client } = require("google-auth-library");
 require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
-// Use centralized database configuration
 const pool = require("../config/database");
 
-
-// JWT configuration - MUST be set in production
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
-  console.error("❌ FATAL ERROR: JWT_SECRET is not set in environment variables!");
-  console.error("   Generate one with: node -e \"console.log(require('crypto').randomBytes(64).toString('hex'))\"");
+  console.error("FATAL ERROR: JWT_SECRET is not set in environment variables!");
+  console.error(
+    'Generate one with: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"'
+  );
   process.exit(1);
 }
+
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 const SALT_ROUNDS = 10;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
+const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
-/**
- * Register new user
- * @param {Object} userData - User registration data
- * @param {string} userData.name - Full name
- * @param {string} userData.email - Email address
- * @param {string} userData.password - Plain text password
- * @param {string} userData.phone - Phone number (optional)
- * @param {string} userData.address - Address (optional) - Will be saved to user_addresses table
- * @returns {Promise<{success: boolean, user: Object, token: string}>}
- */
+const BASE_USER_QUERY = `
+  SELECT 
+    u.user_id AS id,
+    u.name,
+    u.email,
+    u.phone,
+    u.role,
+    u.profile_photo_url AS "profile_photo_url",
+    u.created_at AS "createdAt",
+    ua.full_address AS address
+  FROM users u
+  LEFT JOIN user_addresses ua ON u.user_id = ua.user_id AND ua.is_default = true
+`;
+
 async function registerUser(userData) {
   const { name, email, password, phone, address } = userData;
 
-  // Validation
   if (!name || !email || !password) {
     throw new Error("Name, email, and password are required");
   }
 
-  // Email format validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     throw new Error("Invalid email format");
   }
 
-  // Password strength validation (min 6 characters)
   if (password.length < 6) {
     throw new Error("Password must be at least 6 characters long");
   }
@@ -55,20 +54,14 @@ async function registerUser(userData) {
   try {
     await client.query("BEGIN");
 
-    // Check if email already exists
     const checkEmailQuery = "SELECT user_id FROM users WHERE email = $1";
-    const existingUser = await client.query(checkEmailQuery, [
-      email.toLowerCase(),
-    ]);
-
+    const existingUser = await client.query(checkEmailQuery, [email.toLowerCase()]);
     if (existingUser.rows.length > 0) {
       throw new Error("Email already registered");
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
-    // Insert new user (WITHOUT address column) - Use aliases for consistency
     const insertQuery = `
       INSERT INTO users (name, email, password_hash, phone, role)
       VALUES ($1, $2, $3, $4, $5)
@@ -87,19 +80,17 @@ async function registerUser(userData) {
       email.toLowerCase(),
       hashedPassword,
       phone || null,
-      "customer", // Default role
+      "customer",
     ];
 
     const result = await client.query(insertQuery, values);
     const user = result.rows[0];
 
-    // If address is provided, insert into user_addresses table with is_default = true
     if (address && address.trim() !== "") {
       await client.query(
         `INSERT INTO user_addresses (user_id, full_address, is_default) VALUES ($1, $2, $3)`,
         [user.id, address.trim(), true]
       );
-      // Add address to user object for response
       user.address = address.trim();
     } else {
       user.address = null;
@@ -107,18 +98,11 @@ async function registerUser(userData) {
 
     await client.query("COMMIT");
 
-    // Generate JWT token
     const token = jwt.sign(
-      {
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-      },
+      { userId: user.id, email: user.email, role: user.role },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
-
-    console.log("✅ User registered successfully:", user.email);
 
     return {
       success: true,
@@ -128,30 +112,21 @@ async function registerUser(userData) {
     };
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("❌ Registration error:", error.message);
+    console.error("Registration error:", error.message);
     throw error;
   } finally {
     client.release();
   }
 }
 
-/**
- * Login user
- * @param {Object} credentials - Login credentials
- * @param {string} credentials.email - Email address
- * @param {string} credentials.password - Plain text password
- * @returns {Promise<{success: boolean, user: Object, token: string}>}
- */
 async function loginUser(credentials) {
   const { email, password } = credentials;
 
-  // Validation
   if (!email || !password) {
     throw new Error("Email and password are required");
   }
 
   try {
-    // Find user by email and LEFT JOIN with default address - Use aliases for consistency
     const query = `
       SELECT 
         u.user_id AS id, 
@@ -191,22 +166,13 @@ async function loginUser(credentials) {
       throw new Error("Invalid email or password");
     }
 
-    // Remove password_hash from user object before returning
     delete user.password_hash;
 
-    // Generate JWT token
     const token = jwt.sign(
-      {
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-      },
+      { userId: user.id, email: user.email, role: user.role },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
-
-    console.log("✅ User logged in successfully:", user.email);
-    console.log("📸 Profile photo URL returned:", user.profile_photo_url);
 
     return {
       success: true,
@@ -215,44 +181,107 @@ async function loginUser(credentials) {
       token,
     };
   } catch (error) {
-    console.error("❌ Login error:", error.message);
+    console.error("Login error:", error);
     throw error;
   }
 }
 
-/**
- * Verify JWT token
- * @param {string} token - JWT token
- * @returns {Promise<Object>} - Decoded token payload
- */
+async function loginWithGoogle(googleToken) {
+  if (!googleClient || !GOOGLE_CLIENT_ID) {
+    throw new Error("Google client ID is not configured");
+  }
+
+  const ticket = await googleClient.verifyIdToken({
+    idToken: googleToken,
+    audience: GOOGLE_CLIENT_ID,
+  });
+
+  const payload = ticket.getPayload();
+  const email = payload?.email?.toLowerCase();
+  const name = payload?.name;
+  const picture = payload?.picture;
+
+  if (!email) {
+    throw new Error("Google token missing email");
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const findQuery = `
+      ${BASE_USER_QUERY}
+      WHERE u.email = $1
+      ORDER BY ua.created_at DESC
+      LIMIT 1;
+    `;
+    const existing = await client.query(findQuery, [email]);
+    let user = existing.rows[0];
+
+    if (!user) {
+      const dummyPassword = await bcrypt.hash(`${Date.now()}_${email}`, SALT_ROUNDS);
+      const insertQuery = `
+        INSERT INTO users (name, email, password_hash, role, profile_photo_url)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING user_id AS id, name, email, phone, role, profile_photo_url AS "profile_photo_url", created_at AS "createdAt";
+      `;
+      const insertRes = await client.query(insertQuery, [
+        name || email.split("@")[0],
+        email,
+        dummyPassword,
+        "customer",
+        picture || null,
+      ]);
+      user = insertRes.rows[0];
+    } else if (picture && !user.profile_photo_url) {
+      await client.query(`UPDATE users SET profile_photo_url = $1 WHERE user_id = $2`, [
+        picture,
+        user.id,
+      ]);
+      user.profile_photo_url = picture;
+    }
+
+    await client.query("COMMIT");
+
+    const refreshed = await pool.query(
+      `${BASE_USER_QUERY} WHERE u.user_id = $1 LIMIT 1;`,
+      [user.id]
+    );
+    const finalUser = refreshed.rows[0] || user;
+
+    const token = jwt.sign(
+      { userId: finalUser.id, email: finalUser.email, role: finalUser.role },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+
+    return {
+      success: true,
+      message: "Google login successful",
+      user: finalUser,
+      token,
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Google login error:", error.message);
+    throw new Error("Google login failed");
+  } finally {
+    client.release();
+  }
+}
+
 function verifyToken(token) {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    return decoded;
+    return jwt.verify(token, JWT_SECRET);
   } catch (error) {
     throw new Error("Invalid or expired token");
   }
 }
 
-/**
- * Get user by ID
- * @param {number} userId - User ID (Integer)
- * @returns {Promise<Object>} - User data
- */
 async function getUserById(userId) {
   try {
     const query = `
-      SELECT 
-        u.user_id AS id, 
-        u.name, 
-        u.email, 
-        u.phone, 
-        u.role, 
-        u.profile_photo_url AS "profile_photo_url", 
-        u.created_at AS "createdAt",
-        ua.full_address AS address
-      FROM users u
-      LEFT JOIN user_addresses ua ON u.user_id = ua.user_id AND ua.is_default = true
+      ${BASE_USER_QUERY}
       WHERE u.user_id = $1
       ORDER BY ua.created_at DESC
       LIMIT 1;
@@ -266,27 +295,16 @@ async function getUserById(userId) {
 
     return result.rows[0];
   } catch (error) {
-    console.error("❌ Error fetching user:", error.message);
+    console.error("Error fetching user:", error.message);
     throw error;
   }
 }
 
-/**
- * Update user profile
- * @param {number} userId - User ID (Integer)
- * @param {Object} userData - Updated user data
- * @param {string} userData.name - Full name (optional)
- * @param {string} userData.phone - Phone number (optional)
- * @param {string} userData.address - Address (optional) - Will update user_addresses table
- * @param {string} userData.profile_photo_url - Profile photo URL (optional)
- * @returns {Promise<Object>} - Updated user data
- */
 async function updateProfile(userId, userData) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
-    // Build dynamic update query based on provided fields (excluding address)
     const fields = [];
     const values = [];
     let paramIndex = 1;
@@ -306,10 +324,8 @@ async function updateProfile(userId, userData) {
       values.push(userData.profile_photo_url);
     }
 
-    // Update users table if there are fields to update
     if (fields.length > 0) {
       values.push(userId);
-
       const query = `
         UPDATE users
         SET ${fields.join(", ")}
@@ -320,20 +336,16 @@ async function updateProfile(userId, userData) {
       await client.query(query, values);
     }
 
-    // Update or insert address in user_addresses table if provided
     if (userData.address !== undefined) {
-      // Check if default address exists
       const checkAddressQuery = `SELECT address_id FROM user_addresses WHERE user_id = $1 AND is_default = true`;
       const addressCheck = await client.query(checkAddressQuery, [userId]);
 
       if (addressCheck.rows.length > 0) {
-        // Update existing default address
         await client.query(
           `UPDATE user_addresses SET full_address = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2 AND is_default = true`,
           [userData.address, userId]
         );
       } else {
-        // Insert new default address
         await client.query(
           `INSERT INTO user_addresses (user_id, full_address, is_default) VALUES ($1, $2, $3)`,
           [userId, userData.address, true]
@@ -341,20 +353,8 @@ async function updateProfile(userId, userData) {
       }
     }
 
-    // Fetch updated user with address using aliases
     const finalQuery = `
-      SELECT 
-        u.user_id AS id, 
-        u.name, 
-        u.email, 
-        u.phone, 
-        u.profile_photo_url AS "profile_photo_url", 
-        u.role, 
-        u.created_at AS "createdAt", 
-        u.updated_at AS "updatedAt",
-        ua.full_address AS address
-      FROM users u
-      LEFT JOIN user_addresses ua ON u.user_id = ua.user_id AND ua.is_default = true
+      ${BASE_USER_QUERY}
       WHERE u.user_id = $1
       ORDER BY ua.created_at DESC
       LIMIT 1;
@@ -367,13 +367,10 @@ async function updateProfile(userId, userData) {
     }
 
     await client.query("COMMIT");
-
-    console.log("✅ Profile updated successfully:", result.rows[0].email);
-
     return result.rows[0];
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("❌ Error updating profile:", error.message);
+    console.error("Error updating profile:", error.message);
     throw error;
   } finally {
     client.release();
@@ -383,6 +380,7 @@ async function updateProfile(userId, userData) {
 module.exports = {
   registerUser,
   loginUser,
+  loginWithGoogle,
   verifyToken,
   getUserById,
   updateProfile,

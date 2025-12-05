@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
+  const { login, loginWithGoogle, isAuthenticated } = useAuth();
   const [searchParams] = useSearchParams();
 
   const [formData, setFormData] = useState({
@@ -19,6 +20,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("idle"); // 'idle' | 'success'
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   // Check for suspended parameter
   useEffect(() => {
@@ -81,6 +83,36 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setGoogleLoading(true);
+    setError("");
+    setStatus("idle");
+
+    try {
+      const token = credentialResponse?.credential;
+      if (!token) {
+        setError("Token Google tidak valid.");
+        return;
+      }
+
+      const result = await loginWithGoogle(token);
+      if (result.success) {
+        navigate("/");
+        return;
+      }
+
+      setError(result.message || "Login Google gagal. Silakan coba lagi.");
+    } catch (err) {
+      setError("Login Google gagal. Silakan coba lagi.");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError("Login Google dibatalkan atau gagal.");
   };
 
   return (
@@ -205,8 +237,27 @@ const Login = () => {
                 </>
               ) : (
                 "Masuk ke Dashboard"
-              )}
+                )}
             </button>
+
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t border-gray-300"></div>
+              <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">Atau</span>
+              <div className="flex-grow border-t border-gray-300"></div>
+            </div>
+
+            <div className="flex justify-center">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                useOneTap
+                text="signin_with"
+                shape="rectangular"
+                size="large"
+                width="280"
+                disabled={googleLoading}
+              />
+            </div>
 
             <div className="text-center mt-4">
               <p className="text-gray-600">
