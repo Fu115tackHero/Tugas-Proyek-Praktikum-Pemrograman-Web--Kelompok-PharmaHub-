@@ -761,10 +761,88 @@ async function deleteProduct(id) {
   }
 }
 
+/**
+ * Get all deleted/archived products (soft deleted, is_active = false)
+ */
+async function getDeletedProducts() {
+  const client = await pool.connect();
+  try {
+    console.log("[ProductService] Fetching deleted products...");
+    
+    const query = `
+      SELECT 
+        p.product_id,
+        p.name,
+        p.brand,
+        p.price,
+        p.stock,
+        p.description,
+        p.is_active,
+        p.updated_at,
+        pc.category_name,
+        COALESCE(
+          (SELECT COUNT(DISTINCT o.order_id)
+           FROM orders o
+           INNER JOIN order_items oi ON o.order_id = oi.order_id
+           WHERE oi.product_id = p.product_id),
+          0
+        ) AS total_orders
+      FROM products p
+      LEFT JOIN product_categories pc ON p.category_id = pc.category_id
+      WHERE p.is_active = FALSE
+      ORDER BY p.updated_at DESC
+    `;
+    
+    const result = await client.query(query);
+    console.log(`[ProductService] Found ${result.rows.length} deleted products`);
+    
+    return result.rows;
+  } catch (error) {
+    console.error("[ProductService] Error fetching deleted products:", error.message);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Restore a soft-deleted product (set is_active = true)
+ */
+async function restoreProduct(id) {
+  const client = await pool.connect();
+  try {
+    console.log(`[ProductService] Restoring product ID: ${id}`);
+    
+    const query = `
+      UPDATE products
+      SET is_active = TRUE, updated_at = CURRENT_TIMESTAMP
+      WHERE product_id = $1 AND is_active = FALSE
+      RETURNING *
+    `;
+    
+    const result = await client.query(query, [id]);
+    
+    if (result.rows.length === 0) {
+      console.log(`[ProductService] Product ${id} not found or already active`);
+      return null;
+    }
+    
+    console.log(`[ProductService] Product ${id} restored successfully`);
+    return result.rows[0];
+  } catch (error) {
+    console.error(`[ProductService] Error restoring product ${id}:`, error.message);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 module.exports = {
   createProduct,
   getAllProducts,
   getProductById,
   updateProduct,
   deleteProduct,
+  getDeletedProducts,
+  restoreProduct,
 };
