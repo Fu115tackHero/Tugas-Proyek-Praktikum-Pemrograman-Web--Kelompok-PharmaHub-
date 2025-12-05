@@ -1,13 +1,19 @@
-// file: src/main.jsx atau src/App.jsx
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-import './index.css';
-// IMPORT INI LEK!
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+import App from "./App";
+import "./index.css";
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+if (!googleClientId) {
+  console.warn("VITE_GOOGLE_CLIENT_ID belum diset di file .env");
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    {/* BUNGKUS APP DENGAN USERPROVIDER */}
-    <App />
-  </React.StrictMode>,
+    <GoogleOAuthProvider clientId={googleClientId || ""}>
+      <App />
+    </GoogleOAuthProvider>
+  </React.StrictMode>
 );
