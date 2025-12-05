@@ -1,5 +1,21 @@
 {
+  "type": "commonjs",
   "name": "pharmahub-api",
-  "private": true,
-  "type": "commonjs"
+  "version": "1.0.0",
+  "description": "PharmaHub Backend API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "setup-db": "node scripts/setupDb.js"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "bcrypt": "^5.1.1",
+    "form-data": "^4.0.5",
+    "jsonwebtoken": "^9.0.2",
+    "node-fetch": "^2.7.0",
+    "nodemon": "^3.1.11",
+    "pg": "^8.16.3"
+  }
 }

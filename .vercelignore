@@ -1,0 +1,22 @@
+# Development files
+node_modules
+npm-debug.log
+.DS_Store
+*.log
+
+# Local environment
+.env.local
+.env.development
+
+# API server (not needed for serverless)
+api/server.js
+
+# Scripts (not needed in production)
+api/scripts
+
+# Database schema (not needed in production)
+database
+
+# Development docs
+*.md
+!README.md

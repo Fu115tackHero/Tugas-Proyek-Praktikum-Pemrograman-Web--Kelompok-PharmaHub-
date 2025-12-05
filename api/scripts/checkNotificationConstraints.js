@@ -1,0 +1,45 @@
+require("dotenv").config();
+const { Pool } = require("pg");
+
+const pool = new Pool({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+});
+
+async function checkNotificationConstraints() {
+  console.log("\n🔍 Checking notification table constraints...\n");
+
+  try {
+    // Get check constraints
+    const query = `
+      SELECT 
+        con.conname AS constraint_name,
+        pg_get_constraintdef(con.oid) AS constraint_definition
+      FROM pg_constraint con
+      JOIN pg_class rel ON rel.oid = con.conrelid
+      JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+      WHERE rel.relname = 'notifications'
+        AND con.contype = 'c'
+      ORDER BY con.conname;
+    `;
+
+    const result = await pool.query(query);
+
+    console.log("Check Constraints on notifications table:\n");
+    result.rows.forEach((row) => {
+      console.log(`Constraint: ${row.constraint_name}`);
+      console.log(`Definition: ${row.constraint_definition}\n`);
+    });
+
+    console.log("✅ Check complete!");
+  } catch (error) {
+    console.error("❌ Error:", error.message);
+  } finally {
+    await pool.end();
+  }
+}
+
+checkNotificationConstraints();

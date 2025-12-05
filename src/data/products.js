@@ -683,6 +683,6 @@ export const searchProducts = (query) => {
     (product) =>
       product.name.toLowerCase().includes(lowerQuery) ||
       product.description.toLowerCase().includes(lowerQuery) ||
-      product.brand.toLowerCase().includes(lowerQuery),
+      product.brand.toLowerCase().includes(lowerQuery)
   );
 };
