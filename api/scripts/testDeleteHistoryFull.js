@@ -85,7 +85,9 @@ async function runComprehensiveTest() {
     token = loginRes.data.token;
     userId = loginRes.data.user.id;
     if (!token) throw new Error("No token received");
-    console.log(`  Token: ${token.substring(0, 20)}... (length: ${token.length})`);
+    console.log(
+      `  Token: ${token.substring(0, 20)}... (length: ${token.length})`
+    );
     console.log(`  User ID: ${userId}`);
   });
 
@@ -137,12 +139,16 @@ async function runComprehensiveTest() {
   console.log("───────────────────────────────────────────────────────────");
 
   await test("Verify hide record created in order_status_history", async () => {
-    const historyResult = await pool.query(`
+    const historyResult = await pool.query(
+      `
       SELECT * FROM order_status_history 
       WHERE order_id = $1 AND is_hidden_from_user = TRUE
       ORDER BY changed_at DESC LIMIT 1
-    `, [completedOrderId]);
-    if (historyResult.rows.length === 0) throw new Error("No hide record found");
+    `,
+      [completedOrderId]
+    );
+    if (historyResult.rows.length === 0)
+      throw new Error("No hide record found");
     const record = historyResult.rows[0];
     console.log(`  Record found:`);
     console.log(`    - History ID: ${record.history_id}`);
@@ -155,7 +161,8 @@ async function runComprehensiveTest() {
       "SELECT order_id FROM orders WHERE order_id = $1",
       [completedOrderId]
     );
-    if (orderResult.rows.length === 0) throw new Error("Order was deleted (should only be hidden)");
+    if (orderResult.rows.length === 0)
+      throw new Error("Order was deleted (should only be hidden)");
     console.log(`  Confirmed: Order still exists in database`);
   });
 
@@ -171,7 +178,9 @@ async function runComprehensiveTest() {
     `;
     const dbResult = await pool.query(visibleOrdersQuery, [userId]);
     const dbCount = parseInt(dbResult.rows[0].count);
-    const apiCount = userOrders.filter((o) => o.order_id !== completedOrderId).length;
+    const apiCount = userOrders.filter(
+      (o) => o.order_id !== completedOrderId
+    ).length;
     console.log(`  Database visible orders: ${dbCount}`);
     console.log(`  Frontend visible orders: ${apiCount}`);
   });
@@ -203,7 +212,9 @@ async function runComprehensiveTest() {
   });
 
   // Results Summary
-  console.log("\n\n═══════════════════════════════════════════════════════════");
+  console.log(
+    "\n\n═══════════════════════════════════════════════════════════"
+  );
   console.log("  📊 TEST RESULTS SUMMARY");
   console.log("═══════════════════════════════════════════════════════════\n");
 
@@ -211,10 +222,17 @@ async function runComprehensiveTest() {
 
   console.log(`\n✓ Passed: ${testResults.passed}`);
   console.log(`✗ Failed: ${testResults.failed}`);
-  console.log(`📈 Success Rate: ${((testResults.passed / (testResults.passed + testResults.failed)) * 100).toFixed(1)}%\n`);
+  console.log(
+    `📈 Success Rate: ${(
+      (testResults.passed / (testResults.passed + testResults.failed)) *
+      100
+    ).toFixed(1)}%\n`
+  );
 
   if (testResults.failed === 0) {
-    console.log("🎉 ALL TESTS PASSED! Delete history functionality is working correctly.");
+    console.log(
+      "🎉 ALL TESTS PASSED! Delete history functionality is working correctly."
+    );
   } else {
     console.log("⚠️  Some tests failed. Please review the errors above.");
   }

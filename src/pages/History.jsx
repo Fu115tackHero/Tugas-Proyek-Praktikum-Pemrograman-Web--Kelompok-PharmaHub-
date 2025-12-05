@@ -298,10 +298,12 @@ const History = () => {
 
   const handleDeleteAllHistory = async () => {
     console.log("[History] Starting delete all completed orders...");
-    
+
     // Get all completed orders that can be deleted
-    const completedOrders = orders.filter((o) => o.order_status === "completed");
-    
+    const completedOrders = orders.filter(
+      (o) => o.order_status === "completed"
+    );
+
     if (completedOrders.length === 0) {
       showAlert(
         "Tidak ada pesanan yang dapat dihapus. Hanya pesanan dengan status 'Selesai' yang bisa dihapus.",
@@ -340,7 +342,7 @@ const History = () => {
                 order.order_id,
                 token
               );
-              
+
               if (result.success) {
                 successCount++;
                 console.log(`[History] ✓ Order ${order.order_id} deleted`);
@@ -352,7 +354,10 @@ const History = () => {
               }
             } catch (err) {
               failCount++;
-              console.error(`[History] Error deleting order ${order.order_id}:`, err);
+              console.error(
+                `[History] Error deleting order ${order.order_id}:`,
+                err
+              );
             }
           }
 
@@ -367,7 +372,9 @@ const History = () => {
               `✓ Berhasil menghapus ${successCount} pesanan dari riwayat`,
               "success"
             );
-            console.log(`[History] All ${successCount} orders deleted successfully`);
+            console.log(
+              `[History] All ${successCount} orders deleted successfully`
+            );
           } else {
             showAlert(
               `✓ Berhasil ${successCount} | ✗ Gagal ${failCount}`,
@@ -389,9 +396,9 @@ const History = () => {
 
   const handleDeleteOrder = async (orderId) => {
     console.log(`[History] Initiating delete for order ${orderId}`);
-    
+
     const order = orders.find((o) => o.order_id === orderId);
-    
+
     if (!order) {
       console.error(`[History] Order ${orderId} not found in state`);
       showAlert("Pesanan tidak ditemukan", "error");
@@ -439,7 +446,7 @@ const History = () => {
 
           console.log(`[History] Calling API to delete order ${orderId}...`);
           const result = await OrderService.hideOrderFromUser(orderId, token);
-          
+
           if (result.success) {
             console.log(`[History] ✓ Order ${orderId} deleted successfully`);
             setOrders((prev) => prev.filter((o) => o.order_id !== orderId));
@@ -449,10 +456,7 @@ const History = () => {
               `[History] ✗ API returned failure for order ${orderId}:`,
               result.message
             );
-            showAlert(
-              result.message || "Gagal menghapus pesanan",
-              "error"
-            );
+            showAlert(result.message || "Gagal menghapus pesanan", "error");
           }
         } catch (err) {
           console.error(`[History] Exception deleting order ${orderId}:`, err);

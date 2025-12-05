@@ -26,15 +26,11 @@ async function testDeleteOrderHistory() {
     `;
 
     const completedResult = await pool.query(completedQuery);
-    console.log(
-      `✓ Found ${completedResult.rows.length} completed orders\n`
-    );
+    console.log(`✓ Found ${completedResult.rows.length} completed orders\n`);
     console.table(completedResult.rows);
 
     if (completedResult.rows.length === 0) {
-      console.log(
-        "\n⚠️  No completed orders found. Cannot test delete.\n"
-      );
+      console.log("\n⚠️  No completed orders found. Cannot test delete.\n");
       return;
     }
 
@@ -52,7 +48,9 @@ async function testDeleteOrderHistory() {
       GROUP BY osh.is_hidden_from_user
     `;
 
-    const beforeResult = await pool.query(checkBeforeQuery, [testOrder.order_id]);
+    const beforeResult = await pool.query(checkBeforeQuery, [
+      testOrder.order_id,
+    ]);
     console.log("✓ Status before hide:");
     console.table(beforeResult.rows);
 
@@ -124,7 +122,9 @@ async function testDeleteOrderHistory() {
       ORDER BY o.created_at DESC
     `;
 
-    const visibleResult = await pool.query(visibleOrdersQuery, [testOrder.user_id]);
+    const visibleResult = await pool.query(visibleOrdersQuery, [
+      testOrder.user_id,
+    ]);
     console.log(
       `✓ User has ${visibleResult.rows.length} visible orders (after hiding one)`
     );
@@ -161,7 +161,6 @@ async function testDeleteOrderHistory() {
     console.log("   ✓ Hide records can be inserted");
     console.log("   ✓ Hidden orders are excluded from user view");
     console.log("   ✓ Bulk delete query works correctly");
-
   } catch (error) {
     console.error("\n❌ Test failed:", error.message);
     console.error(error);

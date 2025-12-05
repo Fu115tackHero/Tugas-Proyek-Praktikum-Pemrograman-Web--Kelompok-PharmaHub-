@@ -51,7 +51,9 @@ async function testDeleteAPI() {
     console.log(`✓ Order Number: ${completedOrders[0].order_number}\n`);
 
     // Step 3: Test delete order API
-    console.log(`Step 3: Testing DELETE /api/orders/${testOrderId}/hide endpoint...`);
+    console.log(
+      `Step 3: Testing DELETE /api/orders/${testOrderId}/hide endpoint...`
+    );
 
     try {
       const deleteRes = await axios.delete(
@@ -73,7 +75,9 @@ async function testDeleteAPI() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const stillVisible = verifyRes.data.find((o) => o.order_id === testOrderId);
+      const stillVisible = verifyRes.data.find(
+        (o) => o.order_id === testOrderId
+      );
 
       if (!stillVisible) {
         console.log("✓ Order is hidden from user view (correct!)");
@@ -86,11 +90,17 @@ async function testDeleteAPI() {
       if (deleteError.response?.status === 404) {
         console.log("✗ DELETE endpoint not found (404)");
         console.log(`  URL: ${API_BASE_URL}/orders/${testOrderId}/hide`);
-        console.log("  Make sure the route is properly defined in orderRoutes.js\n");
+        console.log(
+          "  Make sure the route is properly defined in orderRoutes.js\n"
+        );
       } else {
         console.log("✗ Delete API Error:");
         console.log(`  Status: ${deleteError.response?.status}`);
-        console.log(`  Message: ${deleteError.response?.data?.message || deleteError.message}\n`);
+        console.log(
+          `  Message: ${
+            deleteError.response?.data?.message || deleteError.message
+          }\n`
+        );
       }
       throw deleteError;
     }
