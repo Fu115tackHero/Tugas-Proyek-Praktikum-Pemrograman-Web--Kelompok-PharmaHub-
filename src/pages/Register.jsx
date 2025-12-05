@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import AlertModal from "../components/AlertModal";
+import { useAlert } from "../hooks/useAlert";
 
 const Register = () => {
   const navigate = useNavigate();
   const { register, isAuthenticated } = useAuth();
+  const { alertState, showAlert, hideAlert } = useAlert();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -128,7 +131,8 @@ const Register = () => {
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const result = register({
+      // Panggil fungsi register dari AuthContext (async)
+      const result = await register({
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
@@ -137,12 +141,24 @@ const Register = () => {
       });
 
       if (result.success) {
+        showAlert(
+          "Akun Anda berhasil dibuat. Selamat datang di PharmaHub!",
+          "success",
+          "Pendaftaran Berhasil"
+        );
         navigate("/");
       } else {
-        setError(result.message || "Pendaftaran gagal. Silakan coba lagi.");
+        const msg =
+          result.message ||
+          "Pendaftaran gagal. Silakan periksa data Anda dan coba lagi.";
+        setError(msg);
+        showAlert(msg, "error", "Pendaftaran Gagal");
       }
     } catch (err) {
-      setError("Terjadi kesalahan. Silakan coba lagi.");
+      const msg =
+        "Terjadi kesalahan pada sistem. Silakan coba lagi nanti atau hubungi admin.";
+      setError(msg);
+      showAlert(msg, "error", "Gangguan Sistem");
     } finally {
       setLoading(false);
     }
@@ -507,6 +523,15 @@ const Register = () => {
           )}
         </form>
       </div>
+
+      {/* Modal notifikasi global untuk Register */}
+      <AlertModal
+        isOpen={alertState.isOpen}
+        onClose={hideAlert}
+        message={alertState.message}
+        type={alertState.type}
+        title={alertState.title}
+      />
     </div>
   );
 };

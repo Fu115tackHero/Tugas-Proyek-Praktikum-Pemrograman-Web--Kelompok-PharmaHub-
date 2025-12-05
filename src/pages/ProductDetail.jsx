@@ -2,11 +2,14 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import ProductService from "../services/product.service";
 import { useCart } from "../context/CartContext";
+import AlertModal from "../components/AlertModal";
+import { useAlert } from "../hooks/useAlert";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { alertState, showAlert, hideAlert } = useAlert();
 
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -118,7 +121,7 @@ const ProductDetail = () => {
     } else {
       const errorMsg = result?.message || "Gagal menambahkan produk";
       console.error("❌ Buy now failed:", errorMsg);
-      alert(`❌ ${errorMsg}`);
+      showAlert(`❌ ${errorMsg}`, "error");
     }
   };
 
@@ -435,6 +438,14 @@ const ProductDetail = () => {
           </div>
         )}
       </div>
+
+      <AlertModal
+        isOpen={alertState.isOpen}
+        onClose={hideAlert}
+        message={alertState.message}
+        type={alertState.type}
+        title={alertState.title}
+      />
     </div>
   );
 };

@@ -67,6 +67,19 @@ const Checkout = () => {
     }));
   };
 
+  // Pesan sukses standar untuk semua pesanan yang berhasil dibuat
+  const getOrderSuccessTitle = () => "Pesanan Dikonfirmasi";
+
+  const getOrderSuccessMessage = (orderId, extraLine = "") => {
+    const extra = extraLine ? `${extraLine}\n\n` : "";
+    return (
+      `Pesanan #${orderId} telah dibuat!\n\n` +
+      extra +
+      "Silakan ambil pesanan Anda di apotek.\n\n" +
+      "Nomor pesanan akan digunakan untuk verifikasi."
+    );
+  };
+
   const addOrderNotification = (orderId, statusText, orderDetails = null) => {
     try {
       const existingNotifications = JSON.parse(
@@ -298,8 +311,8 @@ const Checkout = () => {
     // Validasi form
     if (!formData.name || !formData.email || !formData.phone) {
       showModal(
-        "⚠️ Data Tidak Lengkap",
-        "Mohon lengkapi data: nama, email, dan nomor telepon!",
+        "Data Tidak Lengkap",
+        "Mohon lengkapi data: nama, email, dan nomor telepon terlebih dahulu.",
         "error",
         false
       );
@@ -342,8 +355,11 @@ const Checkout = () => {
 
         setLoading(false);
         showModal(
-          "✅ Pesanan Dikonfirmasi",
-          `Pesanan #${orderId} telah dibuat!\n\nSilakan ambil dan bayar di kasir apotek.\n\nNomor pesanan akan digunakan untuk verifikasi.`,
+          getOrderSuccessTitle(),
+          getOrderSuccessMessage(
+            orderId,
+            "Metode pembayaran: Bayar di tempat (kasir apotek)."
+          ),
           "success",
           true
         );
@@ -454,8 +470,11 @@ const Checkout = () => {
               addOrderNotification(orderId, status, orderDetails);
 
               showModal(
-                "✅ Pembayaran Berhasil!",
-                `Pembayaran untuk pesanan #${orderId} berhasil!\n\nSilakan ambil pesanan Anda di apotek.`,
+                getOrderSuccessTitle(),
+                getOrderSuccessMessage(
+                  orderId,
+                  "Metode pembayaran: Pembayaran online berhasil."
+                ),
                 "success",
                 true
               );
@@ -514,8 +533,11 @@ const Checkout = () => {
                   saveOrder(orderId, demoStatus, transaction);
                   addOrderNotification(orderId, demoStatus, orderDetails);
                   showModal(
-                    "✅ Pembayaran Berhasil!",
-                    `Pesanan #${orderId} telah dibayar!\n\nSilakan menunggu pesanan disiapkan di apotek.`,
+                    getOrderSuccessTitle(),
+                    getOrderSuccessMessage(
+                      orderId,
+                      "Metode pembayaran: Pembayaran online dikonfirmasi lunas."
+                    ),
                     "success",
                     true
                   );
@@ -617,8 +639,11 @@ const Checkout = () => {
                   await saveOrder(orderId, demoStatus);
                   addOrderNotification(orderId, demoStatus, orderDetails);
                   showModal(
-                    "✅ Pembayaran Berhasil!",
-                    `Pesanan #${orderId} telah dibayar!\n\nSilakan menunggu pesanan disiapkan di apotek.`,
+                    getOrderSuccessTitle(),
+                    getOrderSuccessMessage(
+                      orderId,
+                      "Metode pembayaran: Pembayaran online dikonfirmasi lunas."
+                    ),
                     "success",
                     true
                   );
