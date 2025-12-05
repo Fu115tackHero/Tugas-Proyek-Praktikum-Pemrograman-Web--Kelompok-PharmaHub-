@@ -6,8 +6,9 @@ const authMiddleware = require("../middleware/authMiddleware");
 // All order routes require authentication
 router.use(authMiddleware);
 
-// POST /api/orders - Create new order
-router.post("/", orderController.createOrder);
+// ============================================
+// ADMIN ROUTES (SPECIFIC PATHS FIRST)
+// ============================================
 
 // GET /api/orders/admin/all - Get all orders (admin only)
 router.get("/admin/all", orderController.getAllOrders);
@@ -18,13 +19,24 @@ router.get("/admin/:id", orderController.getOrderDetailsForAdmin);
 // POST /api/orders/bulk-archive - Bulk archive orders (admin only)
 router.post("/bulk-archive", orderController.bulkArchiveOrders);
 
+// ============================================
+// USER ROUTES
+// ============================================
+
+// POST /api/orders - Create new order
+router.post("/", orderController.createOrder);
+
 // GET /api/orders - Get all orders for current user
 router.get("/", orderController.getOrders);
 
-// POST /api/orders/:id/cancel - Cancel an order (must come before /:id)
+// ============================================
+// SPECIFIC ROUTES (MUST COME BEFORE GENERIC /:id)
+// ============================================
+
+// POST /api/orders/:id/cancel - Cancel an order
 router.post("/:id/cancel", orderController.cancelOrder);
 
-// PUT /api/orders/:id/status - Update order status (must come before /:id)
+// PUT /api/orders/:id/status - Update order status
 router.put("/:id/status", orderController.updateOrderStatus);
 
 // PUT /api/orders/:id/archive - Archive order (admin only)
@@ -42,6 +54,7 @@ router.put("/:id/restore-to-user", orderController.unarchiveOrderForUser);
 // Payment actions for pending payments
 // PUT /api/orders/:id/payment/finalize - Mark payment as paid
 router.put("/:id/payment/finalize", orderController.finalizePayment);
+
 // PUT /api/orders/:id/payment/cancel - Cancel payment and order
 router.put("/:id/payment/cancel", orderController.cancelPayment);
 
@@ -51,6 +64,10 @@ router.put(
   "/:id/cancel-with-refund",
   orderController.cancelPaidOrderWithRefund
 );
+
+// ============================================
+// GENERIC ROUTE (MUST COME LAST)
+// ============================================
 
 // GET /api/orders/:id - Get specific order by ID
 router.get("/:id", orderController.getOrderById);
