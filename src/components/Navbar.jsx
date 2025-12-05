@@ -3,9 +3,10 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { searchProducts } from "../data/products";
+import NotificationService from "../services/notification.service";
 
 const Navbar = () => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, getToken } = useAuth();
   const { getCartItemsCount } = useCart();
   const navigate = useNavigate();
 
@@ -15,24 +16,74 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [profilePhotoKey, setProfilePhotoKey] = useState(Date.now());
 
-  // Ambil jumlah notifikasi belum dibaca dari localStorage
+  // Fetch unread notification count from API (excludes archived and expired)
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  useEffect(() => {
+
+  const fetchUnreadCount = async () => {
     try {
-      const raw = localStorage.getItem("notifications");
-      if (raw) {
-        const arr = JSON.parse(raw);
-        const count = arr.filter((n) => !n.read).length;
-        setUnreadNotifications(count);
+      const token = getToken();
+      if (!token) {
+        setUnreadNotifications(0);
+        return;
       }
+      const count = await NotificationService.getUnreadCount(token);
+      setUnreadNotifications(count || 0);
     } catch (e) {
-      // silent fail
+      console.error("Error fetching unread notification count:", e);
+      setUnreadNotifications(0);
     }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUnreadCount();
+      // Refresh count every 10 seconds for more responsive updates
+      const interval = setInterval(fetchUnreadCount, 10000);
+      return () => clearInterval(interval);
+    } else {
+      setUnreadNotifications(0);
+    }
+  }, [isAuthenticated, getToken]);
+
+  // Listen for notification updates via custom event
+  useEffect(() => {
+    const handleNotificationUpdate = () => {
+      fetchUnreadCount();
+    };
+
+    window.addEventListener("notificationUpdated", handleNotificationUpdate);
+    return () =>
+      window.removeEventListener(
+        "notificationUpdated",
+        handleNotificationUpdate
+      );
   }, []);
+
+  // Debug: Log user changes and update profile photo key
+  useEffect(() => {
+    console.log("👤 Navbar - User updated:", user);
+    console.log("📸 Navbar - Profile photo URL:", user?.profile_photo_url);
+    // Force re-render of profile photo when user changes
+    setProfilePhotoKey(Date.now());
+  }, [user]);
 
   const profileRef = useRef(null);
   const searchRef = useRef(null);
+
+  // Helper function to get profile photo URL with cache busting
+  const getProfilePhotoUrl = () => {
+    if (!user?.profile_photo_url) {
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+        user?.name || "User"
+      )}&background=3b82f6&color=fff&size=40&rounded=true`;
+    }
+    
+    // Add cache busting parameter to force reload
+    const separator = user.profile_photo_url.includes('?') ? '&' : '?';
+    return `${user.profile_photo_url}${separator}t=${profilePhotoKey}`;
+  };
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -197,15 +248,16 @@ const Navbar = () => {
                 className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-300 hover:border-blue-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 <img
-                  src={
-                    user?.photo
-                      ? user.photo
-                      : `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          user?.name || "User"
-                        )}&background=3b82f6&color=fff&size=40&rounded=true`
-                  }
+                  key={`profile-photo-${profilePhotoKey}`}
+                  src={getProfilePhotoUrl()}
                   alt="Profile"
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.error("❌ Failed to load profile photo:", user?.profile_photo_url);
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      user?.name || "User"
+                    )}&background=3b82f6&color=fff&size=40&rounded=true`;
+                  }}
                 />
               </button>
 

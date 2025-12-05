@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { getProductById } from "../data/products";
+import ProductService from "../services/product.service";
 import { useCart } from "../context/CartContext";
 
 const ProductDetail = () => {
@@ -14,12 +14,55 @@ const ProductDetail = () => {
   const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
-    const foundProduct = getProductById(id);
-    if (!foundProduct) {
-      navigate("/products");
-    } else {
-      setProduct(foundProduct);
+    async function load() {
+      try {
+        const res = await ProductService.getProductById(id);
+        const p = res?.data;
+        if (!p) {
+          navigate("/products");
+          return;
+        }
+        
+        console.log("📦 Raw product data from API:", p);
+        
+        // Backend already maps fields; normalize with safe fallbacks
+        const normalized = {
+          id: p.id || p.product_id,
+          name: p.name,
+          price: p.price,
+          stock: p.stock,
+          description: p.howItWorks || p.how_it_works || p.description || "",
+          image: p.image || p.main_image_url || "",
+          brand: p.brand || "",
+          genericName: p.genericName || p.generic_name || "",
+          uses: p.uses || "",
+          prescriptionRequired:
+            p.prescriptionRequired || p.prescription_required || false,
+          ingredients: p.ingredients || [],
+          precaution: p.precaution || [],
+          sideEffects: p.sideEffects || p.side_effects || [],
+          interactions: p.interactions || [],
+          indication: p.indication || [],
+          importantInfo: p.importantInfo || p.important_info || [],
+        };
+        
+        console.log("✅ Normalized product data:", normalized);
+        console.log("📋 Details check:", {
+          ingredients: normalized.ingredients?.length || 0,
+          precaution: normalized.precaution?.length || 0,
+          sideEffects: normalized.sideEffects?.length || 0,
+          interactions: normalized.interactions?.length || 0,
+          indication: normalized.indication?.length || 0,
+          importantInfo: normalized.importantInfo?.length || 0,
+        });
+        
+        setProduct(normalized);
+      } catch (e) {
+        console.error("Failed to load product detail", e);
+        navigate("/products");
+      }
     }
+    load();
   }, [id, navigate]);
 
   if (!product) {
@@ -40,21 +83,43 @@ const ProductDetail = () => {
     }
   };
 
-  const handleAddToCart = () => {
-    addToCart(product, quantity);
-    setQuantity(1);
-    setSuccessMessage("Produk berhasil dimasukkan ke keranjang!");
-    setTimeout(() => {
-      setSuccessMessage("");
-    }, 3000);
+  const handleAddToCart = async () => {
+    console.log("🛒 Adding to cart:", product.id, "quantity:", quantity);
+
+    const result = await addToCart(product, quantity);
+
+    if (result && result.success) {
+      setQuantity(1);
+      setSuccessMessage("✅ Produk berhasil dimasukkan ke keranjang!");
+      setTimeout(() => {
+        setSuccessMessage("");
+      }, 3000);
+    } else {
+      const errorMsg =
+        result?.message || "Gagal menambahkan produk ke keranjang";
+      console.error("❌ Add to cart failed:", errorMsg);
+      setSuccessMessage(`❌ ${errorMsg}`);
+      setTimeout(() => {
+        setSuccessMessage("");
+      }, 5000);
+    }
   };
 
   // --- PERUBAHAN LOGIKA BELI SEKARANG ---
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
+    console.log("🛒 Buy now - adding to cart:", product.id);
+
     // 1. Masukkan produk ke keranjang
-    addToCart(product, quantity);
-    // 2. Arahkan ke halaman KERANJANG (Cart) agar bisa input diskon
-    navigate("/cart"); 
+    const result = await addToCart(product, quantity);
+
+    if (result && result.success) {
+      // 2. Arahkan ke halaman KERANJANG (Cart) agar bisa input diskon
+      navigate("/cart");
+    } else {
+      const errorMsg = result?.message || "Gagal menambahkan produk";
+      console.error("❌ Buy now failed:", errorMsg);
+      alert(`❌ ${errorMsg}`);
+    }
   };
 
   const tabs = [
@@ -133,7 +198,10 @@ const ProductDetail = () => {
             <div className="flex justify-center items-center">
               <div className="bg-gray-100 rounded-lg p-8 w-full max-w-md">
                 <img
-                  src={product.image}
+                  src={
+                    product.image ||
+                    "https://via.placeholder.com/400x400?text=No+Image"
+                  }
                   alt={product.name}
                   className="w-full h-auto max-w-md object-contain rounded-lg transition-transform duration-300 hover:scale-105"
                   onError={(e) => {
@@ -167,7 +235,7 @@ const ProductDetail = () => {
               <div className="border-t border-b border-gray-200 py-4">
                 <div className="flex items-center justify-between">
                   <span className="text-2xl font-bold text-blue-600">
-                    Rp {product.price.toLocaleString("id-ID")}
+                    Rp {(product.price || 0).toLocaleString("id-ID")}
                   </span>
                   <span className="text-sm text-gray-500">Per kemasan</span>
                 </div>
@@ -184,7 +252,9 @@ const ProductDetail = () => {
                 <h3 className="font-semibold text-gray-800 mb-2">
                   Cara Kerja:
                 </h3>
-                <p className="text-gray-600">{product.description}</p>
+                <p className="text-gray-600">
+                  {product.howItWorks || product.how_it_works || product.description || "Informasi cara kerja belum tersedia"}
+                </p>
               </div>
 
               {/* Generics */}
@@ -197,25 +267,47 @@ const ProductDetail = () => {
 
               {/* Quantity and Add to Cart */}
               <div className="space-y-4">
-                {/* Quantity Selector */}
-                <div className="flex items-center space-x-4">
-                  <span className="text-gray-700 font-medium">Jumlah:</span>
-                  <div className="flex items-center border border-gray-300 rounded-lg">
-                    <button
-                      onClick={() => handleQuantityChange(-1)}
-                      className="px-3 py-2 hover:bg-gray-100 transition"
-                      disabled={quantity <= 1}
-                    >
-                      <i className="fas fa-minus text-sm"></i>
-                    </button>
-                    <span className="px-4 py-2 font-medium">{quantity}</span>
-                    <button
-                      onClick={() => handleQuantityChange(1)}
-                      className="px-3 py-2 hover:bg-gray-100 transition"
-                      disabled={quantity >= product.stock}
-                    >
-                      <i className="fas fa-plus text-sm"></i>
-                    </button>
+                {/* Quantity Selector with Stock Info */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <span className="text-gray-700 font-medium">Jumlah:</span>
+                    <div className="flex items-center border border-gray-300 rounded-lg">
+                      <button
+                        onClick={() => handleQuantityChange(-1)}
+                        className="px-3 py-2 hover:bg-gray-100 transition"
+                        disabled={quantity <= 1}
+                      >
+                        <i className="fas fa-minus text-sm"></i>
+                      </button>
+                      <span className="px-4 py-2 font-medium">{quantity}</span>
+                      <button
+                        onClick={() => handleQuantityChange(1)}
+                        className="px-3 py-2 hover:bg-gray-100 transition"
+                        disabled={quantity >= product.stock}
+                      >
+                        <i className="fas fa-plus text-sm"></i>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Stock Information */}
+                  <div className="flex items-center space-x-2">
+                    <i className={`fas fa-box ${
+                      product.stock > 10 ? 'text-green-600' : 
+                      product.stock > 0 ? 'text-orange-600' : 'text-red-600'
+                    }`}></i>
+                    <span className={`font-medium ${
+                      product.stock > 10 ? 'text-green-600' : 
+                      product.stock > 0 ? 'text-orange-600' : 'text-red-600'
+                    }`}>
+                      Stok: {product.stock}
+                      {product.stock <= 10 && product.stock > 0 && (
+                        <span className="text-xs ml-1">(Terbatas)</span>
+                      )}
+                      {product.stock === 0 && (
+                        <span className="text-xs ml-1">(Habis)</span>
+                      )}
+                    </span>
                   </div>
                 </div>
 
@@ -241,17 +333,22 @@ const ProductDetail = () => {
                 </div>
               </div>
 
-              {/* Additional Info */}
+              {/* Additional Info - Dynamic from Database */}
               <div className="bg-blue-50 p-4 rounded-lg">
                 <h4 className="font-semibold text-gray-800 mb-2">
                   Informasi Penting:
                 </h4>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Pastikan membaca aturan pakai sebelum mengonsumsi</li>
-                  <li>• Simpan di tempat sejuk dan kering</li>
-                  <li>• Jauhkan dari jangkauan anak-anak</li>
-                  <li>• Konsultasikan dengan apoteker jika diperlukan</li>
-                </ul>
+                {product.importantInfo && product.importantInfo.length > 0 ? (
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    {product.importantInfo.map((info, index) => (
+                      <li key={index}>• {info}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">
+                    Belum ada informasi penting untuk produk ini.
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -281,39 +378,34 @@ const ProductDetail = () => {
                   key={tab.id}
                   className={activeTab === tab.id ? "block" : "hidden"}
                 >
-                  <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+                  <h4 className="font-semibold text-gray-800 mb-4 flex items-center">
                     <i className={`fas ${tab.icon} mr-2 text-blue-600`}></i>
                     {tab.label}:
                   </h4>
-                  <div className="text-gray-600 space-y-2">
+                  <div className="text-gray-600">
                     {tab.data && tab.data.length > 0 ? (
-                      <>
-                        {tab.id === "ingredients" ? (
-                          <div className="bg-blue-50 p-4 rounded-lg">
-                            <h5 className="font-medium text-gray-800 mb-3">
-                              Komposisi per tablet/kapsul:
-                            </h5>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                              {tab.data.map((item, index) => (
-                                <div
-                                  key={index}
-                                  className="flex items-center py-1"
-                                >
-                                  <i className="fas fa-circle text-blue-400 text-xs mr-2"></i>
-                                  <span className="text-sm">{item}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          tab.data.map((item, index) => (
-                            <p key={index} className="flex items-start">
-                              <span className="mr-2">•</span>
-                              <span>{item}</span>
-                            </p>
-                          ))
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        {tab.id === "ingredients" && (
+                          <h5 className="font-medium text-gray-800 mb-3">
+                            Komposisi per tablet/kapsul:
+                          </h5>
                         )}
-                      </>
+                        <div className={`grid gap-x-4 gap-y-2 ${
+                          tab.id === "ingredients" 
+                            ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                            : "grid-cols-1 md:grid-cols-2"
+                        }`}>
+                          {tab.data.map((item, index) => (
+                            <div
+                              key={index}
+                              className="flex items-start py-1"
+                            >
+                              <i className="fas fa-circle text-blue-400 text-xs mr-2 mt-1.5"></i>
+                              <span className="text-sm leading-relaxed">{item}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     ) : (
                       <p className="text-gray-500 italic">
                         Informasi {tab.label.toLowerCase()} tidak tersedia.
