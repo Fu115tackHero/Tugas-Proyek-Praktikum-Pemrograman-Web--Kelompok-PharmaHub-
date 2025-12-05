@@ -23,13 +23,33 @@ const app = express();
 // ============================================
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "https://pharmahub.vercel.app",
-      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
-    ].filter(Boolean),
+    origin: function (origin, callback) {
+      const isDev = (process.env.NODE_ENV || "development") !== "production";
+      const allowedOrigins = [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5175",
+        "http://localhost:5176",
+        "https://pharmahub.vercel.app",
+        "https://tugas-proyek-praktikum-pemrograman-web--kelompok-pharmahub-.vercel.app",
+        process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
+      ].filter(Boolean);
+
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        origin.startsWith("http://localhost:") ||
+        (isDev && origin?.startsWith("http://localhost"))
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     credentials: true,
+    optionsSuccessStatus: 204,
   })
 );
 app.use(express.json({ limit: "50mb" }));
