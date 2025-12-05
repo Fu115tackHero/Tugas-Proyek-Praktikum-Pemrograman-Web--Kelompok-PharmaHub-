@@ -103,9 +103,17 @@ const Login = () => {
         return;
       }
 
-      setError(result.message || "Login Google gagal. Silakan coba lagi.");
+      // Tampilkan pesan error spesifik (termasuk suspended account)
+      const errorMsg = result.message || "Login Google gagal. Silakan coba lagi.";
+      setError(errorMsg);
+      
+      // Jika akun suspended, beri notifikasi khusus
+      if (errorMsg.includes("suspended")) {
+        console.error("Account suspended via Google login");
+      }
     } catch (err) {
-      setError("Login Google gagal. Silakan coba lagi.");
+      const errorMsg = err.message || "Login Google gagal. Silakan coba lagi.";
+      setError(errorMsg);
     } finally {
       setGoogleLoading(false);
     }
@@ -158,6 +166,7 @@ const Login = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="Masukkan email"
+                  autoComplete="email"
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300"
                   required
                 />
@@ -177,6 +186,7 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Masukkan password"
+                  autoComplete="current-password"
                   // Tambahkan pr-10 agar teks tidak tertutup ikon mata
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 pl-10 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300"
                   required

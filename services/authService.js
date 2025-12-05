@@ -27,6 +27,7 @@ const BASE_USER_QUERY = `
     u.email,
     u.phone,
     u.role,
+    u.is_active,
     u.profile_photo_url AS "profile_photo_url",
     u.created_at AS "createdAt",
     ua.full_address AS address
@@ -219,6 +220,7 @@ async function loginWithGoogle(googleToken) {
     let user = existing.rows[0];
 
     if (!user) {
+      // User baru dari Google - buat akun baru
       const dummyPassword = await bcrypt.hash(`${Date.now()}_${email}`, SALT_ROUNDS);
       const insertQuery = `
         INSERT INTO users (name, email, password_hash, role, profile_photo_url)
@@ -233,12 +235,24 @@ async function loginWithGoogle(googleToken) {
         picture || null,
       ]);
       user = insertRes.rows[0];
-    } else if (picture && !user.profile_photo_url) {
-      await client.query(`UPDATE users SET profile_photo_url = $1 WHERE user_id = $2`, [
-        picture,
-        user.id,
-      ]);
-      user.profile_photo_url = picture;
+    } else {
+      // User sudah ada - cek apakah di-suspend
+      const checkActiveQuery = `SELECT is_active FROM users WHERE user_id = $1`;
+      const activeCheck = await client.query(checkActiveQuery, [user.id]);
+      
+      if (activeCheck.rows[0] && !activeCheck.rows[0].is_active) {
+        await client.query("ROLLBACK");
+        throw new Error("Account has been suspended. Please contact administrator.");
+      }
+      
+      // Update profile photo jika belum ada
+      if (picture && !user.profile_photo_url) {
+        await client.query(`UPDATE users SET profile_photo_url = $1 WHERE user_id = $2`, [
+          picture,
+          user.id,
+        ]);
+        user.profile_photo_url = picture;
+      }
     }
 
     await client.query("COMMIT");
