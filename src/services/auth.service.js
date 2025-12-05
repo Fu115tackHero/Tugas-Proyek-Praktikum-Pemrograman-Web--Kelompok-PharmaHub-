@@ -37,10 +37,15 @@ export async function login(email, password) {
   try {
     const response = await post("/auth/login", { email, password });
 
+    console.log("🔍 Login response from backend:", response);
+    console.log("📸 User profile_photo_url:", response.user?.profile_photo_url);
+
     // Save token to localStorage
     if (response.success && response.token) {
       localStorage.setItem("pharmahub_token", response.token);
       localStorage.setItem("pharmahub_user", JSON.stringify(response.user));
+      
+      console.log("💾 Saved to localStorage:", JSON.parse(localStorage.getItem("pharmahub_user")));
     }
 
     return response;

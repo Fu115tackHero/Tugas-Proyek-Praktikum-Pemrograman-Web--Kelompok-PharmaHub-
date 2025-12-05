@@ -101,7 +101,9 @@ const Profile = () => {
       // Upload foto ke Supabase jika ada file baru
       if (photoFile) {
         console.log("📤 Uploading photo to Supabase...");
-        profilePhotoUrl = await uploadImage(photoFile, "profile-photos");
+        // TEMPORARY: Gunakan bucket 'product-images' karena 'profile-photos' belum dibuat
+        // TODO: Buat bucket 'profile-photos' terpisah untuk production
+        profilePhotoUrl = await uploadImage(photoFile, "product-images");
         console.log("✅ Photo uploaded:", profilePhotoUrl);
       }
 

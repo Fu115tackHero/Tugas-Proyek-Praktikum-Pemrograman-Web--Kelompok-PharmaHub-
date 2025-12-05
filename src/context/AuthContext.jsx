@@ -23,12 +23,21 @@ export const AuthProvider = ({ children }) => {
       const isAuth = AuthService.isAuthenticated();
 
       if (storedUser && isAuth) {
-        setUser(storedUser);
+        // Set initial user from localStorage
+        setUser({ ...storedUser });
         setIsAuthenticated(true);
 
-        // Optionally verify token with backend
+        // Fetch fresh user data from backend to sync profile_photo_url
         try {
-          await AuthService.getProfile();
+          const response = await AuthService.getProfile();
+          if (response.success && response.user) {
+            // Update with fresh data from server (create new object)
+            const userData = { ...response.user };
+            setUser(userData);
+            localStorage.setItem("pharmahub_user", JSON.stringify(userData));
+            console.log("✅ User data synced from server");
+            console.log("📸 Profile photo URL from server:", userData.profile_photo_url);
+          }
         } catch (error) {
           // Token invalid, logout
           console.error("Token verification failed:", error);
@@ -48,8 +57,21 @@ export const AuthProvider = ({ children }) => {
       const response = await AuthService.login(email, password);
 
       if (response.success) {
-        setUser(response.user);
+        console.log("✅ Login successful, user data:", response.user);
+        console.log("📸 Profile photo URL:", response.user?.profile_photo_url);
+        
+        // Create new object to force React re-render
+        const userData = { ...response.user };
+        
+        // Set user state with complete data including profile_photo_url
+        setUser(userData);
         setIsAuthenticated(true);
+        
+        // Force update localStorage to ensure profile_photo_url is saved
+        localStorage.setItem("pharmahub_user", JSON.stringify(userData));
+        
+        console.log("💾 User saved to state and localStorage");
+        
         return { success: true };
       }
 
@@ -107,10 +129,19 @@ export const AuthProvider = ({ children }) => {
       const response = await AuthService.updateProfile(user.id, updatedData);
 
       if (response.success && response.user) {
+        // Create new object to force React re-render
+        const userData = { ...response.user };
+        
         // Update local state with fresh data from server
-        setUser(response.user);
+        setUser(userData);
+        
+        // Ensure profile_photo_url is saved to localStorage
+        localStorage.setItem("pharmahub_user", JSON.stringify(userData));
+        
         console.log("✅ Profile updated successfully");
-        return { success: true, user: response.user };
+        console.log("📸 New profile photo URL:", userData.profile_photo_url);
+        
+        return { success: true, user: userData };
       }
 
       return {

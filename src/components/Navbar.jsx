@@ -16,6 +16,7 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [profilePhotoKey, setProfilePhotoKey] = useState(Date.now());
 
   // Fetch unread notification count from API (excludes archived and expired)
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -60,8 +61,29 @@ const Navbar = () => {
       );
   }, []);
 
+  // Debug: Log user changes and update profile photo key
+  useEffect(() => {
+    console.log("👤 Navbar - User updated:", user);
+    console.log("📸 Navbar - Profile photo URL:", user?.profile_photo_url);
+    // Force re-render of profile photo when user changes
+    setProfilePhotoKey(Date.now());
+  }, [user]);
+
   const profileRef = useRef(null);
   const searchRef = useRef(null);
+
+  // Helper function to get profile photo URL with cache busting
+  const getProfilePhotoUrl = () => {
+    if (!user?.profile_photo_url) {
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+        user?.name || "User"
+      )}&background=3b82f6&color=fff&size=40&rounded=true`;
+    }
+    
+    // Add cache busting parameter to force reload
+    const separator = user.profile_photo_url.includes('?') ? '&' : '?';
+    return `${user.profile_photo_url}${separator}t=${profilePhotoKey}`;
+  };
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -226,15 +248,16 @@ const Navbar = () => {
                 className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-300 hover:border-blue-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 <img
-                  src={
-                    user?.profile_photo_url
-                      ? user.profile_photo_url
-                      : `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          user?.name || "User"
-                        )}&background=3b82f6&color=fff&size=40&rounded=true`
-                  }
+                  key={`profile-photo-${profilePhotoKey}`}
+                  src={getProfilePhotoUrl()}
                   alt="Profile"
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.error("❌ Failed to load profile photo:", user?.profile_photo_url);
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      user?.name || "User"
+                    )}&background=3b82f6&color=fff&size=40&rounded=true`;
+                  }}
                 />
               </button>
 
