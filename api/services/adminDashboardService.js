@@ -224,9 +224,77 @@ function formatTimeAgo(date) {
   return past.toLocaleDateString("id-ID");
 }
 
+/**
+ * Get all users with role 'customer'
+ */
+async function getAllUsers() {
+  console.log("👥 [AdminDashboardService] Fetching all users");
+
+  try {
+    const query = `
+      SELECT 
+        user_id,
+        name,
+        email,
+        phone,
+        is_active,
+        created_at
+      FROM users
+      WHERE role = 'customer'
+      ORDER BY created_at DESC
+    `;
+
+    const { rows } = await pool.query(query);
+    console.log(`✅ [AdminDashboardService] Found ${rows.length} users`);
+    return rows;
+  } catch (error) {
+    console.error(
+      "❌ [AdminDashboardService] Error fetching users:",
+      error.message
+    );
+    throw error;
+  }
+}
+
+/**
+ * Toggle user active status (Suspend/Activate)
+ */
+async function toggleUserStatus(userId) {
+  console.log(
+    `👥 [AdminDashboardService] Toggling status for user ID: ${userId}`
+  );
+
+  try {
+    const query = `
+      UPDATE users
+      SET is_active = NOT is_active,
+          updated_at = NOW()
+      WHERE user_id = $1 AND role = 'customer'
+      RETURNING user_id, name, email, is_active
+    `;
+
+    const { rows } = await pool.query(query, [userId]);
+
+    if (rows.length === 0) {
+      throw new Error("User not found or not a customer");
+    }
+
+    console.log(`✅ [AdminDashboardService] User status updated:`, rows[0]);
+    return rows[0];
+  } catch (error) {
+    console.error(
+      "❌ [AdminDashboardService] Error toggling user status:",
+      error.message
+    );
+    throw error;
+  }
+}
+
 module.exports = {
   getDashboardStats,
   getTopSellingProducts,
   getRecentActivity,
   getLowStockAlerts,
+  getAllUsers,
+  toggleUserStatus,
 };

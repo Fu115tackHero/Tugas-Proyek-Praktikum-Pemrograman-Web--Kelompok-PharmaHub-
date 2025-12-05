@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
+  const [searchParams] = useSearchParams();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -18,6 +19,13 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("idle"); // 'idle' | 'success'
+
+  // Check for suspended parameter
+  useEffect(() => {
+    if (searchParams.get("suspended") === "true") {
+      setError("Akun Anda telah di-suspend. Silakan hubungi administrator.");
+    }
+  }, [searchParams]);
 
   // Redirect if already logged in
   useEffect(() => {

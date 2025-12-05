@@ -12,6 +12,18 @@ async function handleResponse(response) {
   const data = await response.json();
 
   if (!response.ok) {
+    // Handle suspended account - logout user
+    if (response.status === 403 && data.message?.includes("suspended")) {
+      // Clear auth data
+      localStorage.removeItem("pharmahub_token");
+      localStorage.removeItem("pharmahub_user");
+      
+      // Redirect to login with message
+      window.location.href = "/login?suspended=true";
+      
+      throw new Error(data.message || "Account suspended");
+    }
+
     throw new Error(
       data.message || `HTTP ${response.status}: ${response.statusText}`
     );
@@ -75,6 +87,19 @@ export async function put(endpoint, data) {
 }
 
 /**
+ * Generic PATCH request
+ */
+export async function patch(endpoint, data) {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: data ? JSON.stringify(data) : undefined,
+  });
+
+  return handleResponse(response);
+}
+
+/**
  * Generic DELETE request
  */
 export async function del(endpoint) {
@@ -90,5 +115,6 @@ export default {
   get,
   post,
   put,
+  patch,
   delete: del,
 };

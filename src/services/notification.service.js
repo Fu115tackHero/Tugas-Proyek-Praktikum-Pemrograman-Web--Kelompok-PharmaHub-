@@ -208,6 +208,36 @@ export async function archiveReadNotifications(token) {
   }
 }
 
+/**
+ * Send notification to a specific user (Admin only)
+ * @param {Object} notificationData - Notification data
+ * @param {number} notificationData.userId - Target user ID
+ * @param {string} notificationData.type - Notification type (promotion/system)
+ * @param {string} notificationData.title - Notification title
+ * @param {string} notificationData.message - Notification message
+ * @param {number} [notificationData.relatedCouponId] - Optional coupon ID
+ * @param {string} token - JWT authentication token
+ * @returns {Promise<Object>} - Created notification
+ */
+export async function sendNotification(notificationData, token) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/notifications/send`,
+      notificationData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("[NotificationService] Error sending notification:", error);
+    throw error.response?.data || error.message;
+  }
+}
+
 const NotificationService = {
   getNotifications,
   getUnreadCount,
@@ -217,6 +247,7 @@ const NotificationService = {
   archiveNotification,
   archiveAllNotifications,
   archiveReadNotifications,
+  sendNotification,
 };
 
 export default NotificationService;

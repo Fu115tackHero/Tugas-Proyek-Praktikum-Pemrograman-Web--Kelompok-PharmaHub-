@@ -113,6 +113,14 @@ async function login(req, res) {
       });
     }
 
+    // Handle suspended account
+    if (error.message.includes("suspended")) {
+      return res.status(403).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Login failed. Please try again.",
