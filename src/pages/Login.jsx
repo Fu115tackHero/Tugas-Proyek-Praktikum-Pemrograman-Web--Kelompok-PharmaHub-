@@ -1,22 +1,33 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
+  const { login, loginWithGoogle, isAuthenticated } = useAuth();
+  const [searchParams] = useSearchParams();
 
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     remember: false,
   });
-  
+
   // State untuk mengontrol visibilitas password
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("idle"); // 'idle' | 'success'
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  // Check for suspended parameter
+  useEffect(() => {
+    if (searchParams.get("suspended") === "true") {
+      setError("Akun Anda telah di-suspend. Silakan hubungi administrator.");
+    }
+  }, [searchParams]);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -38,27 +49,78 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setStatus("idle");
 
     try {
       // Simulasi API delay
       await new Promise((resolve) => setTimeout(resolve, 800));
 
-      const result = login(formData.email, formData.password);
+      // Panggil fungsi login dari AuthContext (async)
+      const result = await login(formData.email, formData.password);
 
       if (result.success) {
-        if (formData.email === "admin@pharmahub.com") {
-          navigate("/admin");
-        } else {
-          navigate("/");
-        }
+        // Tampilkan status sukses di tombol, lalu redirect setelah jeda singkat
+        setStatus("success");
+        setError("");
+
+        setTimeout(() => {
+          if (formData.email === "admin@pharmahub.com") {
+            navigate("/admin");
+          } else {
+            navigate("/");
+          }
+        }, 2000);
       } else {
-        setError(result.message || "Login gagal. Silakan coba lagi.");
+        const msg =
+          result.message ||
+          "Login gagal. Periksa kembali email dan password lalu coba lagi.";
+        setError(msg);
       }
     } catch (err) {
-      setError("Terjadi kesalahan. Silakan coba lagi.");
+      const msg =
+        "Terjadi kesalahan pada sistem. Silakan coba lagi nanti atau hubungi admin.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setGoogleLoading(true);
+    setError("");
+    setStatus("idle");
+
+    try {
+      const token = credentialResponse?.credential;
+      if (!token) {
+        setError("Token Google tidak valid.");
+        return;
+      }
+
+      const result = await loginWithGoogle(token);
+      if (result.success) {
+        navigate("/");
+        return;
+      }
+
+      // Tampilkan pesan error spesifik (termasuk suspended account)
+      const errorMsg = result.message || "Login Google gagal. Silakan coba lagi.";
+      setError(errorMsg);
+      
+      // Jika akun suspended, beri notifikasi khusus
+      if (errorMsg.includes("suspended")) {
+        console.error("Account suspended via Google login");
+      }
+    } catch (err) {
+      const errorMsg = err.message || "Login Google gagal. Silakan coba lagi.";
+      setError(errorMsg);
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError("Login Google dibatalkan atau gagal.");
   };
 
   return (
@@ -104,6 +166,7 @@ const Login = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="Masukkan email"
+                  autoComplete="email"
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300"
                   required
                 />
@@ -123,6 +186,7 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Masukkan password"
+                  autoComplete="current-password"
                   // Tambahkan pr-10 agar teks tidak tertutup ikon mata
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 pl-10 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300"
                   required
@@ -165,12 +229,45 @@ const Login = () => {
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading || status === "success"}
+              className={`w-full py-3 rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed 
+                ${
+                  status === "success"
+                    ? "bg-green-600 hover:bg-green-700 text-white"
+                    : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700"
+                }
+              `}
             >
-              <span>{loading ? "Memproses..." : "Masuk ke Dashboard"}</span>
-              {loading && <i className="fas fa-spinner fa-spin ml-2"></i>}
+              {status === "success" ? (
+                "Berhasil masuk, mengalihkan..."
+              ) : loading ? (
+                <>
+                  <span>Memproses...</span>
+                  <i className="fas fa-spinner fa-spin ml-2"></i>
+                </>
+              ) : (
+                "Masuk ke Dashboard"
+                )}
             </button>
+
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t border-gray-300"></div>
+              <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">Atau</span>
+              <div className="flex-grow border-t border-gray-300"></div>
+            </div>
+
+            <div className="flex justify-center">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                useOneTap
+                text="signin_with"
+                shape="rectangular"
+                size="large"
+                width="280"
+                disabled={googleLoading}
+              />
+            </div>
 
             <div className="text-center mt-4">
               <p className="text-gray-600">

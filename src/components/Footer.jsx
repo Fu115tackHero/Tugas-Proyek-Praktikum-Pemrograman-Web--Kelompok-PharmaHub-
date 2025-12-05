@@ -65,9 +65,9 @@ const Footer = () => {
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center mb-6">
                 <img
-                  src="/images/pharmahub-logo.png"
+                  src="/pharmahub-logo-futer.png"
                   alt="PharmaHub"
-                  className="h-12 w-auto"
+                  className="h-20 w-auto"
                   onError={(e) => {
                     e.target.style.display = 'none';
                     e.target.nextSibling.style.display = 'inline';
@@ -98,7 +98,7 @@ const Footer = () => {
 
             {/* Quick Links */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+              <h3 className="text-lg font-semibold mb-4">Tautan Cepat</h3>
               <ul className="space-y-2">
                 <li>
                   <Link
@@ -129,7 +129,7 @@ const Footer = () => {
                     to="/history"
                     className="text-gray-300 hover:text-white transition"
                   >
-                    Riwayat
+                    Riwayat Pesanan
                   </Link>
                 </li>
                 <li>
@@ -137,7 +137,7 @@ const Footer = () => {
                     to="/cart"
                     className="text-gray-300 hover:text-white transition"
                   >
-                    Keranjang
+                    Keranjang Belanja
                   </Link>
                 </li>
               </ul>
@@ -149,15 +149,15 @@ const Footer = () => {
               <ul className="space-y-3 text-gray-300">
                 <li className="flex items-center">
                   <i className="fas fa-map-marker-alt mr-3 text-blue-400"></i>
-                  <span className="text-sm">Jl. Kesehatan No. 123, Jakarta</span>
+                  <span className="text-sm">Gedung C Fasilkom-TI, Universitas Sumatera Utara.</span>
                 </li>
                 <li className="flex items-center">
                   <i className="fas fa-phone mr-3 text-blue-400"></i>
-                  <span className="text-sm">+62 21 1234 5678</span>
+                  <span className="text-sm">+62 812-6349-2659</span>
                 </li>
                 <li className="flex items-center">
                   <i className="fas fa-envelope mr-3 text-blue-400"></i>
-                  <span className="text-sm">info@pharmahub.com</span>
+                  <span className="text-sm">pharmahub@gmail.com</span>
                 </li>
                 <li className="flex items-center">
                   <i className="fas fa-clock mr-3 text-blue-400"></i>

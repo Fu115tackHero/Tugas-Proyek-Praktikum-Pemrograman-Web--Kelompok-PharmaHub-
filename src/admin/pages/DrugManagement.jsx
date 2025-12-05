@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase, isSupabaseConfigured } from "../../utils/supabase";
 import ProductService from "../../services/product.service";
+import DeletedProductsModal from "../components/DeletedProductsModal";
 
 const DrugManagement = () => {
   const [drugs, setDrugs] = useState([]);
@@ -10,6 +11,7 @@ const DrugManagement = () => {
   const [prescriptionFilter, setPrescriptionFilter] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDeletedProductsModal, setShowDeletedProductsModal] = useState(false);
   const [currentDrug, setCurrentDrug] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [availableGenerics, setAvailableGenerics] = useState([]);
@@ -256,6 +258,9 @@ const DrugManagement = () => {
       const full = resp?.data || drug;
       console.log("📥 Loaded product for edit:", {
         name: full.name,
+        howItWorks: full.howItWorks,
+        how_it_works: full.how_it_works,
+        uses: full.uses,
         importantInfo: full.importantInfo,
         important_info: full.important_info,
         importantInfoLength: full.importantInfo?.length || 0,
@@ -525,6 +530,9 @@ const DrugManagement = () => {
 
       console.log("📤 Sending payload to backend:", {
         name: payload.name,
+        uses: payload.uses,
+        how_it_works: payload.how_it_works,
+        generic_name: payload.generic_name,
         important_info: payload.important_info,
         important_info_length: payload.important_info?.length
       });
@@ -663,13 +671,23 @@ const DrugManagement = () => {
               Kelola data obat dan inventory apotek
             </p>
           </div>
-          <button
-            onClick={openAddModal}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
-          >
-            <i className="fas fa-plus mr-2"></i>
-            Tambah Obat
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={openAddModal}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
+            >
+              <i className="fas fa-plus mr-2"></i>
+              Tambah Obat
+            </button>
+            <button
+              onClick={() => setShowDeletedProductsModal(true)}
+              className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg flex items-center"
+              title="Lihat dan kelola obat yang dihapus"
+            >
+              <i className="fas fa-trash mr-2"></i>
+              Obat Dihapus
+            </button>
+          </div>
         </div>
       </header>
 
@@ -1463,6 +1481,12 @@ const DrugManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Deleted Products Modal */}
+      <DeletedProductsModal 
+        isOpen={showDeletedProductsModal} 
+        onClose={() => setShowDeletedProductsModal(false)} 
+      />
     </div>
   );
 };

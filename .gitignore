@@ -7,10 +7,17 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+package-lock.json
+yarn.lock
+
+# Distribution
 dist
 dist-ssr
 *.local
+
+# Environment Variables (NEVER COMMIT)
 .env
 .env.local
 .env.production
@@ -20,6 +27,10 @@ dist-ssr
 .env.test.local
 .env.staging
 .env.preview
+
+# API folder env (never commit)
+api/.env
+api/.env.*
 database/.env
 
 # Package manager caches & stores
@@ -41,8 +52,17 @@ temp
 .next
 storybook-static
 
+# Test files (local testing only)
+test_*.js
+test_*.sh
+testAPI.cjs
+testServiceFunction.cjs
+*.test.js
+*.spec.js
+
 # Deployment platform local dirs
 .vercel
+.netlify
 
 # OS / misc cruft
 Thumbs.db
@@ -60,3 +80,17 @@ Desktop.ini
 *.njsproj
 *.sln
 *.sw?
+
+# IDE Settings
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+
+# Database backups
+*.sql.backup
+*.db.backup
+
+# API development files
+api/server.js.bak
+api/*.bak
+

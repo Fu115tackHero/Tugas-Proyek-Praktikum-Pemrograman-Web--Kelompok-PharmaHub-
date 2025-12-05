@@ -30,6 +30,8 @@ import DrugManagement from "./admin/pages/DrugManagement";
 import OrderManagement from "./admin/pages/OrderManagement";
 import SalesReport from "./admin/pages/SalesReport";
 import AutoSalesReport from "./admin/pages/AutoSalesReport";
+import UserManagement from "./admin/pages/UserManagement";
+import CouponManagement from "./admin/pages/CouponManagement";
 import AdminActivity from "./admin/AdminActivity";
 
 // Protected Route Components
@@ -99,6 +101,8 @@ function App() {
               <Route index element={<AdminDashboard />} />
               <Route path="drugs" element={<DrugManagement />} />
               <Route path="orders" element={<OrderManagement />} />
+              <Route path="users" element={<UserManagement />} />
+              <Route path="coupons" element={<CouponManagement />} />
               <Route path="reports" element={<AutoSalesReport />} />
               <Route path="activity" element={<AdminActivity />} />
             </Route>

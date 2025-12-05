@@ -12,6 +12,8 @@ const Products = () => {
   const [filters, setFilters] = useState({
     category: "Semua Produk",
     priceRange: "all",
+    minPrice: "",
+    maxPrice: "",
     sort: "name-asc",
   });
 
@@ -27,7 +29,12 @@ const Products = () => {
     const categoryFromUrl = searchParams.get("category");
 
     // 3. Cek apakah kategori dari URL valid (ada di daftar kategori dari backend)
-    if (categoryFromUrl && categoryOptions.includes(categoryFromUrl)) {
+    //    Tunggu sampai kategori backend sudah dimuat (length > 1 artinya ada selain "Semua Produk")
+    if (
+      categoryOptions.length > 1 &&
+      categoryFromUrl &&
+      categoryOptions.includes(categoryFromUrl)
+    ) {
       setFilters((prev) => ({
         ...prev,
         category: categoryFromUrl,
@@ -39,7 +46,7 @@ const Products = () => {
         category: "Semua Produk",
       }));
     }
-  }, [searchParams]);
+  }, [searchParams, categoryOptions]);
 
   // Load products & categories from backend
   useEffect(() => {
@@ -70,7 +77,7 @@ const Products = () => {
    */
   useEffect(() => {
     applyFilters();
-  }, [filters]);
+  }, [filters, allProducts]);
 
   const applyFilters = () => {
     let result = [...allProducts];
@@ -86,7 +93,23 @@ const Products = () => {
 
     // 2. Filter Rentang Harga
     if (filters.priceRange !== "all") {
-      if (filters.priceRange === "0-15000") {
+      if (filters.priceRange === "custom") {
+        let min = parseInt(filters.minPrice, 10);
+        let max = parseInt(filters.maxPrice, 10);
+
+        if (!isNaN(min) && !isNaN(max) && min > max) {
+          const temp = min;
+          min = max;
+          max = temp;
+        }
+
+        result = result.filter((p) => {
+          const price = p.price;
+          if (!isNaN(min) && price < min) return false;
+          if (!isNaN(max) && price > max) return false;
+          return true;
+        });
+      } else if (filters.priceRange === "0-15000") {
         result = result.filter((p) => p.price < 15000);
       } else if (filters.priceRange === "15000-30000") {
         result = result.filter((p) => p.price >= 15000 && p.price <= 30000);
@@ -196,7 +219,42 @@ const Products = () => {
                 <option value="15000-30000">Rp 15.000 - Rp 30.000</option>
                 <option value="30000-50000">Rp 30.000 - Rp 50.000</option>
                 <option value="50000+">Di atas Rp 50.000</option>
+                <option value="custom">Rentang Harga Khusus</option>
               </select>
+              {filters.priceRange === "custom" && (
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">
+                      Min (Rp)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={filters.minPrice}
+                      onChange={(e) =>
+                        handleFilterChange("minPrice", e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">
+                      Maks (Rp)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={filters.maxPrice}
+                      onChange={(e) =>
+                        handleFilterChange("maxPrice", e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="100000"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Sort Filter */}
@@ -221,65 +279,123 @@ const Products = () => {
         {/* Products Grid */}
         {filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => (
-              <Link
-                key={product.id}
-                to={`/product/${product.id}`}
-                className={`
-                  group relative bg-white rounded-2xl p-5 flex flex-col border border-transparent
-                  transition-all duration-300 ease-out
-                  hover:shadow-2xl hover:-translate-y-2 hover:border-blue-200
-                  ${
-                    product.prescriptionRequired
-                      ? "border-l-4 border-l-red-500"
-                      : ""
-                  }
-                `}
-              >
-                <img
-                  src={product.image || "https://via.placeholder.com/150?text=No+Image"}
-                  alt={product.name || "Product"}
-                  className="w-32 h-32 object-cover mx-auto mb-4 rounded-lg"
-                  onError={(e) => {
-                    e.target.src =
-                      "https://via.placeholder.com/150?text=No+Image";
-                  }}
-                />
-                <h3 className="font-semibold text-gray-800">{product.name || "Produk"}</h3>
-                <p className="text-gray-600 text-sm mt-1">
-                  {/* Prioritize howItWorks/how_it_works over description */}
-                  {(product.howItWorks || product.how_it_works || product.description) && 
-                   (product.howItWorks || product.how_it_works || product.description).length > 80
-                    ? (product.howItWorks || product.how_it_works || product.description).substring(0, 80) + "..."
-                    : (product.howItWorks || product.how_it_works || product.description || "")}
-                </p>
-                {product.prescriptionRequired && (
-                  <div className="mt-2 mb-2">
-                    <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded">
-                      Perlu Resep Dokter
-                    </span>
+            {filteredProducts.map((product) => {
+              const stock = product.stock || 0;
+              const isOutOfStock = stock <= 0;
+              return (
+                <Link
+                  key={product.id}
+                  to={`/product/${product.id}`}
+                  className={`
+                    group relative bg-white rounded-2xl p-5 flex flex-col border border-transparent
+                    transition-all duration-300 ease-out
+                    hover:shadow-2xl hover:-translate-y-2 hover:border-blue-200
+                    ${
+                      product.prescriptionRequired
+                        ? "border-l-4 border-l-red-500"
+                        : ""
+                    }
+                    ${isOutOfStock ? "filter grayscale opacity-70" : ""}
+                  `}
+                >
+                  {/* Out of stock badge */}
+                  {isOutOfStock && (
+                    <div className="absolute top-3 right-3 bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded">
+                      Habis
+                    </div>
+                  )}
+
+                  <img
+                    src={
+                      product.image ||
+                      "https://via.placeholder.com/150?text=No+Image"
+                    }
+                    alt={product.name || "Product"}
+                    className="w-32 h-32 object-cover mx-auto mb-4 rounded-lg"
+                    onError={(e) => {
+                      e.target.src =
+                        "https://via.placeholder.com/150?text=No+Image";
+                    }}
+                  />
+                  <h3
+                    className={`font-semibold ${
+                      isOutOfStock ? "text-gray-500" : "text-gray-800"
+                    }`}
+                  >
+                    {product.name || "Produk"}
+                  </h3>
+                  <p
+                    className={`text-sm mt-1 ${
+                      isOutOfStock ? "text-gray-500" : "text-gray-600"
+                    }`}
+                  >
+                    {/* Prioritize howItWorks/how_it_works over description */}
+                    {(product.howItWorks ||
+                      product.how_it_works ||
+                      product.description) &&
+                    (
+                      product.howItWorks ||
+                      product.how_it_works ||
+                      product.description
+                    ).length > 80
+                      ? (
+                          product.howItWorks ||
+                          product.how_it_works ||
+                          product.description
+                        ).substring(0, 80) + "..."
+                      : product.howItWorks ||
+                        product.how_it_works ||
+                        product.description ||
+                        ""}
+                  </p>
+                  {product.prescriptionRequired && (
+                    <div className="mt-2 mb-2">
+                      <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded">
+                        Perlu Resep Dokter
+                      </span>
+                    </div>
+                  )}
+                  <div className="mt-auto">
+                    <div className="flex items-center justify-between mt-4">
+                      <p
+                        className={`${
+                          isOutOfStock ? "text-gray-500" : "text-blue-600"
+                        } font-bold`}
+                      >
+                        Rp {(product.price || 0).toLocaleString("id-ID")}
+                      </p>
+                      <p
+                        className={`text-sm font-medium ${
+                          !isOutOfStock
+                            ? stock > 10
+                              ? "text-green-600"
+                              : "text-orange-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        Stok: {stock}
+                      </p>
+                    </div>
+                    <div
+                      className={`mt-4 px-4 py-2 rounded-lg transition w-full flex items-center justify-center ${
+                        isOutOfStock
+                          ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                          : "bg-blue-600 text-white hover:bg-blue-700"
+                      }`}
+                      role="button"
+                      aria-disabled={isOutOfStock}
+                    >
+                      <i
+                        className={`fas ${
+                          isOutOfStock ? "fa-ban mr-2" : "fa-eye mr-2"
+                        }`}
+                      ></i>
+                      {isOutOfStock ? "Habis" : "Lihat Detail"}
+                    </div>
                   </div>
-                )}
-                <div className="mt-auto">
-                  <div className="flex items-center justify-between mt-4">
-                    <p className="text-blue-600 font-bold">
-                      Rp {(product.price || 0).toLocaleString("id-ID")}
-                    </p>
-                    <p className={`text-sm font-medium ${
-                      (product.stock || 0) > 0 
-                        ? (product.stock > 10 ? 'text-green-600' : 'text-orange-600')
-                        : 'text-red-600'
-                    }`}>
-                      Stok: {product.stock || 0}
-                    </p>
-                  </div>
-                  <div className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition w-full flex items-center justify-center">
-                    <i className="fas fa-eye mr-2"></i>
-                    Lihat Detail
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         ) : (
           /* Tampilan jika produk kosong */

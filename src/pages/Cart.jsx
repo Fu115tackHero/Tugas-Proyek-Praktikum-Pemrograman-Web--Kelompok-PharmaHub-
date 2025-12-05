@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import AlertModal from "../components/AlertModal";
+import ConfirmModal from "../components/ConfirmModal";
 import { useAlert } from "../hooks/useAlert";
 
 const Cart = () => {
@@ -30,6 +31,7 @@ const Cart = () => {
   const [couponMessage, setCouponMessage] = useState("");
   const [couponError, setCouponError] = useState(false);
   const [actionLoading, setActionLoading] = useState(null); // Track which action is loading
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const handleApplyCoupon = async () => {
     if (!couponInput.trim()) {
@@ -40,9 +42,9 @@ const Cart = () => {
 
     setActionLoading("applyCoupon");
     console.log("🎟️ Applying coupon:", couponInput);
-    
+
     const result = await applyCoupon(couponInput);
-    
+
     console.log("🎟️ Coupon result:", result);
     setCouponMessage(result.message);
     setCouponError(!result.success);
@@ -60,9 +62,9 @@ const Cart = () => {
   const handleRemoveCoupon = async () => {
     setActionLoading("removeCoupon");
     console.log("🎟️ Removing coupon");
-    
+
     await removeCoupon();
-    
+
     setCouponInput("");
     setCouponMessage("");
     setCouponError(false);
@@ -78,9 +80,9 @@ const Cart = () => {
 
     setActionLoading(`quantity-${productId}`);
     console.log(`🔢 Updating quantity for product ${productId}:`, newQuantity);
-    
+
     const result = await updateQuantity(productId, newQuantity);
-    
+
     if (!result.success) {
       console.error("❌ Failed to update quantity:", result.message);
       showAlert(result.message, "error");
@@ -91,9 +93,9 @@ const Cart = () => {
   const handleRemoveFromCart = async (productId) => {
     setActionLoading(`remove-${productId}`);
     console.log("🗑️ Removing from cart:", productId);
-    
+
     const result = await removeFromCart(productId);
-    
+
     if (!result.success) {
       console.error("❌ Failed to remove from cart:", result.message);
       showAlert(result.message, "error");
@@ -104,9 +106,9 @@ const Cart = () => {
   const handleSaveForLater = async (productId) => {
     setActionLoading(`save-${productId}`);
     console.log("💾 Saving for later:", productId);
-    
+
     const result = await saveForLater(productId);
-    
+
     if (!result.success) {
       console.error("❌ Failed to save for later:", result.message);
       showAlert(result.message, "error");
@@ -117,9 +119,9 @@ const Cart = () => {
   const handleMoveToCart = async (productId) => {
     setActionLoading(`move-${productId}`);
     console.log("🛒 Moving to cart:", productId);
-    
+
     const result = await moveToCart(productId);
-    
+
     if (!result.success) {
       console.error("❌ Failed to move to cart:", result.message);
       showAlert(result.message, "error");
@@ -130,9 +132,9 @@ const Cart = () => {
   const handleRemoveFromSaved = async (productId) => {
     setActionLoading(`removeSaved-${productId}`);
     console.log("🗑️ Removing from saved:", productId);
-    
+
     const result = await removeFromSaved(productId);
-    
+
     if (!result.success) {
       console.error("❌ Failed to remove from saved:", result.message);
       showAlert(result.message, "error");
@@ -141,13 +143,13 @@ const Cart = () => {
   };
 
   const handleClearCart = async () => {
-    if (!window.confirm("Hapus semua produk dari keranjang?")) return;
+    setShowClearConfirm(false);
 
     setActionLoading("clearCart");
     console.log("🗑️ Clearing cart");
-    
+
     const result = await clearCart();
-    
+
     if (!result.success) {
       console.error("❌ Failed to clear cart:", result.message);
       showAlert(result.message, "error");
@@ -187,7 +189,9 @@ const Cart = () => {
       <div className="bg-gradient-to-b from-blue-50 to-blue-100 min-h-screen flex items-center justify-center">
         <div className="text-center">
           <i className="fas fa-exclamation-triangle text-4xl text-red-600 mb-4"></i>
-          <p className="text-gray-800 font-medium mb-2">Gagal memuat keranjang</p>
+          <p className="text-gray-800 font-medium mb-2">
+            Gagal memuat keranjang
+          </p>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
@@ -253,16 +257,23 @@ const Cart = () => {
                 <>
                   {/* Clear All Button */}
                   <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-                    <h2 className="font-semibold text-gray-800">Produk dalam Keranjang</h2>
+                    <h2 className="font-semibold text-gray-800">
+                      Produk dalam Keranjang
+                    </h2>
                     <button
-                      onClick={handleClearCart}
+                      onClick={() => setShowClearConfirm(true)}
                       disabled={actionLoading === "clearCart"}
                       className="text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-50"
                     >
                       {actionLoading === "clearCart" ? (
-                        <><i className="fas fa-spinner fa-spin mr-1"></i> Menghapus...</>
+                        <>
+                          <i className="fas fa-spinner fa-spin mr-1"></i>{" "}
+                          Menghapus...
+                        </>
                       ) : (
-                        <><i className="fas fa-trash mr-1"></i> Hapus Semua</>
+                        <>
+                          <i className="fas fa-trash mr-1"></i> Hapus Semua
+                        </>
                       )}
                     </button>
                   </div>
@@ -301,9 +312,14 @@ const Cart = () => {
                                 className="text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-50"
                               >
                                 {actionLoading === `remove-${item.id}` ? (
-                                  <><i className="fas fa-spinner fa-spin mr-1"></i> Menghapus...</>
+                                  <>
+                                    <i className="fas fa-spinner fa-spin mr-1"></i>{" "}
+                                    Menghapus...
+                                  </>
                                 ) : (
-                                  <><i className="fas fa-trash mr-1"></i> Hapus</>
+                                  <>
+                                    <i className="fas fa-trash mr-1"></i> Hapus
+                                  </>
                                 )}
                               </button>
                               <button
@@ -312,9 +328,15 @@ const Cart = () => {
                                 className="text-blue-600 hover:text-blue-700 text-sm font-medium ml-4 disabled:opacity-50"
                               >
                                 {actionLoading === `save-${item.id}` ? (
-                                  <><i className="fas fa-spinner fa-spin mr-1"></i> Menyimpan...</>
+                                  <>
+                                    <i className="fas fa-spinner fa-spin mr-1"></i>{" "}
+                                    Menyimpan...
+                                  </>
                                 ) : (
-                                  <><i className="far fa-bookmark mr-1"></i> Simpan untuk nanti</>
+                                  <>
+                                    <i className="far fa-bookmark mr-1"></i>{" "}
+                                    Simpan untuk nanti
+                                  </>
                                 )}
                               </button>
                             </div>
@@ -325,7 +347,10 @@ const Cart = () => {
                           <div className="flex items-center space-x-2">
                             <button
                               onClick={() => handleQuantityChange(item.id, -1)}
-                              disabled={item.quantity <= 1 || actionLoading === `quantity-${item.id}`}
+                              disabled={
+                                item.quantity <= 1 ||
+                                actionLoading === `quantity-${item.id}`
+                              }
                               className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <i className="fas fa-minus text-gray-600"></i>
@@ -339,7 +364,10 @@ const Cart = () => {
                             </span>
                             <button
                               onClick={() => handleQuantityChange(item.id, 1)}
-                              disabled={item.quantity >= item.stock || actionLoading === `quantity-${item.id}`}
+                              disabled={
+                                item.quantity >= item.stock ||
+                                actionLoading === `quantity-${item.id}`
+                              }
                               className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <i className="fas fa-plus text-gray-600"></i>
@@ -411,20 +439,33 @@ const Cart = () => {
                               className="text-blue-600 hover:text-blue-700 text-sm font-medium disabled:opacity-50"
                             >
                               {actionLoading === `move-${item.id}` ? (
-                                <><i className="fas fa-spinner fa-spin mr-1"></i> Memindahkan...</>
+                                <>
+                                  <i className="fas fa-spinner fa-spin mr-1"></i>{" "}
+                                  Memindahkan...
+                                </>
                               ) : (
-                                <><i className="fas fa-cart-plus mr-1"></i> Pindah ke Keranjang</>
+                                <>
+                                  <i className="fas fa-cart-plus mr-1"></i>{" "}
+                                  Pindah ke Keranjang
+                                </>
                               )}
                             </button>
                             <button
                               onClick={() => handleRemoveFromSaved(item.id)}
-                              disabled={actionLoading === `removeSaved-${item.id}`}
+                              disabled={
+                                actionLoading === `removeSaved-${item.id}`
+                              }
                               className="text-red-600 hover:text-red-700 text-sm font-medium ml-4 disabled:opacity-50"
                             >
                               {actionLoading === `removeSaved-${item.id}` ? (
-                                <><i className="fas fa-spinner fa-spin mr-1"></i> Menghapus...</>
+                                <>
+                                  <i className="fas fa-spinner fa-spin mr-1"></i>{" "}
+                                  Menghapus...
+                                </>
                               ) : (
-                                <><i className="fas fa-trash mr-1"></i> Hapus</>
+                                <>
+                                  <i className="fas fa-trash mr-1"></i> Hapus
+                                </>
                               )}
                             </button>
                           </div>
@@ -478,8 +519,12 @@ const Cart = () => {
                       <input
                         type="text"
                         value={couponInput}
-                        onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                        onKeyPress={(e) => e.key === "Enter" && handleApplyCoupon()}
+                        onChange={(e) =>
+                          setCouponInput(e.target.value.toUpperCase())
+                        }
+                        onKeyPress={(e) =>
+                          e.key === "Enter" && handleApplyCoupon()
+                        }
                         placeholder="Masukkan kode kupon"
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                         disabled={actionLoading === "applyCoupon"}
@@ -526,7 +571,9 @@ const Cart = () => {
                               <span className="text-gray-600">
                                 {coupon.discount_type === "percentage"
                                   ? `${coupon.discount_value}% off`
-                                  : `Rp ${coupon.discount_value.toLocaleString("id-ID")} off`}
+                                  : `Rp ${coupon.discount_value.toLocaleString(
+                                      "id-ID"
+                                    )} off`}
                               </span>
                             </button>
                           ))}
@@ -595,6 +642,18 @@ const Cart = () => {
         message={alertState.message}
         type={alertState.type}
         title={alertState.title}
+      />
+
+      {/* Clear Cart Confirm Modal */}
+      <ConfirmModal
+        isOpen={showClearConfirm}
+        onClose={() => setShowClearConfirm(false)}
+        onConfirm={handleClearCart}
+        title="Hapus Semua Produk?"
+        message="Apakah Anda yakin ingin menghapus semua produk dari keranjang? Tindakan ini tidak dapat dibatalkan."
+        confirmText="Ya, Hapus Semua"
+        cancelText="Batal"
+        type="danger"
       />
     </div>
   );

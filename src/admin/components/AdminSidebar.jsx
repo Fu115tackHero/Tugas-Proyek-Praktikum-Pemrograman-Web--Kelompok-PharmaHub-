@@ -60,6 +60,30 @@ const AdminSidebar = () => {
         </Link>
         
         <Link
+          to="/admin/users"
+          className={`flex items-center px-6 py-3 transition-colors ${
+            isActive('/admin/users')
+              ? 'bg-blue-700 border-r-4 border-blue-400'
+              : 'hover:bg-blue-700'
+          }`}
+        >
+          <i className="fas fa-users mr-3"></i>
+          Kelola User
+        </Link>
+
+        <Link
+          to="/admin/coupons"
+          className={`flex items-center px-6 py-3 transition-colors ${
+            isActive('/admin/coupons')
+              ? 'bg-blue-700 border-r-4 border-blue-400'
+              : 'hover:bg-blue-700'
+          }`}
+        >
+          <i className="fas fa-ticket-alt mr-3"></i>
+          Kelola Kupon
+        </Link>
+        
+        <Link
           to="/admin/reports"
           className={`flex items-center px-6 py-3 transition-colors ${
             isActive('/admin/reports')

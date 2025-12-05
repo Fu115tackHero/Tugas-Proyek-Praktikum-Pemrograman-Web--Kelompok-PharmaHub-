@@ -296,15 +296,120 @@ const History = () => {
     return true;
   });
 
-  const handleDeleteAllHistory = () => {
-    localStorage.setItem("order_history", "[]");
-    setOrders([]);
-    setShowDeleteConfirm(false);
+  const handleDeleteAllHistory = async () => {
+    console.log("[History] Starting delete all completed orders...");
+
+    // Get all completed orders that can be deleted
+    const completedOrders = orders.filter(
+      (o) => o.order_status === "completed"
+    );
+
+    if (completedOrders.length === 0) {
+      showAlert(
+        "Tidak ada pesanan yang dapat dihapus. Hanya pesanan dengan status 'Selesai' yang bisa dihapus.",
+        "info"
+      );
+      return;
+    }
+
+    setConfirmModal({
+      isOpen: true,
+      title: "Hapus Semua Riwayat Pesanan",
+      message: `Apakah Anda yakin ingin menghapus ${completedOrders.length} pesanan yang sudah selesai dari riwayat? Data tidak dapat dipulihkan.`,
+      type: "danger",
+      confirmText: "Hapus Semua",
+      onConfirm: async () => {
+        setConfirmModal({ ...confirmModal, isOpen: false });
+        try {
+          const token = getToken();
+          if (!token) {
+            showAlert(
+              "Sesi login telah berakhir. Silakan login kembali.",
+              "warning"
+            );
+            return;
+          }
+
+          console.log(`[History] Deleting ${completedOrders.length} orders...`);
+          let successCount = 0;
+          let failCount = 0;
+
+          // Delete each completed order
+          for (const order of completedOrders) {
+            try {
+              console.log(`[History] Deleting order ${order.order_id}...`);
+              const result = await OrderService.hideOrderFromUser(
+                order.order_id,
+                token
+              );
+
+              if (result.success) {
+                successCount++;
+                console.log(`[History] ✓ Order ${order.order_id} deleted`);
+              } else {
+                failCount++;
+                console.warn(
+                  `[History] ✗ Failed to delete order ${order.order_id}: ${result.message}`
+                );
+              }
+            } catch (err) {
+              failCount++;
+              console.error(
+                `[History] Error deleting order ${order.order_id}:`,
+                err
+              );
+            }
+          }
+
+          // Update UI
+          setOrders((prev) =>
+            prev.filter((o) => o.order_status !== "completed")
+          );
+
+          // Show result message
+          if (failCount === 0) {
+            showAlert(
+              `✓ Berhasil menghapus ${successCount} pesanan dari riwayat`,
+              "success"
+            );
+            console.log(
+              `[History] All ${successCount} orders deleted successfully`
+            );
+          } else {
+            showAlert(
+              `✓ Berhasil ${successCount} | ✗ Gagal ${failCount}`,
+              "warning"
+            );
+            console.warn(
+              `[History] Partial deletion: ${successCount} success, ${failCount} failed`
+            );
+          }
+
+          setShowDeleteConfirm(false);
+        } catch (err) {
+          console.error("[History] Error deleting all history:", err);
+          showAlert(err.message || "Gagal menghapus riwayat", "error");
+        }
+      },
+    });
   };
 
   const handleDeleteOrder = async (orderId) => {
+    console.log(`[History] Initiating delete for order ${orderId}`);
+
     const order = orders.find((o) => o.order_id === orderId);
-    if (order && order.order_status !== "completed") {
+
+    if (!order) {
+      console.error(`[History] Order ${orderId} not found in state`);
+      showAlert("Pesanan tidak ditemukan", "error");
+      return;
+    }
+
+    // Only allow deletion if order is completed
+    if (order.order_status !== "completed") {
+      console.warn(
+        `[History] Cannot delete order ${orderId}: status is '${order.order_status}', expected 'completed'`
+      );
       setConfirmModal({
         isOpen: true,
         title: "Tidak Bisa Menghapus Riwayat",
@@ -331,21 +436,30 @@ const History = () => {
         try {
           const token = getToken();
           if (!token) {
+            console.error(`[History] No auth token for order ${orderId}`);
             showAlert(
               "Sesi login telah berakhir. Silakan login kembali.",
               "warning"
             );
             return;
           }
+
+          console.log(`[History] Calling API to delete order ${orderId}...`);
           const result = await OrderService.hideOrderFromUser(orderId, token);
+
           if (result.success) {
+            console.log(`[History] ✓ Order ${orderId} deleted successfully`);
             setOrders((prev) => prev.filter((o) => o.order_id !== orderId));
             showAlert("Pesanan berhasil dihapus dari riwayat", "success");
           } else {
-            showAlert("Gagal menghapus pesanan", "error");
+            console.error(
+              `[History] ✗ API returned failure for order ${orderId}:`,
+              result.message
+            );
+            showAlert(result.message || "Gagal menghapus pesanan", "error");
           }
         } catch (err) {
-          console.error("Error deleting order:", err);
+          console.error(`[History] Exception deleting order ${orderId}:`, err);
           showAlert(err.message || "Gagal menghapus pesanan", "error");
         }
       },

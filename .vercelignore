@@ -8,14 +8,29 @@ npm-debug.log
 .env.local
 .env.development
 
-# API server (not needed for serverless)
+# API development files (not needed for serverless)
 api/server.js
+api/resolveConflicts.js
+api/CONFLICT_RESOLUTION_GUIDE.js
+api/.env
+api/.env.example
+api/node_modules
+api/package-lock.json
 
 # Scripts (not needed in production)
-api/scripts
+scripts/
 
 # Database schema (not needed in production)
 database
+
+# Test files
+test_*.js
+test_*.sh
+testAPI.cjs
+testServiceFunction.cjs
+
+# Temporary backend folder (if exists)
+src-backend/
 
 # Development docs
 *.md
