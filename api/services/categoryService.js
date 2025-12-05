@@ -108,32 +108,59 @@ async function updateCategory(id, data) {
  * Delete category (soft delete)
  */
 async function deleteCategory(id) {
-  // Check if category is used by any product
-  const checkQuery = `
-    SELECT COUNT(*) as count FROM products WHERE category_id = $1
-  `;
-  const checkResult = await pool.query(checkQuery, [id]);
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
 
-  if (checkResult.rows[0].count > 0) {
-    throw new Error(
-      `Kategori tidak dapat dihapus karena sedang digunakan oleh ${checkResult.rows[0].count} produk`
+    // Check if category has child categories
+    const childCheck = await client.query(
+      `SELECT COUNT(*) as count FROM product_categories 
+       WHERE parent_category_id = $1 AND is_active = true`,
+      [id]
     );
+    
+    if (parseInt(childCheck.rows[0].count) > 0) {
+      throw new Error(
+        `Kategori tidak dapat dihapus karena memiliki ${childCheck.rows[0].count} sub-kategori aktif. Hapus atau pindahkan sub-kategori terlebih dahulu.`
+      );
+    }
+
+    // Check if category is used by any active product
+    const productCheck = await client.query(
+      `SELECT COUNT(*) as count FROM products 
+       WHERE category_id = $1 AND is_available = true`,
+      [id]
+    );
+
+    if (parseInt(productCheck.rows[0].count) > 0) {
+      throw new Error(
+        `Kategori tidak dapat dihapus karena sedang digunakan oleh ${productCheck.rows[0].count} produk aktif. Pindahkan atau nonaktifkan produk terlebih dahulu.`
+      );
+    }
+
+    // Soft delete the category
+    const deleteQuery = `
+      UPDATE product_categories
+      SET is_active = false, updated_at = CURRENT_TIMESTAMP
+      WHERE category_id = $1
+      RETURNING category_id, category_name
+    `;
+
+    const { rows } = await client.query(deleteQuery, [id]);
+
+    if (rows.length === 0) {
+      throw new Error("Kategori tidak ditemukan");
+    }
+
+    await client.query("COMMIT");
+    console.log(`✅ Category ${rows[0].category_name} (ID: ${id}) soft deleted successfully`);
+    return rows[0];
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
   }
-
-  const deleteQuery = `
-    UPDATE product_categories
-    SET is_active = false, updated_at = CURRENT_TIMESTAMP
-    WHERE category_id = $1
-    RETURNING category_id, category_name
-  `;
-
-  const { rows } = await pool.query(deleteQuery, [id]);
-
-  if (rows.length === 0) {
-    throw new Error("Kategori tidak ditemukan");
-  }
-
-  return rows[0];
 }
 
 module.exports = {

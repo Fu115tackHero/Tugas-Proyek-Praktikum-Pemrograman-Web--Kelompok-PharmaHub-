@@ -671,22 +671,88 @@ async function deleteProduct(id) {
   try {
     await client.query("BEGIN");
 
-    // Delete from product_images (if not cascade)
+    // Check if product is referenced in active orders (pending, processing, shipped)
+    const orderCheck = await client.query(
+      `SELECT COUNT(*) as count FROM order_items oi
+       JOIN orders o ON oi.order_id = o.order_id
+       WHERE oi.product_id = $1 
+       AND o.order_status IN ('pending', 'processing', 'shipped')`,
+      [id]
+    );
+    
+    if (parseInt(orderCheck.rows[0].count) > 0) {
+      throw new Error(
+        `Produk tidak dapat dihapus karena sedang ada di ${orderCheck.rows[0].count} pesanan aktif. Tunggu hingga pesanan selesai atau dibatalkan.`
+      );
+    }
+
+    // Check if product is in any user's cart
+    const cartCheck = await client.query(
+      `SELECT COUNT(*) as count FROM cart_items WHERE product_id = $1`,
+      [id]
+    );
+    
+    if (parseInt(cartCheck.rows[0].count) > 0) {
+      throw new Error(
+        `Produk tidak dapat dihapus karena sedang ada di keranjang ${cartCheck.rows[0].count} pengguna. Hapus dari keranjang terlebih dahulu.`
+      );
+    }
+
+    // Check if product is saved for later
+    const savedCheck = await client.query(
+      `SELECT COUNT(*) as count FROM saved_for_later WHERE product_id = $1`,
+      [id]
+    );
+    
+    if (parseInt(savedCheck.rows[0].count) > 0) {
+      throw new Error(
+        `Produk tidak dapat dihapus karena disimpan oleh ${savedCheck.rows[0].count} pengguna. Hapus dari saved for later terlebih dahulu.`
+      );
+    }
+
+    // For completed orders, reviews, and historical data, we'll allow deletion
+    // but clean up references appropriately
+
+    // Remove from notifications (set to NULL if allowed, or delete notification)
+    await client.query(
+      `UPDATE notifications SET related_product_id = NULL WHERE related_product_id = $1`,
+      [id]
+    );
+
+    // Remove from sales_reports (set to NULL)
+    await client.query(
+      `UPDATE sales_reports SET top_selling_product_id = NULL WHERE top_selling_product_id = $1`,
+      [id]
+    );
+
+    // Delete product reviews (historical data - safe to delete)
+    await client.query(`DELETE FROM product_reviews WHERE product_id = $1`, [id]);
+
+    // Delete from product_images
     await client.query(`DELETE FROM product_images WHERE product_id = $1`, [id]);
 
-    // Delete from product_details (child tables will cascade if FK is set properly)
+    // Delete from product_details
     await client.query(`DELETE FROM product_details WHERE product_id = $1`, [id]);
+
+    // For completed order_items, we keep them for historical records
+    // but you might want to set a flag or handle differently
+    // Note: This might be a business decision - keeping for now
 
     // Delete from products
     const query = `
       DELETE FROM products
       WHERE product_id = $1
-      RETURNING product_id;
+      RETURNING product_id, name;
     `;
     const { rows } = await client.query(query, [id]);
 
+    if (!rows[0]) {
+      throw new Error("Produk tidak ditemukan");
+    }
+
     await client.query("COMMIT");
-    return rows[0] || null;
+    console.log(`✅ Product ${rows[0].name} (ID: ${id}) deleted successfully`);
+    return rows[0];
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
