@@ -173,6 +173,56 @@ async function createOrder(userId, orderData) {
       notifResult.rows[0].notification_id
     );
 
+    // Record coupon usage if a coupon was applied
+    try {
+      if (couponCode && Number(discountAmount) > 0) {
+        // Fetch coupon_id by code and insert into coupon_usage
+        const couponRes = await client.query(
+          `SELECT coupon_id FROM coupons WHERE UPPER(code) = UPPER($1)`,
+          [couponCode]
+        );
+
+        if (couponRes.rows.length > 0) {
+          const couponId = couponRes.rows[0].coupon_id;
+
+          // Check per-user usage limit before recording to avoid race conditions
+          const usagePerUserRes = await client.query(
+            `SELECT usage_per_user FROM coupons WHERE coupon_id = $1`,
+            [couponId]
+          );
+          const usagePerUser = usagePerUserRes.rows[0]?.usage_per_user || 1;
+
+          const userUsageCountRes = await client.query(
+            `SELECT COUNT(*) AS count FROM coupon_usage WHERE coupon_id = $1 AND user_id = $2`,
+            [couponId, userId]
+          );
+          const userUsageCount = parseInt(userUsageCountRes.rows[0].count, 10);
+
+          if (userUsageCount >= usagePerUser) {
+            throw new Error(
+              `Kupon ${couponCode} sudah digunakan ${userUsageCount}x oleh user ini (maks ${usagePerUser}x)`
+            );
+          }
+
+          await client.query(
+            `INSERT INTO coupon_usage (coupon_id, user_id, order_id, discount_amount) VALUES ($1, $2, $3, $4)`,
+            [couponId, userId, order_id, Math.round(Number(discountAmount))]
+          );
+
+          console.log(
+            `[OrderService] Recorded coupon usage for order ${order_number} (coupon ${couponCode})`
+          );
+        } else {
+          console.warn(
+            `[OrderService] Coupon code ${couponCode} not found when recording usage`
+          );
+        }
+      }
+    } catch (couponErr) {
+      // If recording usage fails, rollback the whole order to keep consistency
+      throw couponErr;
+    }
+
     // If payment is online and successful, clear the cart
     if (paymentMethod !== "bayar_ditempat") {
       await client.query("DELETE FROM cart_items WHERE user_id = $1", [userId]);
