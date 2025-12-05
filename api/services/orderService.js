@@ -228,7 +228,16 @@ async function getOrdersByUserId(userId) {
         o.cancellation_reason,
         o.is_archived,
         COUNT(oi.order_item_id) as total_items,
-        SUM(oi.quantity) as total_quantity
+        SUM(oi.quantity) as total_quantity,
+        (
+          SELECT admin_notes 
+          FROM notifications 
+          WHERE related_order_id = o.order_id 
+            AND user_id = o.user_id 
+            AND admin_notes IS NOT NULL 
+          ORDER BY created_at DESC 
+          LIMIT 1
+        ) as admin_notes
       FROM orders o
       LEFT JOIN order_items oi ON o.order_id = oi.order_id
       WHERE o.user_id = $1 
@@ -438,6 +447,21 @@ async function getOrderById(userId, orderId) {
 
     order.items = itemsResult.rows;
 
+    // Get the most recent admin note from notifications
+    const notesQuery = `
+      SELECT admin_notes
+      FROM notifications
+      WHERE related_order_id = $1 AND user_id = $2 AND admin_notes IS NOT NULL
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+
+    const notesResult = await pool.query(notesQuery, [orderId, userId]);
+    
+    if (notesResult.rows.length > 0) {
+      order.admin_notes = notesResult.rows[0].admin_notes;
+    }
+
     console.log(
       `[OrderService] Order ${orderId} found with ${itemsResult.rows.length} items`
     );
@@ -456,12 +480,27 @@ async function getOrderById(userId, orderId) {
 /**
  * Update order status (for admin or system updates)
  */
-async function updateOrderStatus(orderId, newStatus) {
+async function updateOrderStatus(orderId, newStatus, adminNotes = null) {
   try {
     console.log(
       `[OrderService] Updating order ${orderId} status to:`,
-      newStatus
+      newStatus,
+      adminNotes ? `with admin notes: ${adminNotes}` : ""
     );
+
+    // Get order details and user_id before updating
+    const orderQuery = `
+      SELECT order_id, order_number, user_id, order_status
+      FROM orders
+      WHERE order_id = $1
+    `;
+    const orderResult = await pool.query(orderQuery, [orderId]);
+    
+    if (orderResult.rows.length === 0) {
+      return null;
+    }
+    
+    const order = orderResult.rows[0];
 
     const query = `
       UPDATE orders
@@ -481,6 +520,46 @@ async function updateOrderStatus(orderId, newStatus) {
     }
 
     console.log("[OrderService] Order status updated:", result.rows[0]);
+
+    // Create notification for user about status change
+    try {
+      const statusMessages = {
+        'pending': 'menunggu konfirmasi',
+        'confirmed': 'telah dikonfirmasi',
+        'preparing': 'sedang disiapkan',
+        'ready': 'siap untuk diambil',
+        'completed': 'telah selesai',
+        'cancelled': 'telah dibatalkan',
+        'delivered': 'telah dikirim'
+      };
+
+      const notifTitle = `Status Pesanan ${order.order_number} Diperbarui`;
+      let notifMessage = `Pesanan Anda ${statusMessages[newStatus] || 'telah diperbarui'}`;
+      
+      // Add admin notes to message if provided
+      if (adminNotes && adminNotes.trim()) {
+        notifMessage += `\n\nCatatan dari Admin: ${adminNotes}`;
+      }
+
+      const notifQuery = `
+        INSERT INTO notifications (user_id, type, title, message, related_order_id, order_status, admin_notes)
+        VALUES ($1, 'order', $2, $3, $4, $5, $6)
+      `;
+      
+      await pool.query(notifQuery, [
+        order.user_id,
+        notifTitle,
+        notifMessage,
+        orderId,
+        newStatus,
+        adminNotes || null
+      ]);
+
+      console.log(`[OrderService] Notification created for user ${order.user_id} - Status: ${newStatus}${adminNotes ? ' with admin notes' : ''}`);
+    } catch (notifError) {
+      console.error("[OrderService] Error creating notification:", notifError.message);
+      // Don't throw error, just log it
+    }
 
     return result.rows[0];
   } catch (error) {

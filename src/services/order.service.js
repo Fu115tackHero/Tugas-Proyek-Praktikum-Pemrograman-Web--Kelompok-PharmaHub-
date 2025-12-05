@@ -97,11 +97,16 @@ export async function getOrderById(orderId, token) {
  * @param {string} token - JWT authentication token
  * @returns {Promise<Object>} - Updated order
  */
-export async function updateOrderStatus(orderId, status, token) {
+export async function updateOrderStatus(orderId, status, token, adminNotes = null) {
   try {
+    const payload = { status };
+    if (adminNotes && adminNotes.trim()) {
+      payload.admin_notes = adminNotes;
+    }
+    
     const response = await axios.put(
       `${API_URL}/orders/${orderId}/status`,
-      { status },
+      payload,
       {
         headers: {
           Authorization: `Bearer ${token}`,

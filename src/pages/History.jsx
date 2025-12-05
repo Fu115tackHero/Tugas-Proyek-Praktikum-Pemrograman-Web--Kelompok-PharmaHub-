@@ -1190,6 +1190,21 @@ const History = () => {
                 </div>
               </div>
 
+              {/* Admin Notes - Display if available */}
+              {selectedOrder.admin_notes && (
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-3">
+                    <i className="fas fa-comment-dots text-orange-600 mr-2"></i>
+                    Pesan dari Admin
+                  </h3>
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <p className="text-sm text-gray-700">
+                      {selectedOrder.admin_notes}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Price Summary - Simplified */}
               <div className="border-t pt-4">
                 <div className="flex justify-between text-lg font-bold">

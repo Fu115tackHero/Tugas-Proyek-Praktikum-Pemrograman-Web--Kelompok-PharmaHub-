@@ -164,7 +164,8 @@ const OrderManagement = () => {
       const result = await OrderService.updateOrderStatus(
         currentOrder.order_id,
         newStatus,
-        token
+        token,
+        statusNote // Send admin notes to backend
       );
 
       if (result.success) {

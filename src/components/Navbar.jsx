@@ -227,8 +227,8 @@ const Navbar = () => {
               >
                 <img
                   src={
-                    user?.photo
-                      ? user.photo
+                    user?.profile_photo_url
+                      ? user.profile_photo_url
                       : `https://ui-avatars.com/api/?name=${encodeURIComponent(
                           user?.name || "User"
                         )}&background=3b82f6&color=fff&size=40&rounded=true`
